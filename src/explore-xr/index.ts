@@ -1,0 +1,5 @@
+export { xrExplorationPlugin } from './plugin.js'
+export { XRExplorationController } from './XRExplorationController.js'
+export { TeleportSystem } from './TeleportSystem.js'
+export type { XRExplorationPluginOptions } from './types.js'
+export type { TeleportResult } from './TeleportSystem.js'

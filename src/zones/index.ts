@@ -1,0 +1,5 @@
+export { zonesPlugin } from './plugin.js'
+export { TriggerSystem } from './TriggerSystem.js'
+export { LodSystem } from './LodSystem.js'
+export { AudioZoneSystem } from './AudioZoneSystem.js'
+export type { ZonesPluginOptions } from './plugin.js'

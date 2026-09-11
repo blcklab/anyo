@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anyo VR Room</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #111318; }
+      canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+      .hud { position: fixed; inset: 16px auto auto 16px; max-width: min(390px, calc(100vw - 32px)); padding: 14px 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(14,16,21,.8); backdrop-filter: blur(16px); color: #f4f4f5; }
+      .hud strong { display: block; margin-bottom: 6px; }
+      .hud p { margin: 0; color: #c5c7ce; font-size: 14px; line-height: 1.45; }
+      .actions { display: flex; gap: 8px; margin-top: 12px; }
+      button { border: 1px solid rgba(255,255,255,.18); border-radius: 9px; padding: 9px 12px; background: #f4f4f5; color: #18181b; font: inherit; cursor: pointer; }
+      button:disabled { opacity: .45; cursor: not-allowed; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@blcklab/sekai64": "/node_modules/@blcklab/sekai64/dist/index.js",
+          "@blcklab/sekai64/assets": "/node_modules/@blcklab/sekai64/dist/assets/index.js",
+          "@blcklab/sekai64/gltf": "/node_modules/@blcklab/sekai64/dist/gltf/index.js",
+          "@blcklab/sekai64/interaction": "/node_modules/@blcklab/sekai64/dist/interaction/index.js",
+          "@blcklab/sekai64/xr": "/node_modules/@blcklab/sekai64/dist/xr/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="world" aria-label="Anyo VR room"></canvas>
+    <aside class="hud">
+      <strong>Anyo VR Room</strong>
+      <p id="status">WASD and mouse work on desktop. Enter VR from a supported secure-context browser.</p>
+      <div class="actions">
+        <button id="enter-vr" type="button">Enter VR</button>
+        <button id="exit-vr" type="button" hidden>Exit VR</button>
+      </div>
+    </aside>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

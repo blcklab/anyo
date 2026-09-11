@@ -1,0 +1,80 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.7.schema.json",
+  "version": "0.7",
+  "revision": 0,
+  "metadata": {
+    "id": "portable-store",
+    "title": "Portable Store"
+  },
+  "channels": {
+    "render": { "world": 1, "products": 2 },
+    "picking": { "interactive": 1 },
+    "editor": { "default": 1 }
+  },
+  "cameras": {
+    "main": {
+      "type": "perspective",
+      "position": [0, 1.7, 6],
+      "fov": 55,
+      "layers": ["world", "products"],
+      "priority": 10
+    },
+    "overview": {
+      "type": "orthographic",
+      "position": [0, 20, 0],
+      "size": 24,
+      "layers": ["world", "products"]
+    }
+  },
+  "activeCamera": "main",
+  "rendering": {
+    "quality": "high",
+    "toneMapping": "aces",
+    "exposure": 1,
+    "shadows": { "enabled": true, "quality": "high" },
+    "antialiasing": "auto",
+    "pixelRatio": { "mode": "adaptive", "maximum": 2 }
+  },
+  "requires": {
+    "shop.product": {
+      "version": "^1.0.0",
+      "required": true,
+      "capabilities": ["catalog"]
+    }
+  },
+  "assets": {
+    "chair-model": {
+      "type": "model",
+      "format": "glb",
+      "src": "./assets/chair.glb",
+      "loading": "lazy",
+      "license": "Proprietary",
+      "variants": { "low": "./assets/chair-low.glb" }
+    }
+  },
+  "prefabs": {
+    "product-chair": {
+      "type": "model",
+      "asset": "chair-model",
+      "version": "1.0.0",
+      "layers": ["products"],
+      "pickLayers": ["interactive"],
+      "components": [
+        { "id": "product", "type": "shop.product", "data": { "productId": "chair-12" } }
+      ],
+      "events": {
+        "select": [
+          { "type": "invoke", "action": "shop.openProduct", "params": { "productId": "chair-12" } }
+        ]
+      }
+    }
+  },
+  "entities": [
+    {
+      "id": "chair-display",
+      "use": "product-chair",
+      "instanceId": "chair-display-1",
+      "position": [0, 0, 0]
+    }
+  ]
+}

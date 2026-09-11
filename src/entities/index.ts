@@ -1,0 +1,7 @@
+export { entitiesPlugin } from './plugin.js'
+export type { EntitiesPluginOptions } from './plugin.js'
+export { compileEntities } from './compileEntities.js'
+export type { CompileEntitiesOptions } from './compileEntities.js'
+export { resolveSurfaceTransform } from './surface.js'
+export { EntityTypeRegistry, createEntityTypeRegistry } from './registry.js'
+export type { EntityTypeRegistration, EntityCompileContext } from './registry.js'

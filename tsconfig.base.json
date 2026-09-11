@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@blcklab/sekai64": [
+        "node_modules/@blcklab/sekai64/dist/index.d.ts"
+      ],
+      "@blcklab/sekai64/*": [
+        "node_modules/@blcklab/sekai64/dist/*/index.d.ts"
+      ]
+    }
+  }
+}

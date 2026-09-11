@@ -1,0 +1,132 @@
+{
+  "$schema": "../../schemas/world-0.6.schema.json",
+  "version": "0.6",
+  "data": {
+    "profile": {
+      "name": "Avelino",
+      "role": "Open-source creator",
+      "tagline": "I build lightweight tools for the modern web."
+    }
+  },
+  "environment": {
+    "background": "#dfe7ec",
+    "ambientLight": { "intensity": 1 },
+    "sun": { "intensity": 1.7, "position": [8, 12, 8] }
+  },
+  "materials": {
+    "wall": { "color": "#f2f1ed", "roughness": 0.92 },
+    "floor": { "color": "#c9c1b5", "roughness": 0.76 },
+    "ink": { "color": "#27272a", "roughness": 0.58 },
+    "green": { "color": "#7fa184", "roughness": 0.66 },
+    "rose": { "color": "#c98e9c", "roughness": 0.66 }
+  },
+  "prefabs": {
+    "project-display": {
+      "type": "group",
+      "children": [
+        { "id": "plinth", "type": "box", "position": [0, 0.55, 0], "size": [2.2, 1.1, 1.2], "material": "ink", "collision": true },
+        { "id": "object", "type": "box", "position": [0, 1.45, 0], "size": [1.1, 0.65, 0.65], "material": "green" }
+      ]
+    }
+  },
+  "building": {
+    "floors": [
+      {
+        "id": "ground",
+        "elevation": 0,
+        "rooms": [
+          {
+            "id": "lobby",
+            "position": [0, 0],
+            "size": [11, 8],
+            "materials": { "wall": "wall", "floor": "floor" },
+            "openings": [
+              { "type": "door", "wall": "south", "offset": "center", "width": 2.2, "height": 2.5, "open": true }
+            ]
+          },
+          {
+            "id": "projects",
+            "size": [11, 8],
+            "attachTo": { "room": "lobby", "wall": "north" },
+            "materials": { "wall": "wall", "floor": "floor" }
+          },
+          {
+            "id": "about",
+            "size": [6, 6],
+            "attachTo": { "room": "projects", "wall": "east", "align": "center" },
+            "materials": { "wall": "wall", "floor": "floor" }
+          }
+        ]
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "name",
+      "type": "text",
+      "content": { "$bind": "profile.name" },
+      "size": [5, 1.1],
+      "surface": { "room": "lobby", "wall": "north", "offset": [0, 0.8] },
+      "style": { "fontSize": 0.25, "fontWeight": 750, "color": "#202124" }
+    },
+    {
+      "id": "role",
+      "type": "text",
+      "content": { "$bind": "profile.role" },
+      "size": [5, 0.7],
+      "surface": { "room": "lobby", "wall": "north", "offset": [0, 0] },
+      "style": { "fontSize": 0.19, "fontWeight": 550, "color": "#52525b" }
+    },
+    {
+      "id": "tagline",
+      "type": "text",
+      "content": { "$bind": "profile.tagline" },
+      "size": [6.5, 0.65],
+      "surface": { "room": "lobby", "wall": "north", "offset": [0, -0.65] },
+      "style": { "fontSize": 0.16, "fontWeight": 450, "color": "#71717a" }
+    },
+    {
+      "id": "freedom",
+      "use": "project-display",
+      "room": "projects",
+      "position": [-3.2, 0, 0],
+      "children": [
+        { "id": "plinth", "type": "box", "position": [0, 0.55, 0], "size": [2.2, 1.1, 1.2], "material": "ink", "collision": true },
+        { "id": "object", "type": "box", "position": [0, 1.45, 0], "size": [1.1, 0.65, 0.65], "material": "green", "interaction": { "action": "open-project", "params": { "name": "freeDOM", "packageName": "@blcklab/freedom" } } }
+      ]
+    },
+    {
+      "id": "scriptoria",
+      "use": "project-display",
+      "room": "projects",
+      "position": [0, 0, 0],
+      "children": [
+        { "id": "plinth", "type": "box", "position": [0, 0.55, 0], "size": [2.2, 1.1, 1.2], "material": "ink", "collision": true },
+        { "id": "object", "type": "box", "position": [0, 1.45, 0], "size": [1.1, 0.65, 0.65], "material": "rose", "interaction": { "action": "open-project", "params": { "name": "Scriptoria", "packageName": "@blcklab/scriptoria" } } }
+      ]
+    },
+    {
+      "id": "panulat",
+      "use": "project-display",
+      "room": "projects",
+      "position": [3.2, 0, 0],
+      "children": [
+        { "id": "plinth", "type": "box", "position": [0, 0.55, 0], "size": [2.2, 1.1, 1.2], "material": "ink", "collision": true },
+        { "id": "object", "type": "box", "position": [0, 1.45, 0], "size": [1.1, 0.65, 0.65], "material": "green", "interaction": { "action": "open-project", "params": { "name": "Panulat", "packageName": "blcklab/panulat" } } }
+      ]
+    },
+    { "id": "about-title", "type": "text", "content": "About", "size": [3.5, 0.9], "surface": { "room": "about", "wall": "east", "offset": [0, 0.7] }, "style": { "fontSize": 0.25, "fontWeight": 750, "color": "#202124" } },
+    { "id": "about-copy", "type": "text", "content": "Lightweight. Modular. Made for developers.", "size": [4.5, 1.3], "surface": { "room": "about", "wall": "east", "offset": [0, -0.4] }, "style": { "fontSize": 0.16, "fontWeight": 500, "color": "#52525b" } },
+    { "id": "about-zone", "type": "trigger", "room": "about", "position": [0, 1, 0], "trigger": { "size": [5, 2, 5], "once": true, "onEnter": [{ "event": "portfolio:about" }] } },
+    { "id": "lobby-light", "type": "light", "room": "lobby", "position": [0, 2.8, 0], "lightType": "point", "intensity": 25, "color": "#fff3dc" },
+    { "id": "projects-light", "type": "light", "room": "projects", "position": [0, 2.8, 0], "lightType": "point", "intensity": 28, "color": "#fff3dc" }
+  ],
+  "exploration": {
+    "spawn": { "room": "lobby", "position": [0, 1.65, 2.6] },
+    "pointerLock": true
+  },
+  "visibility": {
+    "maxPortalDepth": 2,
+    "hideUnreachableRooms": true
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "$schema": "../../schemas/world-0.6.schema.json",
+  "version": "0.6",
+  "metadata": {
+    "title": "Anyo Runtime Systems"
+  },
+  "materials": {
+    "wall": {
+      "color": "#ece9e2",
+      "roughness": 0.9
+    },
+    "floor": {
+      "color": "#c8c0b2",
+      "roughness": 0.8
+    },
+    "product": {
+      "color": "#7c8cf8",
+      "roughness": 0.4
+    }
+  },
+  "building": {
+    "floors": [
+      {
+        "id": "ground",
+        "rooms": [
+          {
+            "id": "studio",
+            "size": [
+              9,
+              8
+            ],
+            "materials": {
+              "wall": "wall",
+              "floor": "floor"
+            }
+          }
+        ],
+        "elevation": 0
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "animated-product",
+      "authoringId": "animated-product",
+      "type": "box",
+      "room": "studio",
+      "position": [
+        0,
+        1.25,
+        -1.5
+      ],
+      "size": [
+        1.4,
+        1.4,
+        1.4
+      ],
+      "material": "product",
+      "components": [
+        {
+          "type": "anyo.animation",
+          "clip": "float-and-turn"
+        }
+      ]
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "content": "Runtime systems\nwithout rewriting JSON",
+      "size": [
+        5.5,
+        1.3
+      ],
+      "surface": {
+        "room": "studio",
+        "wall": "north",
+        "offset": [
+          0,
+          0.7
+        ]
+      },
+      "style": {
+        "fontSize": 48,
+        "fontWeight": 700,
+        "align": "center",
+        "color": "#1f2937"
+      }
+    }
+  ],
+  "exploration": {
+    "spawn": {
+      "room": "studio",
+      "position": [
+        0,
+        1.65,
+        2.5
+      ]
+    }
+  }
+}

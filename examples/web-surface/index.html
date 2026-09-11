@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anyo Web Surface</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #111318; }
+      canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+      .hud { position: fixed; z-index: 30; inset: 16px auto auto 16px; max-width: min(420px, calc(100vw - 32px)); padding: 14px 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(14,16,21,.82); backdrop-filter: blur(16px); color: #f4f4f5; pointer-events: none; }
+      .hud strong { display: block; margin-bottom: 6px; }
+      .hud p { margin: 0; color: #c5c7ce; font-size: 14px; line-height: 1.45; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@blcklab/sekai64": "/node_modules/@blcklab/sekai64/dist/index.js",
+          "@blcklab/sekai64/assets": "/node_modules/@blcklab/sekai64/dist/assets/index.js",
+          "@blcklab/sekai64/gltf": "/node_modules/@blcklab/sekai64/dist/gltf/index.js",
+          "@blcklab/sekai64/interaction": "/node_modules/@blcklab/sekai64/dist/interaction/index.js",
+          "@blcklab/sekai64/xr": "/node_modules/@blcklab/sekai64/dist/xr/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="world" aria-label="Anyo web-surface example"></canvas>
+    <aside class="hud">
+      <strong>Anyo Web Surface</strong>
+      <p id="status">Loading the spatial web application…</p>
+    </aside>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

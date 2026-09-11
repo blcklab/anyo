@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.7.schema.json",
+  "version": "0.7",
+  "revision": 0,
+  "metadata": { "id": "track-b-anime-rpg", "name": "Track B Anime RPG Visual Contract" },
+  "assets": {
+    "grade": { "type": "color-lut", "format": "cube", "src": "./grade.cube" },
+    "lightmap": { "type": "texture", "format": "ktx2", "src": "./lightmap.ktx2", "colorSpace": "linear", "compression": "ktx2" }
+  },
+  "materials": {
+    "stone": { "shadingModel": "pbr", "baseColor": "#d4c8b3", "roughness": 0.68, "lightMapTexture": "lightmap", "lightMapTexCoord": 1, "lightMapIntensity": 0.8, "clearcoat": 0.06 },
+    "water": { "shadingModel": "water", "transparent": true, "opacity": 0.82, "water": { "shallowColor": "#6edce8", "deepColor": "#16496d", "foamColor": "#efffff", "fresnelPower": 5, "reflectionStrength": 0.72, "absorptionStrength": 0.36 } }
+  },
+  "environment": {
+    "visualStyle": { "profile": "anime-rpg" },
+    "sky": { "enabled": true, "width": 512, "height": 256, "sunDirection": [0.3, 0.8, -0.45], "haze": 0.2, "cloudCoverage": 0.22, "cloudDensity": 0.65, "seed": 7 },
+    "shadows": { "enabled": true, "cascades": 3, "filter": "pcf5", "cascadeBlend": 0.12, "distanceFade": 0.16 },
+    "postProcessing": { "enabled": true, "colorGrading": { "enabled": true, "lut": "grade", "lutIntensity": 0.8 }, "ssao": { "enabled": true, "mode": "gtao", "denoise": true }, "bloom": { "enabled": true, "levels": 4, "strength": 0.12 } }
+  },
+  "entities": [
+    { "id": "plaza", "type": "box", "size": [20, 0.3, 20], "position": [0, -0.15, 0], "material": "stone" },
+    { "id": "pool", "type": "box", "size": [8, 0.12, 5], "position": [0, 0.02, -2], "material": "water" }
+  ]
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640">
+  <rect width="1200" height="640" rx="48" fill="#111827"/>
+  <circle cx="104" cy="104" r="24" fill="#8b5cf6"/>
+  <text x="152" y="122" font-family="system-ui,sans-serif" font-size="44" font-weight="700" fill="#f8fafc">Anyo Spatial Web</text>
+  <text x="72" y="286" font-family="system-ui,sans-serif" font-size="88" font-weight="750" fill="#ffffff">Bring the web into 3D.</text>
+  <text x="72" y="372" font-family="system-ui,sans-serif" font-size="34" fill="#a5b4fc">Desktop: live registered app · VR: safe snapshot fallback</text>
+  <rect x="72" y="456" width="328" height="96" rx="24" fill="#f8fafc"/>
+  <text x="122" y="518" font-family="system-ui,sans-serif" font-size="34" font-weight="700" fill="#111827">Explore the world</text>
+</svg>

@@ -1,0 +1,108 @@
+{
+  "$schema": "../../schemas/world-0.6.schema.json",
+  "version": "0.6",
+  "assets": {
+    "monitor": {
+      "type": "model",
+      "format": "glb",
+      "src": "./monitor.glb"
+    }
+  },
+  "prefabs": {
+    "monitor": {
+      "type": "group",
+      "children": [
+        {
+          "id": "body",
+          "type": "model",
+          "asset": "monitor",
+          "components": [
+            {
+              "type": "anyo.surface-host",
+              "slots": {
+                "screen": {
+                  "mesh": "DisplayPanel",
+                  "materialSlot": 1,
+                  "uvSet": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "screen",
+          "type": "web-surface",
+          "position": [0, 1.2, 0],
+          "size": [2.4, 1.5],
+          "webSurface": {
+            "source": {
+              "type": "app",
+              "app": "product-dashboard",
+              "props": {
+                "monitor": { "$bind": "selectedMonitor", "fallback": "unknown" }
+              }
+            },
+            "target": {
+              "type": "entity-slot",
+              "entity": "$parent/body",
+              "slot": "screen"
+            },
+            "fallback": {
+              "type": "snapshot",
+              "image": "./dashboard-fallback.svg",
+              "alt": "Product dashboard fallback"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "building": {
+    "floors": [
+      {
+        "id": "ground",
+        "elevation": 0,
+        "rooms": [
+          {
+            "id": "showroom",
+            "size": [14, 10]
+          }
+        ]
+      }
+    ]
+  },
+  "data": {
+    "selectedMonitor": "monitor-a"
+  },
+  "entities": [
+    {
+      "id": "wall-status",
+      "type": "web-surface",
+      "size": [4, 2],
+      "webSurface": {
+        "source": {
+          "type": "snapshot",
+          "image": "./wall-status.svg"
+        },
+        "target": {
+          "type": "wall",
+          "room": "showroom",
+          "wall": "north",
+          "offset": [0, 1]
+        }
+      }
+    },
+    {
+      "id": "monitor-a",
+      "use": "monitor",
+      "room": "showroom",
+      "position": [-2.2, 0, 0]
+    },
+    {
+      "id": "monitor-b",
+      "use": "monitor",
+      "room": "showroom",
+      "position": [2.2, 0, 0]
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "../../schemas/world-0.6.schema.json",
+  "version": "0.6",
+  "metadata": {
+    "title": "Anyo Web Surface"
+  },
+  "data": {
+    "visitors": 128,
+    "status": "Live"
+  },
+  "materials": {
+    "wall": { "color": "#ece9e2", "roughness": 0.9 },
+    "floor": { "color": "#b9b1a5", "roughness": 0.85 }
+  },
+  "building": {
+    "floors": [
+      {
+        "id": "ground",
+        "elevation": 0,
+        "rooms": [
+          {
+            "id": "studio",
+            "size": [10, 8],
+            "materials": {
+              "wall": "wall",
+              "floor": "floor"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "spatial-dashboard",
+      "type": "web-surface",
+      "size": [5.2, 2.8],
+      "surface": {
+        "room": "studio",
+        "wall": "north",
+        "offset": [0, 0.45]
+      },
+      "webSurface": {
+        "title": "Spatial dashboard",
+        "source": {
+          "type": "app",
+          "app": "spatial-dashboard",
+          "props": {
+            "visitors": { "$bind": "visitors" },
+            "status": { "$bind": "status" }
+          }
+        },
+        "renderMode": "auto",
+        "interaction": {
+          "pointer": true,
+          "keyboard": true,
+          "scroll": false
+        },
+        "animations": [
+          {
+            "trigger": "mount",
+            "preset": "fade-slide-up",
+            "duration": 550
+          },
+          {
+            "trigger": "focus",
+            "preset": "scale-in",
+            "duration": 180
+          }
+        ],
+        "fallback": {
+          "type": "snapshot",
+          "image": "./fallback.svg",
+          "alt": "Static fallback for the spatial dashboard"
+        }
+      }
+    }
+  ],
+  "exploration": {
+    "spawn": {
+      "room": "studio",
+      "position": [0, 1.65, 2.6]
+    }
+  }
+}

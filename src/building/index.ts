@@ -1,0 +1,5 @@
+export { buildingPlugin } from './plugin.js'
+export { compileBuilding } from './compileBuilding.js'
+export { decomposeWall } from './wallGeometry.js'
+export { decomposeSlab } from './slabGeometry.js'
+export type { SlabCutout, SlabCell } from './slabGeometry.js'

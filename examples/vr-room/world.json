@@ -1,0 +1,86 @@
+{
+  "$schema": "../../schemas/world-0.6.schema.json",
+  "version": "0.6",
+  "metadata": {
+    "title": "Anyo VR Room"
+  },
+  "materials": {
+    "wall": { "color": "#ece9e2", "roughness": 0.9 },
+    "floor": { "color": "#c8c0b2", "roughness": 0.8 },
+    "product": { "color": "#7896ec", "roughness": 0.45 }
+  },
+  "building": {
+    "floors": [
+      {
+        "id": "ground",
+        "elevation": 0,
+        "rooms": [
+          {
+            "id": "gallery",
+            "size": [8, 8],
+            "materials": {
+              "wall": "wall",
+              "floor": "floor"
+            },
+            "openings": [
+              {
+                "id": "entrance",
+                "type": "door",
+                "wall": "south",
+                "offset": "center",
+                "width": 2,
+                "height": 2.5,
+                "open": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "vr-product",
+      "type": "box",
+      "room": "gallery",
+      "position": [0, 1, -2],
+      "size": [1.2, 1.2, 1.2],
+      "material": "product",
+      "interaction": {
+        "action": "inspect-product",
+        "distance": 10,
+        "params": {
+          "name": "Sekai Cube"
+        }
+      }
+    },
+    {
+      "id": "vr-title",
+      "type": "text",
+      "content": "Anyo VR",
+      "size": [3.5, 0.8],
+      "surface": {
+        "room": "gallery",
+        "wall": "north",
+        "offset": [0, 0.7]
+      }
+    }
+  ],
+  "exploration": {
+    "spawn": {
+      "room": "gallery",
+      "position": [0, 1.65, 2]
+    },
+    "xr": {
+      "enabled": true,
+      "mode": "immersive-vr",
+      "referenceSpace": "local-floor",
+      "locomotion": "teleport",
+      "turning": "snap",
+      "snapAngle": 30,
+      "dominantHand": "auto",
+      "interactionDistance": 10,
+      "collision": true
+    }
+  }
+}

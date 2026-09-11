@@ -1,0 +1,181 @@
+{
+  "$schema": "../../schemas/world-0.6.schema.json",
+  "version": "0.6",
+  "data": {
+    "store": {
+      "name": "Sumi Concept Store",
+      "featured": "Sumi Runner",
+      "price": 2499,
+      "inventory": 12
+    }
+  },
+  "environment": {
+    "background": "#dce4e8",
+    "ambientLight": { "color": "#ffffff", "intensity": 0.9 },
+    "sun": { "color": "#fff3dc", "intensity": 1.8, "position": [10, 15, 8] }
+  },
+  "materials": {
+    "wall": { "color": "#f3f1ec", "roughness": 0.9 },
+    "floor": { "color": "#cdbda8", "roughness": 0.72 },
+    "ceiling": { "color": "#fbfbfa", "roughness": 1 },
+    "charcoal": { "color": "#24262b", "roughness": 0.58 },
+    "wood": { "color": "#936c4f", "roughness": 0.72 },
+    "pink": { "color": "#d9a3ad", "roughness": 0.6 },
+    "glass": { "color": "#b9dce8", "roughness": 0.18, "opacity": 0.35, "transparent": true, "side": "double" }
+  },
+  "prefabs": {
+    "shelf": {
+      "type": "group",
+      "children": [
+        { "id": "back", "type": "box", "position": [0, 1.1, 0], "size": [2.6, 2.2, 0.16], "material": "charcoal", "collision": true },
+        { "id": "row-a", "type": "box", "position": [0, 0.45, 0.35], "size": [2.6, 0.12, 0.7], "material": "wood" },
+        { "id": "row-b", "type": "box", "position": [0, 1.15, 0.35], "size": [2.6, 0.12, 0.7], "material": "wood" },
+        { "id": "row-c", "type": "box", "position": [0, 1.85, 0.35], "size": [2.6, 0.12, 0.7], "material": "wood" }
+      ]
+    },
+    "product-pod": {
+      "type": "group",
+      "children": [
+        { "id": "stand", "type": "cylinder", "position": [0, 0.45, 0], "radius": 0.65, "height": 0.9, "material": "charcoal", "collision": true },
+        {
+          "id": "product",
+          "type": "box",
+          "position": [0, 1.1, 0],
+          "size": [0.85, 0.35, 0.35],
+          "material": "pink",
+          "interaction": {
+            "action": "inspect-product",
+            "params": { "sku": "SUMI-001", "name": "Sumi Runner" },
+            "distance": 5
+          }
+        }
+      ]
+    }
+  },
+  "building": {
+    "id": "sumi-store",
+    "name": "Sumi Concept Store",
+    "defaults": {
+      "roomHeight": 3.4,
+      "wallThickness": 0.14,
+      "floorThickness": 0.18,
+      "ceilingThickness": 0.12
+    },
+    "floors": [
+      {
+        "id": "ground",
+        "elevation": 0,
+        "rooms": [
+          {
+            "id": "main-store",
+            "position": [0, 0],
+            "size": [14, 12],
+            "materials": { "wall": "wall", "floor": "floor", "ceiling": "ceiling" },
+            "openings": [
+              { "id": "entrance", "type": "door", "wall": "south", "offset": "center", "width": 2.6, "height": 2.6, "open": true },
+              { "type": "window", "wall": "south", "offset": 3, "width": 2.6, "height": 1.9, "elevation": 0.8, "material": "glass" },
+              { "type": "window", "wall": "south", "offset": 11, "width": 2.6, "height": 1.9, "elevation": 0.8, "material": "glass" }
+            ]
+          },
+          {
+            "id": "showroom",
+            "size": [10, 6],
+            "attachTo": { "room": "main-store", "wall": "north", "align": "center" },
+            "materials": { "wall": "wall", "floor": "floor", "ceiling": "ceiling" }
+          }
+        ],
+        "stairs": [
+          { "id": "mezzanine-stairs", "fromFloor": "ground", "toFloor": "upper", "position": [-5.2, 4.6], "direction": "north", "width": 1.4, "run": 5.4, "steps": 22, "material": "wood" }
+        ]
+      },
+      {
+        "id": "upper",
+        "elevation": 3.8,
+        "rooms": [
+          {
+            "id": "mezzanine",
+            "position": [0, 0],
+            "size": [14, 12],
+            "height": 3.2,
+            "materials": { "wall": "wall", "floor": "floor", "ceiling": "ceiling" },
+            "openings": [
+              { "type": "window", "wall": "south", "offset": "center", "width": 5, "height": 1.7, "elevation": 0.9, "material": "glass" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "store-title",
+      "type": "text",
+      "content": { "$bind": "store.name" },
+      "size": [5.5, 1],
+      "surface": { "room": "main-store", "wall": "north", "offset": [0, 0.95] },
+      "style": { "fontSize": 0.22, "fontWeight": 700, "color": "#202126" }
+    },
+    {
+      "id": "featured-label",
+      "type": "text",
+      "content": { "$bind": "store.featured", "format": "Featured: {value}" },
+      "size": [4.2, 0.75],
+      "surface": { "room": "main-store", "wall": "east", "offset": [0, 0.65] },
+      "style": { "fontSize": 0.2, "fontWeight": 650, "color": "#202126" }
+    },
+    {
+      "id": "price-label",
+      "type": "text",
+      "content": { "$bind": "store.price", "format": "PHP {value}" },
+      "size": [2.6, 0.65],
+      "surface": { "room": "main-store", "wall": "east", "offset": [0, -0.1] },
+      "style": { "fontSize": 0.2, "fontWeight": 700, "color": "#7c3d4a" }
+    },
+    {
+      "id": "inventory-label",
+      "type": "text",
+      "content": { "$bind": "store.inventory", "format": "{value} available" },
+      "size": [2.8, 0.55],
+      "surface": { "room": "main-store", "wall": "east", "offset": [0, -0.75] },
+      "style": { "fontSize": 0.18, "fontWeight": 500, "color": "#52525b" }
+    },
+    {
+      "id": "shelf-row",
+      "use": "shelf",
+      "room": "main-store",
+      "position": [-3.2, 0, -1.4],
+      "repeat": { "count": 3, "axis": "x", "spacing": 3.2 }
+    },
+    {
+      "id": "product-pods",
+      "use": "product-pod",
+      "room": "main-store",
+      "position": [-2.4, 0, 3.2],
+      "repeat": { "count": 3, "axis": "x", "spacing": 2.4 }
+    },
+    { "id": "checkout", "type": "box", "room": "main-store", "position": [4.6, 0.55, 4.3], "size": [3, 1.1, 1], "material": "wood", "collision": true },
+    { "id": "showroom-sign", "type": "text", "content": "New Collection", "size": [4, 0.8], "surface": { "room": "showroom", "wall": "north", "offset": [0, 0.65] }, "style": { "fontSize": 0.22, "fontWeight": 700, "color": "#27272a" } },
+    { "id": "showroom-display", "type": "box", "room": "showroom", "position": [0, 0.55, 0], "size": [4, 1.1, 2], "material": "pink", "collision": true },
+    { "id": "mezzanine-title", "type": "text", "content": "Members Lounge", "size": [4.8, 0.9], "surface": { "room": "mezzanine", "wall": "north", "offset": [0, 0.75] }, "style": { "fontSize": 0.22, "fontWeight": 700, "color": "#27272a" } },
+    { "id": "showroom-trigger", "type": "trigger", "room": "showroom", "position": [0, 1, 1.8], "trigger": { "size": [4, 2, 2], "once": true, "onEnter": [{ "event": "store:showroom-enter" }] } },
+    { "id": "main-light-a", "type": "light", "room": "main-store", "position": [-3, 2.8, 0], "lightType": "point", "color": "#fff4df", "intensity": 25 },
+    { "id": "main-light-b", "type": "light", "room": "main-store", "position": [3, 2.8, 0], "lightType": "point", "color": "#fff4df", "intensity": 25 },
+    { "id": "upper-light", "type": "light", "room": "mezzanine", "position": [0, 2.7, 0], "lightType": "point", "color": "#fff4df", "intensity": 30 }
+  ],
+  "exploration": {
+    "spawn": { "room": "main-store", "position": [0, 1.65, 4.7] },
+    "height": 1.75,
+    "eyeHeight": 1.65,
+    "radius": 0.3,
+    "walkSpeed": 3.2,
+    "runSpeed": 5.4,
+    "gravity": 9.81,
+    "stepHeight": 0.32,
+    "pointerLock": true
+  },
+  "visibility": {
+    "enabled": true,
+    "maxPortalDepth": 2,
+    "hideUnreachableRooms": true
+  }
+}

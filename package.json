@@ -1,0 +1,227 @@
+{
+  "name": "@blcklab/anyo",
+  "version": "0.10.0-rc.1",
+  "description": "A secure, renderer-independent spatial web engine with replacement-safe plugin and system lifecycles, player-ready lifecycle, WebXR, renderer-neutral web-surface targets, and runtime systems.",
+  "keywords": [
+    "3d",
+    "architecture",
+    "building",
+    "json",
+    "virtual-store",
+    "portfolio",
+    "threejs",
+    "webgl",
+    "sekai64",
+    "webgpu",
+    "spatial-web",
+    "json-world",
+    "vrm",
+    "headless",
+    "editor",
+    "authoring",
+    "undo-redo",
+    "web-surface",
+    "spatial-ui",
+    "html-in-3d",
+    "animation",
+    "physics",
+    "runtime-systems",
+    "transient-transforms",
+    "vfx",
+    "geospatial",
+    "openstreetmap",
+    "map-world"
+  ],
+  "license": "MIT",
+  "author": "blcklab",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "schemas",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "docs"
+  ],
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./core": {
+      "types": "./dist/types/core/index.d.ts",
+      "import": "./dist/esm/core/index.js",
+      "require": "./dist/cjs/core/index.js"
+    },
+    "./validation": {
+      "types": "./dist/types/schema/index.d.ts",
+      "import": "./dist/esm/schema/index.js",
+      "require": "./dist/cjs/schema/index.js"
+    },
+    "./systems": {
+      "types": "./dist/types/systems/index.d.ts",
+      "import": "./dist/esm/systems/index.js",
+      "require": "./dist/cjs/systems/index.js"
+    },
+    "./document": {
+      "types": "./dist/types/document/index.d.ts",
+      "import": "./dist/esm/document/index.js",
+      "require": "./dist/cjs/document/index.js"
+    },
+    "./history": {
+      "types": "./dist/types/history/index.d.ts",
+      "import": "./dist/esm/history/index.js",
+      "require": "./dist/cjs/history/index.js"
+    },
+    "./editor": {
+      "types": "./dist/types/editor/index.d.ts",
+      "import": "./dist/esm/editor/index.js",
+      "require": "./dist/cjs/editor/index.js"
+    },
+    "./migrations": {
+      "types": "./dist/types/migrations/index.d.ts",
+      "import": "./dist/esm/migrations/index.js",
+      "require": "./dist/cjs/migrations/index.js"
+    },
+    "./renderer": {
+      "types": "./dist/types/renderer/index.d.ts",
+      "import": "./dist/esm/renderer/index.js",
+      "require": "./dist/cjs/renderer/index.js"
+    },
+    "./building": {
+      "types": "./dist/types/building/index.d.ts",
+      "import": "./dist/esm/building/index.js",
+      "require": "./dist/cjs/building/index.js"
+    },
+    "./entities": {
+      "types": "./dist/types/entities/index.d.ts",
+      "import": "./dist/esm/entities/index.js",
+      "require": "./dist/cjs/entities/index.js"
+    },
+    "./components": {
+      "types": "./dist/types/components/index.d.ts",
+      "import": "./dist/esm/components/index.js",
+      "require": "./dist/cjs/components/index.js"
+    },
+    "./assets": {
+      "types": "./dist/types/assets/index.d.ts",
+      "import": "./dist/esm/assets/index.js",
+      "require": "./dist/cjs/assets/index.js"
+    },
+    "./explore": {
+      "types": "./dist/types/explore/index.d.ts",
+      "import": "./dist/esm/explore/index.js",
+      "require": "./dist/cjs/explore/index.js"
+    },
+    "./interactions": {
+      "types": "./dist/types/interactions/index.d.ts",
+      "import": "./dist/esm/interactions/index.js",
+      "require": "./dist/cjs/interactions/index.js"
+    },
+    "./visibility": {
+      "types": "./dist/types/visibility/index.d.ts",
+      "import": "./dist/esm/visibility/index.js",
+      "require": "./dist/cjs/visibility/index.js"
+    },
+    "./zones": {
+      "types": "./dist/types/zones/index.d.ts",
+      "import": "./dist/esm/zones/index.js",
+      "require": "./dist/cjs/zones/index.js"
+    },
+    "./renderer-three": {
+      "types": "./dist/types/renderer-three/index.d.ts",
+      "import": "./dist/esm/renderer-three/index.js",
+      "require": "./dist/cjs/renderer-three/index.js"
+    },
+    "./presets": {
+      "types": "./dist/types/presets/index.d.ts",
+      "import": "./dist/esm/presets/index.js",
+      "require": "./dist/cjs/presets/index.js"
+    },
+    "./schema": "./schemas/world-0.7.schema.json",
+    "./schema/0.3": "./schemas/world-0.3.schema.json",
+    "./schema/0.2": "./schemas/world-0.2.schema.json",
+    "./package.json": "./package.json",
+    "./renderer-sekai64": {
+      "types": "./dist/types/renderer-sekai64/index.d.ts",
+      "import": "./dist/esm/renderer-sekai64/index.js"
+    },
+    "./schema/0.3.1": "./schemas/world-0.3.1.schema.json",
+    "./schema/0.4": "./schemas/world-0.4.schema.json",
+    "./schema/0.5": "./schemas/world-0.5.schema.json",
+    "./schema/0.6": "./schemas/world-0.6.schema.json",
+    "./explore-xr": {
+      "types": "./dist/types/explore-xr/index.d.ts",
+      "import": "./dist/esm/explore-xr/index.js",
+      "require": "./dist/cjs/explore-xr/index.js"
+    },
+    "./web-surface": {
+      "types": "./dist/types/web-surface/index.d.ts",
+      "import": "./dist/esm/web-surface/index.js",
+      "require": "./dist/cjs/web-surface/index.js"
+    },
+    "./schema/0.7": "./schemas/world-0.7.schema.json",
+    "./snapshots": {
+      "types": "./dist/types/snapshots/index.d.ts",
+      "import": "./dist/esm/snapshots/index.js",
+      "require": "./dist/cjs/snapshots/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.check.json --noEmit",
+    "test": "npm run build && npm run test:run",
+    "test:run": "node scripts/run-tests.mjs",
+    "check:exports": "node scripts/verify-exports.mjs",
+    "size": "node scripts/size.mjs",
+    "check": "npm run typecheck && npm run test && npm run check:exports && npm run check:stability && npm run check:boundaries && npm run check:pack && npm run size && npm run verify:track-f",
+    "prepublishOnly": "npm run check",
+    "check:boundaries": "node scripts/verify-boundaries.mjs",
+    "check:pack": "node scripts/verify-package.mjs",
+    "benchmark": "npm run build && node scripts/benchmark.mjs",
+    "check:stability": "node scripts/verify-stability.mjs",
+    "benchmark:track-a": "npm run build && node scripts/benchmark-track-a.mjs",
+    "verify:track-f": "node scripts/verify-track-f.mjs",
+    "test:track-f": "npm run build && node --test tests/track-f-production.test.mjs",
+    "benchmark:track-f": "npm run build && node --expose-gc scripts/benchmark-track-f.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "three": ">=0.174.0 <1",
+    "@blcklab/sekai64": ">=0.7.0 <0.8.0 || >=0.8.0-0 <0.9.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    },
+    "@blcklab/sekai64": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "three": "^0.180.0",
+    "typescript": "^5.8.3",
+    "@blcklab/sekai64": "0.8.0-rc.33"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blcklab/anyo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/blcklab/anyo/issues"
+  },
+  "homepage": "https://github.com/blcklab/anyo#readme"
+}
