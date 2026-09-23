@@ -1,8 +1,6 @@
-# VR release checklist
+# VR production checklist
 
-Run these checks in your actual viewer on each supported headset and browser.
-
-## Entry and fallback
+## Hosting and permission
 
 - Serve production builds over HTTPS.
 - Request immersive VR only from an explicit user gesture.
@@ -26,7 +24,7 @@ Run these checks in your actual viewer on each supported headset and browser.
 - Verify room visibility and portal state after movement.
 - Verify controller and gaze actions use the same registered host actions as desktop input.
 - Verify instanced products resolve to the correct Anyo entity.
-- Check that runtime bindings and door-state updates remain incremental while XR is active.
+- Verify runtime bindings and door updates do not remount the XR scene.
 
 ## Lifecycle
 
@@ -43,4 +41,4 @@ Run these checks in your actual viewer on each supported headset and browser.
 
 Record the browser, browser version, headset, firmware, controllers, operating system, backend, supported features, and known limitations for every tested target.
 
-Automated tests use XR mocks. Record physical headset results before calling a release stable; passing the mock suite does not establish tracking quality, comfort, or rendering performance.
+The automated release-candidate tests use deterministic XR mocks and renderer contracts. A physical headset test is required before promoting the packages from release candidate to stable.

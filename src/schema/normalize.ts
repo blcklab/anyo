@@ -284,19 +284,21 @@ function mergeEntityTemplate(
   }
 }
 
-function markTemplateInstance(entity: WorkingEntity, instance: AuthoringReference): WorkingEntity {
+function markTemplateInstance(entity: WorkingEntity, instance: AuthoringReference, lineage = ''): WorkingEntity {
   const template = entity.__authoring
+  const localIdentity = `${lineage}/${entity.id}:${template?.sourcePath ?? entity.id}`
   const authoring: AuthoringReference = {
-    id: `${instance.id}/template:${hashIdentity(template?.sourcePath ?? entity.id)}`,
+    id: `${instance.id}/template:${hashIdentity(localIdentity)}`,
     sourcePath: instance.sourcePath,
     instancePath: instance.sourcePath,
     templatePath: template?.sourcePath,
     editable: false,
   }
+  const nextLineage = `${lineage}/${entity.id}`
   return {
     ...entity,
     __authoring: authoring,
-    children: entity.children?.map((child) => markTemplateInstance(child, instance)),
+    children: entity.children?.map((child) => markTemplateInstance(child, instance, nextLineage)),
   }
 }
 
@@ -352,30 +354,30 @@ function expandRepeat(entity: WorkingEntity): WorkingEntity[] {
 }
 
 
-function applyPrefabOverrides(template: WorkingEntity, overrides: Record<string, unknown> | undefined): WorkingEntity {
+function applyTemplateOverrides(template: WorkingEntity, overrides: Record<string, unknown> | undefined): WorkingEntity {
   if (!overrides || Object.keys(overrides).length === 0) return template
   const result = structuredClone(template) as unknown
   for (const [pointer, value] of Object.entries(overrides)) {
     const parts = parseJsonPointer(pointer)
-    if (parts.length === 0) throw new Error('Prefab override paths must not replace the complete prefab.')
+    if (parts.length === 0) throw new Error('Template override paths must not replace the complete template.')
     let target: unknown = result
     for (const part of parts.slice(0, -1)) {
       if (Array.isArray(target)) {
         const index = Number(part)
-        if (!Number.isInteger(index) || index < 0 || index >= target.length) throw new Error(`Prefab override path "${pointer}" is outside the template.`)
+        if (!Number.isInteger(index) || index < 0 || index >= target.length) throw new Error(`Template override path "${pointer}" is outside the template.`)
         target = target[index]
       } else if (target && typeof target === 'object' && hasOwn(target, part)) target = (target as Record<string, unknown>)[part]
-      else throw new Error(`Prefab override path "${pointer}" does not exist.`)
+      else throw new Error(`Template override path "${pointer}" does not exist.`)
     }
     const key = parts.at(-1) as string
     if (Array.isArray(target)) {
       const index = Number(key)
-      if (!Number.isInteger(index) || index < 0 || index >= target.length) throw new Error(`Prefab override path "${pointer}" is outside the template.`)
+      if (!Number.isInteger(index) || index < 0 || index >= target.length) throw new Error(`Template override path "${pointer}" is outside the template.`)
       target[index] = structuredClone(value)
     } else if (target && typeof target === 'object') {
-      if (!hasOwn(target, key)) throw new Error(`Prefab override path "${pointer}" does not exist.`)
+      if (!hasOwn(target, key)) throw new Error(`Template override path "${pointer}" does not exist.`)
       ;(target as Record<string, unknown>)[key] = structuredClone(value)
-    } else throw new Error(`Prefab override path "${pointer}" cannot be assigned.`)
+    } else throw new Error(`Template override path "${pointer}" cannot be assigned.`)
   }
   return result as WorkingEntity
 }
@@ -401,24 +403,51 @@ function resolvePrefabDefinition(
   }
 }
 
+
+function resolveCompositionDefinition(
+  id: string,
+  compositions: NonNullable<WorldDocument['compositions']>,
+  stack: string[] = [],
+): Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition'> & { id?: string } {
+  if (stack.includes(id)) throw new Error(`Composition inheritance cycle detected: ${[...stack, id].join(' -> ')}`)
+  const composition = compositions[id]
+  if (!composition) throw new Error(`Unknown composition "${id}".`)
+  const { extends: baseId, version: _version, provenance: _provenance, type: _type, ...own } = composition
+  const normalizedOwn = { ...own, type: 'group' as const }
+  if (!baseId) return normalizedOwn
+  const base = resolveCompositionDefinition(baseId, compositions, [...stack, id])
+  return {
+    ...structuredClone(base),
+    ...structuredClone(normalizedOwn),
+    type: 'group',
+    style: { ...(base.style ?? {}), ...(normalizedOwn.style ?? {}) },
+    data: { ...(base.data ?? {}), ...(normalizedOwn.data ?? {}) },
+    components: mergeComponents(base.components, normalizedOwn.components),
+    children: normalizedOwn.children ?? base.children,
+  }
+}
+
 function expandEntity(
   entity: WorkingEntity,
   prefabs: WorldDocument['prefabs'],
+  compositions: WorldDocument['compositions'],
   stack: string[] = [],
 ): WorkingEntity[] {
   let resolved = entity
+  if (entity.use && entity.composition) throw new Error(`Entity "${entity.id}" cannot reference both prefab and composition templates.`)
   if (entity.use) {
-    if (stack.includes(entity.use)) {
-      throw new Error(`Prefab cycle detected: ${[...stack, entity.use].join(' -> ')}`)
+    const stackKey = `prefab:${entity.use}`
+    if (stack.includes(stackKey)) {
+      throw new Error(`Prefab cycle detected: ${[...stack, stackKey].join(' -> ')}`)
     }
     if (!prefabs?.[entity.use]) throw new Error(`Unknown prefab "${entity.use}".`)
-    const template = resolvePrefabDefinition(entity.use, prefabs, stack)
+    const template = resolvePrefabDefinition(entity.use, prefabs)
     const templatePath = `/prefabs/${escapePointer(entity.use)}`
     const templateEntity = annotateEntity({ ...template, id: entity.id } as EntityDefinition, templatePath)
-    const expandedTemplate = expandEntity(templateEntity, prefabs, [...stack, entity.use])[0]
+    const expandedTemplate = expandEntity(templateEntity, prefabs, compositions, [...stack, `prefab:${entity.use}`])[0]
     if (!expandedTemplate) throw new Error(`Prefab "${entity.use}" produced no entity.`)
     const instanceAuthoring = entity.__authoring ?? createAuthoringReference(entity, `/entities/${escapePointer(entity.id)}`)
-    const overriddenTemplate = applyPrefabOverrides(expandedTemplate, entity.overrides)
+    const overriddenTemplate = applyTemplateOverrides(expandedTemplate, entity.overrides)
     const templateWithProvenance = entity.children
       ? overriddenTemplate
       : {
@@ -432,9 +461,35 @@ function expandEntity(
       instancePath: instanceAuthoring.sourcePath,
       editable: true,
     }
+  } else if (entity.composition) {
+    const stackKey = `composition:${entity.composition}`
+    if (stack.includes(stackKey)) {
+      throw new Error(`Composition cycle detected: ${[...stack, stackKey].join(' -> ')}`)
+    }
+    if (!compositions?.[entity.composition]) throw new Error(`Unknown composition "${entity.composition}".`)
+    const template = resolveCompositionDefinition(entity.composition, compositions)
+    const templatePath = `/compositions/${escapePointer(entity.composition)}`
+    const templateEntity = annotateEntity({ ...template, id: entity.id, type: 'group' } as EntityDefinition, templatePath)
+    const expandedTemplate = expandEntity(templateEntity, prefabs, compositions, [...stack, stackKey])[0]
+    if (!expandedTemplate) throw new Error(`Composition "${entity.composition}" produced no entity.`)
+    const instanceAuthoring = entity.__authoring ?? createAuthoringReference(entity, `/entities/${escapePointer(entity.id)}`)
+    const overriddenTemplate = applyTemplateOverrides(expandedTemplate, entity.overrides)
+    const templateWithProvenance = entity.children
+      ? overriddenTemplate
+      : {
+          ...overriddenTemplate,
+          children: overriddenTemplate.children?.map((child) => markTemplateInstance(child, instanceAuthoring)),
+        }
+    resolved = mergeEntityTemplate(templateWithProvenance, { ...entity, composition: undefined, overrides: undefined, type: entity.type ?? 'group' })
+    resolved.__authoring = {
+      ...instanceAuthoring,
+      templatePath,
+      instancePath: instanceAuthoring.sourcePath,
+      editable: true,
+    }
   }
 
-  const children = (resolved.children ?? []).flatMap((child) => expandEntity(child, prefabs, stack))
+  const children = (resolved.children ?? []).flatMap((child) => expandEntity(child, prefabs, compositions, stack))
   resolved = { ...resolved, children: children.length > 0 ? children : undefined }
   return expandRepeat(resolved)
 }
@@ -464,7 +519,7 @@ function flattenEntities(document: WorldDocument): NormalizedEntityDefinition[] 
     }
   }
 
-  const entities = raw.flatMap((entity) => expandEntity(entity, document.prefabs)).map(namespaceChildIds)
+  const entities = raw.flatMap((entity) => expandEntity(entity, document.prefabs, document.compositions)).map(namespaceChildIds)
   const ids = new Set<string>()
   const authoringIds = new Set<string>()
   const visit = (entity: NormalizedEntityDefinition): void => {

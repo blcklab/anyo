@@ -1,10 +1,12 @@
-# Changes introduced in world 0.3.1
+> Historical migration note. Anyo 0.4 now migrates 0.2 and 0.3 documents directly to 0.4. See `migration-0.4.md`.
 
-This guide records the 0.3.1 changes for older integrations. For a current upgrade, use the [world 0.7 migration guide](migrations/MIGRATION_WORLD_0.7.md).
+# Migrating to 0.3.1
+
+Version `0.2` and `0.3` documents migrate automatically to `0.3.1`. Unknown extension data is preserved.
 
 ## Renderer change
 
-To switch an older app from Three.js to Sekai64, replace:
+Replace:
 
 ```ts
 import { ThreeRenderer } from '@blcklab/anyo/renderer-three'
@@ -16,11 +18,11 @@ with:
 import { Sekai64Renderer } from '@blcklab/anyo/renderer-sekai64'
 ```
 
-The original 0.3.1 integration used Sekai64 `^0.6.0`. Current package versions are covered in [Sekai64 setup](sekai64.md). The Three.js adapter remains available.
+Install `@blcklab/sekai64@^0.6.0` as an application dependency. Three.js is no longer used by production examples, but the adapter remains available.
 
 ## Schema
 
-The 0.3.1 document header was:
+Update `$schema` and version:
 
 ```json
 {
@@ -31,12 +33,12 @@ The 0.3.1 document header was:
 
 ## Attachment validation
 
-An attachment with no geometric overlap throws `ANYO_ATTACHMENT_OVERLAP_INVALID`. Positive `gap` values intentionally preserve walls and do not create an automatic portal.
+An attachment with no geometric overlap now throws `ANYO_ATTACHMENT_OVERLAP_INVALID`. Positive `gap` values intentionally preserve walls and do not create an automatic portal.
 
 ## Door updates
 
-Door primitives and colliders gained stable identities. Changing `open` updates door visibility, portal state, and collider state incrementally.
+Door primitives and colliders now have stable identities. Changing `open` updates door visibility, portal state, and collider state incrementally.
 
 ## Security
 
-Path APIs reject prototype-related segments and malformed JSON Pointer escapes. If older code read inherited properties through these paths, move the values to own properties.
+Path-based APIs now reject dangerous prototype segments and malformed JSON Pointer escapes. Code relying on inherited object properties through untrusted paths must move those values to own properties.

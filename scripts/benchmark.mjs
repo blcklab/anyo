@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -241,7 +241,6 @@ const lines = [
   '',
 ]
 
-await mkdir(path.join(root, 'docs/reports'), { recursive: true })
 await writeFile(path.join(root, 'docs/reports/BENCHMARK_REPORT.md'), `${lines.join('\n')}\n`)
 await writeFile(path.join(root, 'benchmark-results.json'), `${JSON.stringify({ generatedAt: new Date().toISOString(), node: process.version, platform: `${process.platform}-${process.arch}`, results }, null, 2)}\n`)
 console.log(lines.join('\n'))

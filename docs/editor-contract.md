@@ -1,6 +1,6 @@
-# Editor APIs
+# Editor contract
 
-Use `@blcklab/anyo/editor` to build selection, property panels, transform previews, and clipboard operations around a loaded world. The APIs work without a particular renderer or UI framework.
+Anyo 0.6 provides a renderer- and framework-independent authoring contract. It is suitable for Vue, React, plain DOM, CLI, testing, or other editor frontends, but none of those are required by Anyo.
 
 ## Create a session
 
@@ -23,7 +23,7 @@ An editable entity can carry `authoringId`. Compiled entities expose:
 - optional repeat `generatedIndex`
 - `editable` status
 
-A repeat declaration can create many runtime instances. Detach an instance before editing it independently.
+Generated repeated instances are intentionally protected from direct source mutation because one source repeat declaration can create many runtime instances.
 
 ## Selection and picking
 
@@ -49,7 +49,7 @@ Group bounds include compiled descendants and remain renderer-independent.
 const model = editor.getInspector(authoringId)
 ```
 
-The inspector model describes fields for identity, transforms, appearance, content, assets, materials, and behavior. Use it to build property forms in your UI. Identity fields are read-only, and edits still use Anyo's validation and transactions.
+The model contains renderer-neutral sections and field definitions for identity, transforms, appearance, content, assets, materials, and behavior. Vue can generate property forms from these definitions without importing private compiler state. Identity fields are read-only; editing remains subject to normal Anyo validation and transactions.
 
 ## Create and clipboard operations
 
@@ -61,7 +61,7 @@ await editor.duplicate(pasted.authoringIds)
 await editor.remove(pasted.authoringIds)
 ```
 
-Clipboard payloads contain entity JSON that your app can inspect, save, or transfer. Pasting assigns new IDs.
+Clipboard payloads contain ordinary Anyo entity JSON and can be inspected, saved, or transferred by a host application. IDs are regenerated safely when pasted.
 
 ## Transform previews
 
@@ -72,7 +72,7 @@ await editor.updateTransformPreview(authoringId, { position: [2.2, 0, -1] })
 await editor.commitTransformPreview()
 ```
 
-A preview updates the compiled world and renderer while the user drags. Committing adds one history entry; canceling restores the original source and compiled state.
+Preview updates affect the compiled world and connected renderer but do not create intermediate history entries. Committing creates one forward/inverse operation entry. Canceling restores the original source and compiled state.
 
 ## Reparenting, grouping, and TRS limits
 
@@ -82,7 +82,7 @@ const group = await editor.group([firstId, secondId])
 await editor.ungroup(group.authoringIds[0])
 ```
 
-Preserving world position can produce a transform that needs shear. Anyo reports `ANYO_EDITOR_TRANSFORM_SHEAR_UNREPRESENTABLE` if position, Euler rotation, and scale cannot represent it. Cyclic parenting is also rejected without applying the edit.
+World-preserving operations use matrix inversion and decomposition. Anyo explicitly rejects `ANYO_EDITOR_TRANSFORM_SHEAR_UNREPRESENTABLE` when the resulting transform requires shear that cannot be represented by JSON position, Euler rotation, and scale. Cyclic parenting is rejected atomically.
 
 ## History
 
@@ -94,6 +94,6 @@ await world.redo()
 
 History stores forward and inverse JSON operations rather than full before/after document snapshots.
 
-## UI responsibilities
+## What remains outside Anyo
 
-Your editor owns panels, dialogs, shortcuts, camera controls, grids, gizmos, and asset browsing. Connect them through these public APIs and keep their UI state outside world JSON.
+The frontend owns panels, dialogs, shortcuts, editor camera, grid state, gizmo visuals, asset-browser UI, and other presentation state. The future Vue editor will consume these public APIs rather than access private compiler or renderer objects.

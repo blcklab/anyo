@@ -1,6 +1,6 @@
 # Entities
 
-Use entities for objects, text, models, lights, and triggers. They can belong to rooms or form a world without a building.
+Entities are universal spatial nodes. They may exist inside rooms or directly in an entity-only world.
 
 ## Local room coordinates
 
@@ -40,7 +40,7 @@ The first offset component moves along the wall. The second moves vertically.
 
 ## Text
 
-The built-in text renderers draw text to a canvas texture. This example uses a system font:
+Text uses a generated canvas texture and requires no font file:
 
 ```json
 {
@@ -91,7 +91,7 @@ The built-in text renderers draw text to a canvas texture. This example uses a s
 
 ## Groups and transforms
 
-Place related entities in a group to move and rotate them together. JSON rotations use XYZ Euler angles in radians; the compiler composes rotations with quaternions and also exposes matrix data. A child ID is prefixed by its parent during normalization, for example:
+Groups compose child transforms using quaternion rotation composition. JSON rotations are XYZ Euler angles in radians; compiled transforms also expose quaternion and matrix metadata. Child IDs are namespaced by their parent during normalization.
 
 ```text
 display/product
@@ -117,6 +117,7 @@ Triggers do not render geometry:
 }
 ```
 
+
 ## Components
 
-Attach [components](components.md) for optional behavior. Existing `interaction`, `collision`, `audio`, `lod`, `trigger`, and `visible` fields are still supported.
+Anyo 0.5 entities may attach namespaced declarative components. See [`components.md`](components.md). Existing interaction, collision, audio, LOD, trigger, and visibility fields remain compatible.

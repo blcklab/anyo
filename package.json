@@ -1,6 +1,6 @@
 {
   "name": "@blcklab/anyo",
-  "version": "0.10.0-rc.1",
+  "version": "0.10.0-rc.3",
   "description": "A secure, renderer-independent spatial web engine with replacement-safe plugin and system lifecycles, player-ready lifecycle, WebXR, renderer-neutral web-surface targets, and runtime systems.",
   "keywords": [
     "3d",
@@ -30,7 +30,10 @@
     "vfx",
     "geospatial",
     "openstreetmap",
-    "map-world"
+    "map-world",
+    "procedural-geometry",
+    "geometry",
+    "world-authoring"
   ],
   "license": "MIT",
   "author": "blcklab",
@@ -58,6 +61,11 @@
       "types": "./dist/types/core/index.d.ts",
       "import": "./dist/esm/core/index.js",
       "require": "./dist/cjs/core/index.js"
+    },
+    "./geometry": {
+      "types": "./dist/types/geometry/index.d.ts",
+      "import": "./dist/esm/geometry/index.js",
+      "require": "./dist/cjs/geometry/index.js"
     },
     "./validation": {
       "types": "./dist/types/schema/index.d.ts",
@@ -171,14 +179,19 @@
       "types": "./dist/types/snapshots/index.d.ts",
       "import": "./dist/esm/snapshots/index.js",
       "require": "./dist/cjs/snapshots/index.js"
-    }
+    },
+    "./resources": {
+      "types": "./dist/types/resources/index.d.ts",
+      "import": "./dist/esm/resources/index.js",
+      "require": "./dist/cjs/resources/index.js"
+    },
+    "./schema/0.8": "./schemas/world-0.8.schema.json"
   },
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
-    "test": "npm run build && npm run test:run",
-    "test:run": "node scripts/run-tests.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
     "check:exports": "node scripts/verify-exports.mjs",
     "size": "node scripts/size.mjs",
     "check": "npm run typecheck && npm run test && npm run check:exports && npm run check:stability && npm run check:boundaries && npm run check:pack && npm run size && npm run verify:track-f",
@@ -210,7 +223,7 @@
   "devDependencies": {
     "three": "^0.180.0",
     "typescript": "^5.8.3",
-    "@blcklab/sekai64": "0.8.0-rc.33"
+    "@blcklab/sekai64": "0.8.0-rc.34"
   },
   "publishConfig": {
     "access": "public",

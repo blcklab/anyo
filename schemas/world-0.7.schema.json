@@ -2901,50 +2901,69 @@
       "additionalProperties": false
     },
     "webSurfacePresentation": {
-      "type": "object",
-      "required": [
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "const": "texture"
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "texture"
+            },
+            "resolution": {
+              "$ref": "#/$defs/positiveVec2"
+            },
+            "fit": {
+              "enum": [
+                "stretch",
+                "contain",
+                "cover"
+              ]
+            },
+            "transform": {
+              "$ref": "#/$defs/webSurfaceTextureTransform"
+            },
+            "side": {
+              "enum": [
+                "front",
+                "back",
+                "double"
+              ]
+            },
+            "emissive": {
+              "$ref": "#/$defs/webSurfaceTextureEmissive"
+            },
+            "transparent": {
+              "type": "boolean"
+            },
+            "glass": {
+              "$ref": "#/$defs/webSurfaceGlassOverlay"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
         },
-        "resolution": {
-          "$ref": "#/$defs/positiveVec2"
-        },
-        "fit": {
-          "enum": [
-            "stretch",
-            "contain",
-            "cover"
-          ]
-        },
-        "transform": {
-          "$ref": "#/$defs/webSurfaceTextureTransform"
-        },
-        "side": {
-          "enum": [
-            "front",
-            "back",
-            "double"
-          ]
-        },
-        "emissive": {
-          "$ref": "#/$defs/webSurfaceTextureEmissive"
-        },
-        "transparent": {
-          "type": "boolean"
-        },
-        "glass": {
-          "$ref": "#/$defs/webSurfaceGlassOverlay"
-        },
-        "opacity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "overlay"
+            },
+            "resolution": {
+              "$ref": "#/$defs/positiveVec2"
+            }
+          },
+          "additionalProperties": false
         }
-      },
-      "additionalProperties": false
+      ]
     },
     "cameraLookAt": {
       "oneOf": [

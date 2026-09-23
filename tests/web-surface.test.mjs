@@ -45,6 +45,27 @@ test('web-surface app compiles to a renderer-neutral plane with trusted app meta
   assert.deepEqual(primitive.webSurface.target, { type: 'plane', size: [4, 2] })
 })
 
+test('overlay presentation compiles directly to the browser-native DOM mode', () => {
+  const document = normalizeWorldDocument({
+    ...base,
+    entities: [{
+      id: 'overlay-panel', type: 'web-surface', size: [4, 2],
+      webSurface: {
+        source: { type: 'app', app: 'inventory' },
+        presentation: { type: 'overlay', resolution: [1280, 720] },
+      },
+    }],
+  })
+  const compiled = output()
+  compileBuilding(document, compiled)
+  compileEntities(document, compiled)
+  const primitive = compiled.primitives.find(candidate => candidate.entityId === 'overlay-panel')
+  assert.ok(primitive)
+  assert.equal(primitive.webSurface.renderMode, 'dom-overlay')
+  assert.deepEqual(primitive.webSurface.presentation, { type: 'overlay', resolution: [1280, 720] })
+})
+
+
 test('snapshot and fallback sources compile as image primitives', () => {
   const document = normalizeWorldDocument({
     ...base,
@@ -159,7 +180,8 @@ test('web-surface runtime mounts, updates, pauses, resumes, and disposes registe
     appendChild(child) { this.append(child); return child }
     replaceChildren(...children) { this.children = [...children] }
     addEventListener(name, listener) { this.listeners.set(name, listener) }
-    animate() { return { cancel() {} } }
+    getBoundingClientRect() { return this.rect }
+  animate() { return { cancel() {} } }
     remove() { this.removed = true }
   }
   const body = new FakeElement('body')
@@ -232,6 +254,7 @@ class WS1FakeElement {
     this.inert = false
     this.parent = null
     this.className = ''
+    this.rect = { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0 }
   }
   setAttribute(name, value) { this.attributes.set(name, String(value)); this[name] = String(value) }
   append(...children) {
@@ -258,6 +281,7 @@ class WS1FakeElement {
     if (candidate === this) return true
     return this.children.some(child => typeof child.contains === 'function' && child.contains(candidate))
   }
+  getBoundingClientRect() { return this.rect }
   animate() { return { cancel() {} } }
   blur() { this.blurred = true }
   remove() { this.removed = true; this.parent = null }
@@ -827,4 +851,154 @@ test('texture presentation validation rejects unsafe dimensions and material val
   assert.ok(codes.has('WEB_SURFACE_PRESENTATION_GLASS_MESH_REQUIRED'))
   assert.ok(codes.has('WEB_SURFACE_PRESENTATION_GLASS_SLOT_INVALID'))
   assert.ok(codes.has('WEB_SURFACE_PRESENTATION_GLASS_OPACITY_INVALID'))
+})
+
+test('web-surface projection exposes all four corners for perspective-aware DOM placement', () => {
+  const primitive = ws1Primitive()
+  const projection = projectWebSurface({
+    projectWorldPoint: ([x, y, z]) => ({
+      x: 400 + x * 120 + x * y * 18,
+      y: 300 - y * 110 + x * y * 8,
+      depth: z,
+      visible: true,
+    }),
+  }, primitive)
+  assert.ok(projection)
+  assert.equal(projection.corners.length, 4)
+  assert.notEqual(projection.corners[0].x - projection.corners[1].x, projection.corners[3].x - projection.corners[2].x)
+})
+
+test('custom DOM roots localize viewport-projected corners into root coordinates', async () => {
+  await withWS1FakeDom(async body => {
+    const { WebSurfaceRuntime } = await import('../dist/esm/web-surface/index.js')
+    const registry = createWebSurfaceAppRegistry()
+    registry.register('dashboard', { mount() { return { dispose() {} } } })
+    const root = new WS1FakeElement('div')
+    root.rect = { left: 600, top: 150, width: 800, height: 600, right: 1400, bottom: 750, x: 600, y: 150 }
+    body.append(root)
+    const primitive = ws1Primitive()
+    const projectWorldPoint = ([x, y, z]) => ({
+      x: 900 + x * 100,
+      y: 350 - y * 100,
+      depth: z,
+      visible: true,
+    })
+    const runtime = new WebSurfaceRuntime({ registry, root })
+    const context = ws1Context(primitive, { projectWorldPoint })
+    await runtime.sync(context)
+    runtime.update(context)
+    const element = root.children[0]
+    const match = /^matrix3d\((.*)\)$/.exec(element.style.transform)
+    assert.ok(match)
+    const values = match[1].split(',').map(Number)
+    assert.equal(values[12], 200)
+    assert.equal(values[13], 150)
+    runtime.dispose()
+  })
+})
+
+test('live DOM web surfaces use a projective matrix for oblique screen placement', async () => {
+  await withWS1FakeDom(async body => {
+    const { WebSurfaceRuntime } = await import('../dist/esm/web-surface/index.js')
+    const registry = createWebSurfaceAppRegistry()
+    registry.register('dashboard', { mount() { return { dispose() {} } } })
+    const primitive = ws1Primitive()
+    const context = ws1Context(primitive, {
+      projectWorldPoint: ([x, y, z]) => ({
+        x: 500 + x * 140 + x * y * 30,
+        y: 320 - y * 110 + x * y * 12,
+        depth: z,
+        visible: true,
+      }),
+    })
+    const runtime = new WebSurfaceRuntime({ registry })
+    await runtime.sync(context)
+    runtime.update(context)
+    const element = body.children[0].children[0]
+    assert.match(element.style.transform, /^matrix3d\(/)
+    assert.equal(element.style.transformOrigin, '0 0')
+    runtime.dispose()
+  })
+})
+
+
+test('DOM fallback keeps an authored logical viewport stable as camera distance changes', async () => {
+  await withWS1FakeDom(async body => {
+    const { WebSurfaceRuntime } = await import('../dist/esm/web-surface/index.js')
+    const registry = createWebSurfaceAppRegistry()
+    registry.register('dashboard', { mount() { return { dispose() {} } } })
+    const primitive = ws1Primitive()
+    primitive.webSurface = {
+      ...primitive.webSurface,
+      renderMode: 'dom-overlay',
+      presentation: { type: 'overlay', resolution: [1920, 1080] },
+    }
+    let pixelsPerMeter = 180
+    const projectWorldPoint = ([x, y, z]) => ({
+      x: 500 + x * pixelsPerMeter,
+      y: 320 - y * pixelsPerMeter,
+      depth: z,
+      visible: true,
+    })
+    const context = ws1Context(primitive, { projectWorldPoint })
+    const runtime = new WebSurfaceRuntime({ registry })
+    await runtime.sync(context)
+    runtime.update(context)
+    const element = body.children[0].children[0]
+    const firstTransform = element.style.transform
+    assert.equal(element.style.width, '1920px')
+    assert.equal(element.style.height, '1080px')
+
+    pixelsPerMeter = 60
+    runtime.update(context)
+    assert.equal(element.style.width, '1920px', 'camera distance must not resize the CSS layout viewport')
+    assert.equal(element.style.height, '1080px')
+    assert.notEqual(element.style.transform, firstTransform, 'only the projection transform should change with camera distance')
+    runtime.dispose()
+  })
+})
+
+test('projective DOM matrix preserves sub-millipixel perspective coefficients at oblique angles', async () => {
+  await withWS1FakeDom(async body => {
+    const { WebSurfaceRuntime } = await import('../dist/esm/web-surface/index.js')
+    const registry = createWebSurfaceAppRegistry()
+    registry.register('dashboard', { mount() { return { dispose() {} } } })
+    const primitive = ws1Primitive()
+    const projectWorldPoint = ([x, y, z]) => ({
+      x: 500 + x * 140 + x * y * 30,
+      y: 320 - y * 110 + x * y * 12,
+      depth: z,
+      visible: true,
+    })
+    const projection = projectWebSurface({ projectWorldPoint }, primitive)
+    assert.ok(projection)
+    const runtime = new WebSurfaceRuntime({ registry })
+    await runtime.sync(ws1Context(primitive, { projectWorldPoint }))
+    runtime.update(ws1Context(primitive, { projectWorldPoint }))
+    const element = body.children[0].children[0]
+    const match = /^matrix3d\((.*)\)$/.exec(element.style.transform)
+    assert.ok(match)
+    const values = match[1].split(',').map(Number)
+    assert.equal(values.length, 16)
+    // m14/m24 are the perspective denominator terms. Three-decimal layout
+    // rounding used to collapse or materially distort these values.
+    assert.ok(Math.abs(values[3] - Math.round(values[3] * 1000) / 1000) > 1e-7)
+    assert.ok(Math.abs(values[7] - Math.round(values[7] * 1000) / 1000) > 1e-7)
+
+    const width = Number.parseFloat(element.style.width)
+    const height = Number.parseFloat(element.style.height)
+    const apply = (x, y) => {
+      const w = values[3] * x + values[7] * y + values[15]
+      return {
+        x: (values[0] * x + values[4] * y + values[12]) / w,
+        y: (values[1] * x + values[5] * y + values[13]) / w,
+      }
+    }
+    const actual = [apply(0, 0), apply(width, 0), apply(width, height), apply(0, height)]
+    for (let index = 0; index < 4; index += 1) {
+      assert.ok(Math.abs(actual[index].x - projection.corners[index].x) < 0.01)
+      assert.ok(Math.abs(actual[index].y - projection.corners[index].y) < 0.01)
+    }
+    runtime.dispose()
+  })
 })

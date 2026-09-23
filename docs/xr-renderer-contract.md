@@ -1,6 +1,6 @@
-# XR adapter requirements
+# XR renderer contract
 
-Implement `RendererXRBridge` to add XR to an adapter, and `RendererFrameDriver` to manage its frame loop. Native WebXR and rendering-engine types stay inside the adapter.
+Anyo core never imports WebXR or Sekai64 types. Renderers opt into XR through `RendererXRBridge` and may opt into frame ownership through `RendererFrameDriver`.
 
 ## Frame driver
 
@@ -16,9 +16,7 @@ interface RendererFrameDriver {
 
 ## XR bridge
 
-The following summary omits detailed event types; use the exported interface when implementing an adapter.
-
-```text
+```ts
 interface RendererXRBridge {
   readonly state: XRSessionState
   readonly capabilities: RendererXRCapabilities
@@ -37,9 +35,9 @@ interface RendererXRBridge {
 }
 ```
 
-Return snapshots Anyo can read without knowing your rendering engine. Keep native `XRSession`, `XRFrame`, `XRInputSource`, GPU handles, and renderer nodes private.
+Only serializable renderer-neutral snapshots cross the boundary. Native `XRSession`, `XRFrame`, `XRInputSource`, GPU handles, and Sekai64 nodes remain private to the adapter.
 
-## Session lifecycle
+## Required lifecycle behavior
 
 - Session entry is atomic.
 - Failed reference-space or layer initialization rolls back the partial session.
@@ -51,10 +49,10 @@ Return snapshots Anyo can read without knowing your rendering engine. Keep nativ
 
 ## Ray picking
 
-Implement the optional `pickRay()` method for controller rays. For example:
+VR controllers call the optional renderer method:
 
 ```ts
-renderer.pickRay?.(origin, direction, {
+pickRay(origin, direction, {
   near: 0.02,
   far: 10,
   precision: 'triangles',
@@ -65,4 +63,4 @@ The result may include `primitiveId`, `entityId`, `instanceId`, hit `point`, hit
 
 ## Capability reporting
 
-Derive capabilities from the browser, backend, active session, reference space, and connected inputs. Report bounded floors, controllers, hands, or haptics only when available.
+XR capability booleans must come from the actual browser, backend, session, reference space, and connected input sources. Renderers must not hardcode support for bounded floors, controllers, hands, or haptics.

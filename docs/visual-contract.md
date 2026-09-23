@@ -1,10 +1,10 @@
-# Visual settings
+# Visual Contract
 
-Store lighting and material settings in the world document. Anyo validates and normalizes them; the renderer adapter applies the supported settings to its backend.
+Anyo describes visual intent without binding world JSON to a renderer. The world is validated and normalized once, then an adapter translates the normalized contract to Sekai64, Three.js, or another renderer.
 
 ## Texture color spaces
 
-Use these color spaces for texture data:
+The standard channels have fixed semantics:
 
 | Channel | Color space |
 |---|---|
@@ -18,7 +18,7 @@ Use these color spaces for texture data:
 
 Use `ANYO_TEXTURE_COLOR_SPACES` when a loader or renderer needs to inspect the contract programmatically.
 
-## Environment
+## World-owned environment
 
 ```json
 {
@@ -62,11 +62,11 @@ Use `ANYO_TEXTURE_COLOR_SPACES` when a loader or renderer needs to inspect the c
 }
 ```
 
-The world supplies the default look. Your app can override it, for example with an exposure control.
+Runtime hosts may override a recommendation—for example, an accessibility exposure control—but the world remains the default owner of its intended presentation.
 
 ## Materials
 
-Normalization fills in material defaults such as roughness, metalness, alpha mode, and shadow settings. Transparent or transmissive materials default to not casting an opaque shadow.
+Normalized materials provide stable defaults for base color, emissive intensity, roughness, metalness, normal scale, occlusion strength, alpha mode, double-sided rendering, and shadow participation. Transparent or transmissive materials default to not casting an opaque shadow.
 
 ```json
 {
@@ -107,7 +107,7 @@ Point-light range and decay are portable authoring controls:
 }
 ```
 
-Anyo warns about lighting values likely to wash out or darken the scene. Check the result in your viewer as well.
+Anyo reports warnings for destructive ambient, sun, and local-light values. These warnings do not replace physical visual testing, but they prevent common accidental washout and black-screen calibrations.
 
 ## Diagnostics
 
@@ -123,7 +123,7 @@ for (const warning of result.warnings) {
 }
 ```
 
-Diagnostics identify unsupported material channels, color management, environment lighting, maps, and shadows. A missing environment-map asset is reported before rendering.
+Capability diagnostics cover material channels and features, color management, environment lighting, environment maps, and shadows. A missing environment-map asset is an error before rendering begins.
 
 ## Normalization API
 
@@ -135,4 +135,4 @@ import {
 } from '@blcklab/anyo'
 ```
 
-Use the normalized values in renderer adapters so each backend starts from the same defaults.
+Renderer adapters should consume the normalized world rather than re-inventing defaults. This keeps the same JSON predictable across backends.

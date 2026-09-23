@@ -75,3 +75,27 @@ test('groups compose child transforms without adding the room origin twice', () 
   assert.equal(product.transform.position[2], 10)
   assert.deepEqual(product.transform.scale, [2, 2, 2])
 })
+
+
+test('compiler emits native rounded Sekai64-friendly primitives with stable bounds', () => {
+  const rounded = normalizeWorldDocument({
+    version: '0.7',
+    entities: [
+      { id: 'pond', type: 'disc', radius: 3, height: 0.08, position: [0, 0.04, 0] },
+      { id: 'pine', type: 'cone', radius: 2, height: 5, position: [0, 2.5, 0] },
+      { id: 'bush', type: 'sphere', radius: 1.5, position: [0, 1.5, 0], scale: [1.2, 0.8, 1] },
+    ],
+  })
+  const compiled = output()
+  compileBuilding(rounded, compiled)
+  compileEntities(rounded, compiled)
+  const pond = compiled.primitives.find((primitive) => primitive.entityId === 'pond')
+  const pine = compiled.primitives.find((primitive) => primitive.entityId === 'pine')
+  const bush = compiled.primitives.find((primitive) => primitive.entityId === 'bush')
+  assert.equal(pond?.kind, 'disc')
+  assert.deepEqual(pond?.size, [6, 0.08, 6])
+  assert.equal(pine?.kind, 'cone')
+  assert.deepEqual(pine?.size, [4, 5, 4])
+  assert.equal(bush?.kind, 'sphere')
+  assert.deepEqual(bush?.size, [3, 3, 3])
+})

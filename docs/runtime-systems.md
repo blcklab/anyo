@@ -1,8 +1,19 @@
 # Runtime systems and transient transforms
 
-Use runtime systems for animation, physics, procedural motion, or networking that updates every frame. They schedule simulation and apply temporary transforms without rewriting the world document or creating history entries.
+Anyo world JSON is persistent authoring state. Animation, physics, procedural motion, constraints, networking, and other high-frequency simulations should not rewrite that JSON every frame.
 
-Anyo provides fixed steps, ordered update phases, transform layers, component queries, and renderer batching. Your animation or physics package supplies the simulation itself.
+The runtime-systems foundation provides:
+
+- deterministic `fixedUpdate`, `update`, and `lateUpdate` phases
+- a fixed timestep with a bounded substep count
+- world- and local-space transient transform layers
+- override and additive composition
+- stable source ownership, priorities, cleanup, and rollback
+- one batched renderer synchronization per frame
+- component and tag queries over renderer-independent compiled entities
+- explicit commit/reset APIs when a transient result should become authored JSON
+
+The systems foundation does not include an animation mixer or rigid-body solver. Those belong in optional packages built on this contract.
 
 ## State model
 
@@ -16,7 +27,13 @@ Transient runtime layers
 Resolved renderer transforms
 ```
 
-Layers stay private to the running world and are removed when their owning system is disposed. Commit a layer explicitly when its result should become saved world data.
+Transient layers:
+
+- do not mutate the source document
+- do not create history entries
+- do not validate or recompile the world every frame
+- remain private to the running world
+- are removed when their owning system is disposed
 
 ## Create a system
 
@@ -62,9 +79,9 @@ const world = createWorld({
 })
 ```
 
-`context.setTransform()` assigns the layer to the system's name. `context.clearTransform()` removes that system's layer, leaving other systems' layers alone.
+`context.setTransform()` automatically owns the layer under the system name. `context.clearTransform()` removes only that system's layer.
 
-## Frame order
+## System phases
 
 ```ts
 interface WorldSystem {
@@ -76,12 +93,11 @@ interface WorldSystem {
   update?(deltaSeconds: number, context: SystemRuntimeContext): void
   lateUpdate?(deltaSeconds: number, context: SystemRuntimeContext): void
   applyChanges?(changes: readonly WorldChange[], context: SystemRuntimeContext): void | Promise<void>
-  teardown?(context: SystemRuntimeContext): void
   dispose?(context: SystemRuntimeContext): void
 }
 ```
 
-Each frame runs:
+Execution order for each frame:
 
 1. zero or more `fixedUpdate` steps
 2. each system's `update`
@@ -106,7 +122,7 @@ const world = createWorld({
 ```
 
 - `fixedDeltaSeconds` is the simulation step.
-- `maxSubSteps` caps catch-up work after a long frame.
+- `maxSubSteps` prevents a spiral of death after a long frame.
 - `maxFrameDeltaSeconds` limits time admitted into the systems scheduler.
 - legacy plugin and renderer frame deltas remain uncapped for backward compatibility.
 
@@ -119,7 +135,7 @@ await world.load(document)
 world.tick(1 / 60)
 ```
 
-`tick()` advances one manual frame for tests, server simulation, or tools. Stop the desktop or XR loop before calling it.
+`tick()` runs one deterministic manual frame and is useful for tests, server-side simulation, exports, and tools. It cannot be called while the normal or XR frame loop is running.
 
 ## Runtime transform layers
 
@@ -148,7 +164,7 @@ Options:
 - `space: 'world'`: values resolve in world coordinates
 - `space: 'local'`: values resolve relative to the parent entity or room origin
 
-Layers resolve by priority, then source name.
+Layers are deterministic: priority first, then source name.
 
 ## Physics and animation together
 
@@ -168,7 +184,7 @@ context.transforms.set('avatar', breathingOffset, {
 })
 ```
 
-The physics layer sets the root pose; a later animation layer adds a local offset. Use your animation engine for skeletal joints and morph weights.
+The physics layer can own the root pose while a later animation layer adds a local procedural offset. Skeletal joints and morph weights remain renderer/animation-engine responsibilities rather than Anyo entity transforms.
 
 ## Component queries
 
@@ -180,9 +196,9 @@ const entity = context.query.entity('crate')
 const primitives = context.query.primitives('crate')
 ```
 
-Queries read compiled entities and refresh when the compiled world changes. If a system caches query results, refresh that cache in `applyChanges()`.
+Queries read compiled, renderer-independent data and are rebuilt when the compiled world changes. Cache stable query results inside a system when appropriate, then refresh them in `applyChanges()`.
 
-## Send transforms to the renderer
+## Flush behavior
 
 While `world.start()` or XR is active, Anyo flushes dirty runtime transforms once per frame.
 
@@ -196,7 +212,13 @@ world.transforms.set('crate', transform, {
 await world.flushRuntimeTransforms()
 ```
 
-Adapters can implement the synchronous `applyRuntimeTransforms(updates)` method to receive the whole batch.
+The renderer hot path is synchronous and optional:
+
+```ts
+applyRuntimeTransforms(
+  updates: readonly RuntimeTransformUpdate[],
+): void
+```
 
 Renderers without that method fall back to their existing incremental primitive update contract.
 
@@ -215,9 +237,14 @@ await world.commitRuntimeTransform('chair', {
 })
 ```
 
-A commit converts the resolved pose into the entity's authored local or room coordinates, preserves asset scaling, and creates one history mutation. Transient layers clear after the authored update succeeds.
+The commit:
 
-Surface-attached and generated entities reject direct commits because their placement comes from an attachment or generation rule. Edit that rule or detach the entity first.
+- converts the final world pose back into authored local/room space
+- creates one normal history mutation
+- preserves asset scaling
+- clears transient layers after the authored update succeeds
+
+Surface-attached and generated entities reject direct runtime-transform commits because their transforms are derived from higher-level authoring constraints.
 
 Reset without committing:
 
@@ -229,7 +256,7 @@ await world.resetRuntimeTransform('chair', 'placement')
 
 Parent transient transforms propagate to descendants. Local-space layers follow parent rotation and scale.
 
-When reparenting changes an editable entity's compiled ID, Anyo uses its `authoringId` to preserve layers. Generated entities without an editable identity may lose temporary state after regeneration.
+When an editable entity is reparented and its canonical compiled ID changes, layers rebase through its stable `authoringId`. Generated entities without stable editable identity may intentionally lose transient state after structural regeneration.
 
 ## Error and lifecycle rules
 
@@ -237,14 +264,13 @@ When reparenting changes an editable entity's compiled ID, Anyo uses its `author
 - Failed world loads restore previous runtime layers.
 - System setup failure disposes systems already initialized.
 - Disposal runs in reverse system order.
-- `teardown()` releases per-document resources before a system is set up for a replacement world; `dispose()` handles final world shutdown.
 - Disposal automatically clears layers owned by each system name.
 - System update errors are reported through `onWarning` and do not corrupt the world loop.
 - Unsupported or structural document mutations still use Anyo's complete validation/compiler path.
 
-## Where simulation code belongs
+## Animation and physics package boundaries
 
-Keep scheduling in Anyo and simulation in optional packages. For example:
+Recommended package layout:
 
 ```text
 @blcklab/anyo
@@ -257,7 +283,7 @@ Keep scheduling in Anyo and simulation in optional packages. For example:
   bodies, shapes, broad phase, narrow phase, solver, joints, events
 
 @blcklab/sekai64
-  rendering and visual resources
+  GPU transforms, skinning, morph targets, visual resources
 ```
 
-These are integration responsibilities, not dependencies installed by Anyo core.
+The core provides the scheduling and state boundary. Optional engines provide simulation behavior.

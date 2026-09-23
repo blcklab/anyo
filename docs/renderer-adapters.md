@@ -1,12 +1,10 @@
 # Renderer adapters
 
-Implement `RendererAdapter` from `@blcklab/anyo/renderer` to connect another rendering engine. Anyo supplies the compiled world and manages documents, collision, portals, bindings, history, and runtime state. The adapter creates and updates visual resources.
+A renderer implements the contract from `@blcklab/anyo/renderer`. It receives `CompiledWorld` and must not own document, architectural, collision, portal, binding, history, or runtime state.
 
-## Lifecycle at a glance
+## Required lifecycle
 
-This is a summary; import `RendererAdapter` for the full TypeScript interface, including optional runtime-transform, camera, channel, asset, and XR APIs.
-
-```text
+```ts
 interface RendererAdapter {
   readonly canvas: HTMLCanvasElement
   readonly camera: CameraAdapter
@@ -28,16 +26,16 @@ interface RendererAdapter {
 }
 ```
 
-Without incremental methods, Anyo remounts when an update requires it. Add those methods when preserving resources across small changes matters.
+Adapters without incremental methods remain compatible: Anyo safely falls back to remounting when needed.
 
 ## Capabilities
 
-Report features supported by the active backend. Anyo checks required text, image, model, light, and picking features before mounting and points diagnostics back to the source.
+Capabilities must represent actual backend support. Anyo checks required text, image, model, light, and picking features before mounting and reports unsupported primitives with source diagnostics.
 
 ## World changes
 
-Incremental updates describe transforms, visibility, materials, content, replacement, removal, room visibility, portal state, and collider state. Changes that need a rebuild use `world-rebuild`.
+Non-structural changes are classified into primitive transform, visibility, material, content, replacement, removal, room visibility, portal state, and collider state. Structural changes use `world-rebuild`.
 
 ## Resource ownership
 
-Track ownership of shared geometry and materials so removing one object does not break another. On disposal, cancel pending loads and release each owned resource once. See [Sekai64 integration](sekai64.md) for a working adapter.
+Adapters must explicitly define ownership when geometry or materials are shared. Removing one node must not dispose a resource used by other nodes. A complete adapter disposal must cancel pending assets and release all owned resources exactly once.

@@ -1,18 +1,18 @@
 # VR development
 
-Add XR exploration to the same world you use on desktop. Anyo handles movement, collision, rooms, and actions; the renderer handles the XR session, device poses, and stereo rendering. No editor package is needed.
+Anyo VR support is renderer-independent. Anyo owns the world document, collision, rooms, portals, actions, runtime data, history, and the virtual player rig. The active renderer owns WebXR session creation, headset/controller pose acquisition, stereo rendering, and GPU resources.
+
+The visual editor is not part of this runtime path. Anyo and Sekai64 load and run VR worlds without any editor package.
 
 ## Install the release candidates
 
 ```bash
-npm install @blcklab/anyo@0.10.0-rc.1 @blcklab/sekai64@0.8.0-rc.33
+npm install @blcklab/anyo@0.7.0-rc.1 @blcklab/sekai64@0.7.0-rc.1
 ```
 
 Sekai64 remains an optional peer dependency. Headless compilation and non-Sekai renderers do not require it.
 
-## Enter VR
-
-This example expects a canvas with ID `world` and a button with ID `enter-vr`.
+## Minimal VR setup
 
 ```ts
 import {
@@ -53,15 +53,15 @@ enterButton.addEventListener('click', () => {
   void world.xr.enter({
     mode: 'immersive-vr',
     referenceSpace: 'local-floor',
-  }).catch(error => console.error('Could not enter VR:', error))
+  })
 })
 ```
 
 An immersive session must be requested from an explicit user gesture. The ordinary desktop experience remains active when immersive VR is unavailable.
 
-## Frame scheduling
+## One authoritative frame loop
 
-The frame driver uses `window.requestAnimationFrame()` on desktop and switches to `XRSession.requestAnimationFrame()` in VR. Only one loop renders the world at a time.
+Anyo uses one renderer-neutral world step. In desktop mode, the renderer frame driver uses `window.requestAnimationFrame()`. In VR, Sekai64 transfers ownership to `XRSession.requestAnimationFrame()`. The loops never render the world simultaneously.
 
 Each frame still updates the same Anyo plugins, collision, room state, triggers, runtime bindings, and renderer.
 
@@ -73,7 +73,7 @@ Raw headset movement is a physical offset inside an Anyo-controlled virtual rig:
 virtual player rig × physical viewer pose = final world-space viewer pose
 ```
 
-Teleportation and turning move the rig while preserving the headset's physical offset, so the player can still move within their room.
+Teleportation, smooth locomotion, and snap turning move the rig. They never overwrite the device-provided headset pose. This preserves room-scale movement and makes entering or leaving XR deterministic.
 
 ## Locomotion
 
@@ -107,7 +107,7 @@ XR configuration is optional and does not create a separate VR world format:
 
 ```json
 {
-  "version": "0.7",
+  "version": "0.6",
   "exploration": {
     "spawn": {
       "room": "lobby",
@@ -130,18 +130,20 @@ XR configuration is optional and does not create a separate VR world format:
 }
 ```
 
-XR settings live inside the normal world schema. Older supported documents migrate to the current schema; see [world 0.7 migration](migrations/MIGRATION_WORLD_0.7.md).
+The authoring schema remains version `0.6` because XR is an optional backward-compatible exploration capability. Existing `0.6` documents remain valid.
 
 ## Current backend scope
 
-XR presentation currently uses WebGL2 through `XRWebGLLayer`. Create a VR-enabled adapter with `backend: 'webgl2'`; WebGPU remains available for ordinary rendering.
+The first release-candidate XR rendering path is WebGL2 through `XRWebGLLayer`. Sekai64 may still use WebGPU for non-XR applications, but a VR-enabled `Sekai64Renderer` should currently be created with `backend: 'webgl2'`.
+
+WebGPU XR presentation is intentionally deferred until the deployment/browser path is reliable.
 
 ## Disposal
 
 Dispose the world when the route or application is destroyed:
 
 ```ts
-await world.disposeAsync()
+world.dispose()
 ```
 
-This waits for XR exit and world cleanup. Before release, work through the [VR checklist](vr-production-checklist.md).
+This stops the active frame driver, ends or releases XR resources through Sekai64, disposes plugins, cancels pending assets, and clears renderer resources.

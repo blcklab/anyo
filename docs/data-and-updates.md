@@ -1,10 +1,8 @@
-# Data and updates
-
-Use data bindings for changing content, entity updates for individual objects, and patches for edits to the world document.
+# Data and runtime updates
 
 ## Bindings
 
-A `$bind` expression reads a value from the root `data` object:
+A binding object replaces itself with data from the root `data` object:
 
 ```json
 {
@@ -23,11 +21,9 @@ Supported bound entity fields include:
 - `visible`
 - asset `src`
 
-Bindings also resolve inside nested extension fields.
+The resolver also works recursively in extension fields.
 
 ## Updating data
-
-`setData()` updates runtime values and their bindings. It does not change saved world JSON unless you call `world.commitRuntimeData()`.
 
 ```ts
 await world.setData('store.inventory', 8)
@@ -54,7 +50,7 @@ await world.updateEntity('title', {
 })
 ```
 
-Anyo recompiles the changed renderable fields and sends them to the adapter. Use `world.patch()` for structural changes such as adding entities or resizing rooms.
+Renderable fields are recompiled and sent to the renderer adapter. Structural changes should use `world.patch()`.
 
 ## Patching the document
 
@@ -77,6 +73,4 @@ await world.patch([
 ])
 ```
 
-Patches update the source document, which is then validated, normalized, and compiled. Anyo sends incremental changes when possible and remounts when the change requires rebuilding.
-
-For movement every frame, use [runtime transforms](runtime-systems.md) instead of repeatedly editing the document.
+Patches are applied to the original source document, then the world is validated, normalized, compiled, and remounted.

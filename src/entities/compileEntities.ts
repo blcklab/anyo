@@ -23,9 +23,10 @@ import { resolveSurfaceTransform } from './surface.js'
 import type { EntityTypeRegistry } from './registry.js'
 import { compileWebSurfaceTarget, resolveWebSurfaceTarget } from '../web-surface/target.js'
 import { compileWorldChannels, resolveChannelMask } from '../core/architecture.js'
+import { resourceGraphModelAsset } from '../core/resourceAssetPolicy.js'
 
 const BUILTIN_TYPES = new Set([
-  'box', 'plane', 'cylinder', 'text', 'image', 'model', 'light', 'group', 'trigger', 'audio', 'portal', 'web-surface',
+  'box', 'plane', 'cylinder', 'disc', 'cone', 'sphere', 'text', 'image', 'model', 'light', 'group', 'trigger', 'audio', 'portal', 'web-surface', 'geometry', 'construction',
 ])
 
 export interface CompileEntitiesOptions {
@@ -92,9 +93,17 @@ function getSize(entity: EntityDefinition): Size3 {
   if (entity.type === 'web-surface' && entity.webSurface?.target?.type === 'plane' && entity.webSurface.target.size) {
     return [entity.webSurface.target.size[0], entity.webSurface.target.size[1], 0.02]
   }
-  if (entity.type === 'cylinder') {
+  if (entity.type === 'cylinder' || entity.type === 'cone') {
     const diameter = (entity.radius ?? 0.5) * 2
     return [diameter, entity.height ?? 1, diameter]
+  }
+  if (entity.type === 'disc') {
+    const diameter = (entity.radius ?? 0.5) * 2
+    return [diameter, entity.height ?? 0.04, diameter]
+  }
+  if (entity.type === 'sphere') {
+    const diameter = (entity.radius ?? 0.5) * 2
+    return [diameter, diameter, diameter]
   }
   if (entity.type === 'text') {
     const size = entity.size ?? [3, 1]
@@ -117,6 +126,7 @@ function primitiveKind(entity: EntityDefinition): CompiledPrimitive['kind'] | nu
   }
   if (
     entity.type === 'box' || entity.type === 'plane' || entity.type === 'cylinder' ||
+    entity.type === 'disc' || entity.type === 'cone' || entity.type === 'sphere' ||
     entity.type === 'text' || entity.type === 'image' || entity.type === 'model' ||
     entity.type === 'light' || entity.type === 'audio'
   ) return entity.type
@@ -218,6 +228,8 @@ function compileEntity(
     sourcePath,
     authoring,
     primitiveIds: [] as string[],
+    resourceInstanceIds: [] as string[],
+    resourceInstanceTransforms: {} as Record<string, import('../core/types.js').TransformDefinition>,
     enabled,
     renderMask: resolveChannelMask(entity.layers, channels.render),
     pickingMask: resolveChannelMask(entity.pickLayers, channels.picking),
@@ -246,6 +258,25 @@ function compileEntity(
     })
   }
   if (entity.type === 'trigger') return
+  if (entity.type === 'geometry' || entity.type === 'construction') return
+
+  // S20: static schema-0.8 model assets are realized through ResourceGraph.
+  // VRM/animated-model assets intentionally stay on the established legacy path.
+  if (resourceGraphModelAsset(entity, document)) {
+    if (resolvedComponents.collision) {
+      const collider: CompiledCollider = {
+        id: `resource-model:${entity.id}:collider`,
+        bounds: aabbFromTransformedSize(transform, size),
+        roomId,
+        entityId: entity.id,
+        enabled: true,
+        kind: 'solid',
+      }
+      output.colliders.push(collider)
+      addToRoomChunk(output, roomId, undefined, collider.id)
+    }
+    return
+  }
 
   const kind = primitiveKind(entity)
   if (!kind) {
@@ -305,14 +336,14 @@ function compileEntity(
     sourcePath,
     authoring,
     bounds: aabbFromTransformedSize(transform, size),
-    static: entity.type !== 'web-surface' && !resolvedComponents.dynamic && !resolvedComponents.collision && (kind === 'box' || kind === 'plane' || kind === 'cylinder'),
-    geometryKey: kind === 'box' ? 'unit-box' : kind === 'plane' ? 'unit-plane' : kind === 'cylinder' ? 'unit-cylinder' : undefined,
+    static: entity.type !== 'web-surface' && !resolvedComponents.dynamic && !resolvedComponents.collision && (kind === 'box' || kind === 'plane' || kind === 'cylinder' || kind === 'disc' || kind === 'cone' || kind === 'sphere'),
+    geometryKey: kind === 'box' ? 'unit-box' : kind === 'plane' ? 'unit-plane' : (kind === 'cylinder' || kind === 'disc') ? 'unit-cylinder' : kind === 'cone' ? 'unit-cone' : kind === 'sphere' ? 'unit-sphere' : undefined,
     batchKey: entity.type === 'web-surface' || resolvedComponents.dynamic ? undefined : `${roomId ?? 'world'}:${entity.material ?? '__default'}:${kind}`,
     loading: entity.loading ?? asset?.loading,
     webSurface: entity.type === 'web-surface' && entity.webSurface ? {
       source: entity.webSurface.source,
       target: compileWebSurfaceTarget(entity.webSurface.target, [size[0], size[1]], entity.id, parentId),
-      renderMode: entity.webSurface.renderMode ?? 'auto',
+      renderMode: entity.webSurface.renderMode ?? (entity.webSurface.presentation?.type === 'overlay' ? 'dom-overlay' : 'auto'),
       fallback: entity.webSurface.fallback,
       framePolicy: entity.webSurface.framePolicy ?? { mode: 'on-change', maxFps: 30 },
       presentation: entity.webSurface.presentation,

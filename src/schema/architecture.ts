@@ -179,6 +179,32 @@ export function inspectArchitectureDocument(
   }
   Object.keys(prefabs).forEach((id) => visitPrefab(id, 0))
 
+  const compositions = document.compositions ?? {}
+  const compositionVisiting = new Set<string>()
+  const compositionVisited = new Set<string>()
+  const visitComposition = (id: string, depth: number): void => {
+    if (depth > limits.maxPrefabDepth) { push(issues, { severity: 'error', code: 'COMPOSITION_DEPTH_EXCEEDED', path: `/compositions/${id}`, message: `Composition nesting exceeds ${limits.maxPrefabDepth}.` }, limits.maxDiagnostics); return }
+    if (compositionVisited.has(id)) return
+    if (compositionVisiting.has(id)) { push(issues, { severity: 'error', code: 'COMPOSITION_CYCLE', path: `/compositions/${id}`, message: `Circular composition reference includes "${id}".` }, limits.maxDiagnostics); return }
+    const composition = compositions[id]
+    if (!composition) return
+    if (!id.trim()) push(issues, { severity: 'error', code: 'COMPOSITION_ID_REQUIRED', path: `/compositions/${id}`, message: 'Composition ids must not be empty.' }, limits.maxDiagnostics)
+    if (composition.version !== undefined && !/^[0-9]+(?:\.[0-9]+){0,2}(?:-[A-Za-z0-9.-]+)?$/.test(composition.version)) push(issues, { severity: 'error', code: 'COMPOSITION_VERSION_INVALID', path: `/compositions/${id}/version`, message: 'Composition version must be a semantic version.' }, limits.maxDiagnostics)
+    compositionVisiting.add(id)
+    if (composition.extends) {
+      if (!compositions[composition.extends]) push(issues, { severity: 'error', code: 'COMPOSITION_EXTENDS_UNKNOWN', path: `/compositions/${id}/extends`, message: `Unknown base composition "${composition.extends}".` }, limits.maxDiagnostics)
+      else visitComposition(composition.extends, depth + 1)
+    }
+    walkEntities(composition.children ?? [], `/compositions/${id}/children`, (entity) => {
+      if (entity.composition) {
+        if (!compositions[entity.composition]) push(issues, { severity: 'error', code: 'COMPOSITION_REFERENCE_UNKNOWN', path: `/compositions/${id}/children`, message: `Unknown composition "${entity.composition}".` }, limits.maxDiagnostics)
+        else visitComposition(entity.composition, depth + 1)
+      }
+    })
+    compositionVisiting.delete(id); compositionVisited.add(id)
+  }
+  Object.keys(compositions).forEach((id) => visitComposition(id, 0))
+
   const assetEntries = Object.entries(document.assets ?? {})
   if (assetEntries.length > limits.maxAssets) push(issues, { severity: 'error', code: 'ASSET_LIMIT_EXCEEDED', path: '/assets', message: `World contains ${assetEntries.length} assets; limit is ${limits.maxAssets}.` }, limits.maxDiagnostics)
   if (options.assetUrlPolicy) for (const [assetId, asset] of assetEntries) if (typeof asset.src === 'string') {

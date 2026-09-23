@@ -369,12 +369,14 @@ export function buildCompilerDependencyGraph(document: WorldDocument | Normalize
   const materialConsumers = new Map<string, Set<string>>()
   const assetConsumers = new Map<string, Set<string>>()
   const prefabInstances = new Map<string, Set<string>>()
+  const compositionInstances = new Map<string, Set<string>>()
   const cameraDependents = new Map<string, Set<string>>()
   const variableBindings = new Map<string, Set<string>>()
   const collectEntity = (entity: EntityDefinition): void => {
     addConsumer(materialConsumers, entity.material, entity.id)
     addConsumer(assetConsumers, entity.asset, entity.id)
     addConsumer(prefabInstances, entity.use, entity.instanceId ?? entity.id)
+    addConsumer(compositionInstances, entity.composition, entity.instanceId ?? entity.id)
     collectBindings(entity, entity.id, variableBindings)
   }
   walkEntities(document.entities ?? [], collectEntity)
@@ -388,10 +390,20 @@ export function buildCompilerDependencyGraph(document: WorldDocument | Normalize
       collectBindings(entity, `prefab:${prefabId}/${entity.id}`, variableBindings)
     })
   }
+  for (const [compositionId, composition] of Object.entries(document.compositions ?? {})) {
+    if (composition.extends) addConsumer(compositionInstances, composition.extends, `composition:${compositionId}`)
+    walkEntities(composition.children ?? [], (entity) => {
+      addConsumer(materialConsumers, entity.material, `composition:${compositionId}/${entity.id}`)
+      addConsumer(assetConsumers, entity.asset, `composition:${compositionId}/${entity.id}`)
+      addConsumer(prefabInstances, entity.use, `composition:${compositionId}/${entity.id}`)
+      addConsumer(compositionInstances, entity.composition, `composition:${compositionId}/${entity.id}`)
+      collectBindings(entity, `composition:${compositionId}/${entity.id}`, variableBindings)
+    })
+  }
   for (const [id, camera] of Object.entries(document.cameras ?? {})) {
     if (camera.parent) addConsumer(cameraDependents, camera.parent, id)
     if (camera.follow?.entity) addConsumer(cameraDependents, camera.follow.entity, id)
     if (camera.lookAt && !Array.isArray(camera.lookAt) && 'entity' in camera.lookAt) addConsumer(cameraDependents, camera.lookAt.entity, id)
   }
-  return { materialConsumers, assetConsumers, prefabInstances, cameraDependents, variableBindings }
+  return { materialConsumers, assetConsumers, prefabInstances, compositionInstances, cameraDependents, variableBindings }
 }

@@ -147,6 +147,7 @@ test('Sekai64 switches perspective and orthographic projection without losing th
   renderer.resize(1600, 800)
   renderer.camera.setPosition([12, 80, -7])
   renderer.camera.setRotation(.25, -Math.PI / 2 + .001)
+  assert.equal(renderer.camera.nativeCamera.rotation.order, 'XYZ')
   const before = renderer.camera.getPosition()
 
   renderer.camera.setProjection({ type: 'orthographic', verticalSize: 120, near: .05, far: 4_000 })
@@ -189,6 +190,9 @@ test('Sekai64 maps all required primitive and light types', async () => {
     primitive('box', 'box', { material: 'white' }),
     primitive('plane', 'plane', { transform: { position: [3, 0, -5], rotation: [0, 0, 0], scale: [1, 1, 1] } }),
     primitive('cylinder', 'cylinder', { transform: { position: [-3, 0, -5], rotation: [0, 0, 0], scale: [1, 1, 1] }, radius: 0.5, height: 1 }),
+    primitive('disc', 'disc', { transform: { position: [-1, 0, -5], rotation: [0, 0, 0], scale: [1, 1, 1] }, radius: 0.75, height: 0.06 }),
+    primitive('cone', 'cone', { transform: { position: [1, 0, -5], rotation: [0, 0, 0], scale: [1, 1, 1] }, radius: 0.75, height: 1.5 }),
+    primitive('sphere', 'sphere', { transform: { position: [0, 1.5, -5], rotation: [0, 0, 0], scale: [1, 1, 1] }, radius: 0.75 }),
     primitive('text', 'text', { text: 'Anyo + Sekai64' }),
     primitive('image', 'image', { src: imageSource }),
     primitive('model', 'model', { src: gltfSource }),
@@ -203,6 +207,9 @@ test('Sekai64 maps all required primitive and light types', async () => {
   assert.ok(nodes.get('box') instanceof Mesh)
   assert.ok(nodes.get('plane') instanceof Mesh)
   assert.ok(nodes.get('cylinder') instanceof Mesh)
+  assert.ok(nodes.get('disc') instanceof Mesh)
+  assert.ok(nodes.get('cone') instanceof Mesh)
+  assert.ok(nodes.get('sphere') instanceof Mesh)
   assert.ok(nodes.get('text') instanceof TextMesh)
   assert.ok(nodes.get('image') instanceof ImageMesh)
   assert.equal(nodes.get('model')?.id, 'model')
@@ -321,7 +328,7 @@ test('Sekai64 shares geometry, batches 1,000 primitives, and disposes ownership 
   renderer.render()
   const metrics = renderer.getMetrics()
   assert.equal(metrics.mountedPrimitives, 1000)
-  assert.equal(metrics.sharedGeometryCount, 3)
+  assert.equal(metrics.sharedGeometryCount, 5)
   assert.ok(metrics.instancedBatchCount <= 20)
   assert.ok(metrics.drawCalls <= 20)
   assert.equal(sharedBox.disposed, false)
@@ -575,6 +582,13 @@ test('Sekai64 receives the complete normalized Anyo visual contract', async () =
   const directional = renderer.nodes.get('visual-sun')
   assert.ok(directional instanceof DirectionalLight)
   assert.equal(directional.castShadow, true)
+
+  const environmentSun = renderer.getNativeAccess().scene.children.find((node) => node.id === 'anyo-environment-sun')
+  assert.ok(environmentSun instanceof DirectionalLight)
+  const expectedLength = Math.hypot(10, 16, 7)
+  assert.ok(Math.abs(environmentSun.direction.x - (-10 / expectedLength)) < 1e-6)
+  assert.ok(Math.abs(environmentSun.direction.y - (-16 / expectedLength)) < 1e-6)
+  assert.ok(Math.abs(environmentSun.direction.z - (-7 / expectedLength)) < 1e-6)
   renderer.dispose()
 })
 
@@ -592,4 +606,18 @@ test('anime-rpg keeps environments PBR while routing characters to MToon and eff
   assert.equal(renderer.nodes.get('character-mesh').material.shadingModel, 'mtoon')
   assert.equal(renderer.nodes.get('effect-mesh').material.shadingModel, 'toon')
   renderer.dispose()
+})
+
+
+test('environment sun uses a finite downward fallback for zero or overflowing vectors', async () => {
+  for (const position of [[0, 0, 0], [1e308, 1e308, 1e308]]) {
+    const renderer = new Sekai64Renderer({ canvas: canvas(), engineFactory: engineFactory('webgl2', { shadows: true }) })
+    const worldDocument = document()
+    worldDocument.environment.sun = { position, intensity: 1, castShadow: true }
+    await renderer.mount(compiled([]), worldDocument)
+    const sun = renderer.getNativeAccess().scene.children.find(node => node.id === 'anyo-environment-sun')
+    assert.ok(sun instanceof DirectionalLight)
+    assert.deepEqual([sun.direction.x, sun.direction.y, sun.direction.z], [0, -1, 0])
+    renderer.dispose()
+  }
 })

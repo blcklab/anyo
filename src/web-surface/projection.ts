@@ -8,6 +8,8 @@ export interface ProjectedSurfaceRect {
   angle: number
   depth: number
   visible: boolean
+  /** Projected plane corners in top-left, top-right, bottom-right, bottom-left order. */
+  corners: readonly [CanvasProjection, CanvasProjection, CanvasProjection, CanvasProjection]
 }
 
 function finite(value: number): boolean {
@@ -53,6 +55,10 @@ export function projectWebSurface(
     transformPoint(matrix, [width / 2, 0, 0]),
     transformPoint(matrix, [0, height / 2, 0]),
     transformPoint(matrix, [0, -height / 2, 0]),
+    transformPoint(matrix, [-width / 2, height / 2, 0]),
+    transformPoint(matrix, [width / 2, height / 2, 0]),
+    transformPoint(matrix, [width / 2, -height / 2, 0]),
+    transformPoint(matrix, [-width / 2, -height / 2, 0]),
   ] as const
   if (points.some(point => point === null)) return null
 
@@ -62,10 +68,10 @@ export function projectWebSurface(
   } catch {
     return null
   }
-  if (projected.length !== 5 || projected.some(value => !value || !validProjection(value))) return null
+  if (projected.length !== 9 || projected.some(value => !value || !validProjection(value))) return null
 
-  const [center, left, right, top, bottom] = projected
-  if (!center || !left || !right || !top || !bottom) return null
+  const [center, left, right, top, bottom, topLeft, topRight, bottomRight, bottomLeft] = projected
+  if (!center || !left || !right || !top || !bottom || !topLeft || !topRight || !bottomRight || !bottomLeft) return null
   const projectedWidth = distance(left, right)
   const projectedHeight = distance(top, bottom)
   const angle = normalizeReadableAngle(Math.atan2(right.y - left.y, right.x - left.x))
@@ -79,6 +85,7 @@ export function projectWebSurface(
     angle,
     depth: center.depth,
     visible: projected.every(value => value.visible) && projectedWidth >= minimumPixels && projectedHeight >= minimumPixels,
+    corners: [topLeft, topRight, bottomRight, bottomLeft],
   }
 }
 

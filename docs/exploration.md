@@ -1,6 +1,6 @@
 # Exploration and collision
 
-Use the exploration plugin for first-person movement through compiled rooms and colliders. For moving rigid bodies, joints, or impulses, add a separate physics system.
+The exploration plugin uses a lightweight first-person controller and does not include a rigid-body physics engine.
 
 ## Configuration
 
@@ -37,10 +37,10 @@ Movement is divided into substeps to reduce tunneling through thin walls.
 
 ## Room detection
 
-The controller uses the camera position and compiled room bounds to track the current room. Read it with `world.getCurrentRoom()`.
+The controller tests the camera position against compiled room bounds and updates `world.getCurrentRoom()`.
 
 Room changes emit `room:leave` and `room:enter`.
 
 ## Custom controls
 
-If your app owns camera movement, omit `explorePlugin()` and use `world.compiled.colliders` for collision data. If you only want custom input with Anyo's movement rules, use [player input APIs](player-foundation.md#input-ownership).
+Do not include `explorePlugin()` when an application supplies its own camera controller. The compiled colliders remain available through `world.compiled.colliders`.
