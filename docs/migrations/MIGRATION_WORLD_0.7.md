@@ -1,8 +1,8 @@
-# Migrate world documents to 0.7
+# Migrating Anyo World Documents to 0.7
 
-Use `migrateWorldDocument()` to upgrade an older supported document to the current schema. `world.load()` also migrates older documents as part of loading.
+## Automatic migration
 
-## Run the migration
+`migrateWorldDocument()` upgrades documents from 0.2, 0.3, 0.4, 0.5, or 0.6 to 0.7.
 
 ```ts
 import { migrateWorldDocument } from '@blcklab/anyo'
@@ -11,7 +11,7 @@ const result = migrateWorldDocument(legacyDocument)
 console.log(result.from, result.to, result.changes, result.warnings)
 ```
 
-Review `changes` and `warnings` before saving the result. Migration:
+The migration:
 
 - Sets `version` to `0.7`
 - Adds `revision: 0` when absent
@@ -21,9 +21,9 @@ Review `changes` and `warnings` before saving the result. Migration:
 - Moves unknown legacy root fields to `extensions["anyo.legacyRoot"]` rather than discarding them
 - Leaves existing interaction, collision, audio, and LOD declarations compatible
 
-## Optional additions
+## New optional fields
 
-You can adopt cameras, channels, requirements, rendering settings, events, snapshots, and asset metadata as needed. Existing worlds do not need all of them.
+Existing worlds do not need to add cameras, channels, requirements, rendering intent, events, snapshots, or asset metadata immediately.
 
 A minimal 0.7 world remains:
 
@@ -38,11 +38,11 @@ A minimal 0.7 world remains:
 
 ## Stable revisions
 
-For stable-ID transactions, `baseRevision` must match the document's current revision. Each successful transaction advances it, letting callers detect edits based on an older document.
+Stable-ID transactions require the patch `baseRevision` to match the document revision. Successful transactions increase the revision monotonically.
 
 ## Extension migration
 
-Register extension migration hooks through `ExtensionRegistry`. Your app loads the extension code; package names in JSON never trigger automatic imports.
+Extension code can register migration hooks through `ExtensionRegistry`. Package loading remains controlled by the host; package names found in JSON are never imported automatically.
 
 ## Compatibility
 

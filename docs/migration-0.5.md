@@ -1,8 +1,8 @@
-# Changes introduced in world 0.5
+# Migrating to Anyo 0.5
 
-World 0.5 added explicit components while keeping older entity fields valid. For a current upgrade, use the [world 0.7 migration guide](migrations/MIGRATION_WORLD_0.7.md).
+Anyo automatically migrates `0.2`, `0.3`, and `0.4` documents to `0.5` during `world.load()` and `migrateWorldDocument()`.
 
-## Document header
+## Required document header
 
 ```json
 {
@@ -11,16 +11,16 @@ World 0.5 added explicit components while keeping older entity fields valid. For
 }
 ```
 
-## What the 0.5 migration changed
+## What migration changes
 
 - Sets the target version and schema reference to 0.5.
 - Preserves buildings, entities, IDs, transforms, materials, actions, bindings, extension data, and legacy component-like fields.
 - Infers missing legacy asset types and formats where possible.
 - Does not automatically rewrite `interaction`, `collision`, `audio`, `lod`, `trigger`, or `visible` into explicit components.
 
-You can keep the older fields or adopt components where they make the document clearer.
+Keeping legacy fields avoids unexpected source rewrites. New documents may use explicit components immediately.
 
-## Moving to components
+## Optional manual modernization
 
 Before:
 
@@ -51,8 +51,8 @@ After:
 }
 ```
 
-Both forms describe the same interaction and collider behavior.
+Both forms compile to equivalent runtime semantics in 0.5.
 
 ## Renderer compatibility
 
-The original 0.5 adapter used Sekai64 `^0.6.1` for its asset-loader registry and material textures. See [Sekai64 setup](sekai64.md) for the current package pair.
+The 0.5 Sekai64 adapter requires `@blcklab/sekai64@^0.6.1` because it uses the public asset-loader registry and textured material contracts introduced in that release.

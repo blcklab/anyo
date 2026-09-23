@@ -1,6 +1,6 @@
 # Assets and material textures
 
-Declare assets once and reference them by ID from entities and materials. Anyo checks the declarations and URLs; a renderer or registered loader decodes the files and cleans up their runtime resources.
+Anyo assets are renderer-independent declarations. Anyo validates identity, type, format, references, fallbacks, and URLs. Renderers or registered loaders decode the resource and own runtime/GPU disposal.
 
 ```json
 {
@@ -27,12 +27,11 @@ Declare assets once and reference them by ID from entities and materials. Anyo c
 - `environment`: HDR, EXR and common image formats
 - `data`: custom JSON-safe or external data resources
 
-Declaring a format does not install a decoder. Check your renderer's capabilities before using it; it may support only part of this list.
+These are declaration contracts. A renderer may support only a subset and must report its real capabilities.
 
 ## Custom asset types
 
 ```ts
-import { createWorld } from '@blcklab/anyo'
 import {
   assetsPlugin,
   createAssetTypeRegistry,
@@ -80,11 +79,11 @@ When a document is loaded from `https://example.com/worlds/shop/world.anyo.json`
 }
 ```
 
-Material texture fields include `baseColorTexture`, `normalTexture`, `roughnessTexture`, `metalnessTexture`, `metallicRoughnessTexture`, `emissiveTexture`, and `occlusionTexture`. The Sekai64 adapter maps these to supported engine channels and reports them through `renderer.info.capabilities.materialTextureChannels`. Anyo checks required channels before mounting.
+Available declaration channels are `baseColorTexture`, `normalTexture`, `roughnessTexture`, `metalnessTexture`, `emissiveTexture`, and `occlusionTexture`. The current Sekai64 0.6.1 adapter renders base-color and normal textures and reports those exact channels. Anyo rejects a world before mount when a required renderer channel is unavailable.
 
 ## Sekai64 loader registration
 
-The Anyo adapter registers glTF/GLB loading by default. Supply an asset loader for other formats, even if the underlying renderer can decode them. Here, `canvas` and `vrmLoader` come from your application:
+Sekai64 includes glTF/GLB support. Other model formats remain optional:
 
 ```ts
 const renderer = new Sekai64Renderer({
@@ -93,8 +92,8 @@ const renderer = new Sekai64Renderer({
 })
 ```
 
-The loader receives `{ type, format, src, id, signal, options }` and returns a Sekai64 `Node`. The adapter manages cancellation, concurrency, diagnostics, and disposal, and ignores results from a world that has since been replaced.
+The loader receives `{ type, format, src, id, signal, options }` and returns a Sekai64 `Node`. Abort signals, stale completion protection, bounded concurrency, diagnostics, and disposal remain managed by the adapter.
 
 ## Security
 
-Set trusted asset origins, a Content Security Policy, and request/size limits in your app. Keep credentials out of public JSON. See [security](../SECURITY.md).
+Host applications should allowlist asset origins, apply CSP, enforce size/request limits, and keep credentials out of public JSON. Anyo never executes asset-provided scripts.

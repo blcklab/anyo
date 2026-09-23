@@ -113,6 +113,7 @@ function targetBase(document: WorldDocument, target: StablePatchTarget): { path:
   if ('materialId' in target) return { path: pointerForObjectKey('/materials', target.materialId), kind: 'affectedMaterials', id: target.materialId }
   if ('assetId' in target) return { path: pointerForObjectKey('/assets', target.assetId), kind: 'affectedAssets', id: target.assetId }
   if ('prefabId' in target) return { path: pointerForObjectKey('/prefabs', target.prefabId), kind: 'affectedPrefabs', id: target.prefabId }
+  if ('compositionId' in target) return { path: pointerForObjectKey('/compositions', target.compositionId), kind: 'affectedPrefabs', id: target.compositionId }
   if ('cameraId' in target) return { path: pointerForObjectKey('/cameras', target.cameraId), kind: 'affectedCameras', id: target.cameraId }
   throw new Error('Unsupported stable patch target.')
 }

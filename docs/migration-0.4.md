@@ -1,17 +1,19 @@
-# Changes introduced in world 0.4
+> Historical migration note. Anyo 0.5 now migrates 0.2, 0.3, and 0.4 documents to 0.5. See `migration-0.5.md`.
 
-This guide records the 0.4 changes. Use the [world 0.7 migration guide](migrations/MIGRATION_WORLD_0.7.md) when upgrading with the current package.
+# Migrating to Anyo 0.4
+
+Anyo automatically migrates `0.2` and `0.3` documents to `0.4` during `world.load()` and `migrateWorldDocument()`.
 
 ## Main changes
 
 - `building` is optional.
-- The document format advanced to `0.4`.
+- The migration target is `0.4`.
 - Legacy asset declarations receive inferred `type` and, when possible, `format` values.
 - Unknown entity types no longer compile as boxes.
 - Nested group rotations use quaternion composition.
 - Entity collider and trigger bounds account for rotation.
 
-## Document header
+## New schema
 
 ```json
 {
@@ -34,4 +36,4 @@ This guide records the 0.4 changes. Use the [world 0.7 migration guide](migratio
 }
 ```
 
-A typed asset still needs a renderer or loader that supports its format.
+Asset loading and decoding remain renderer-adapter responsibilities.

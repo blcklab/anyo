@@ -27,6 +27,12 @@ try {
     'schemas/world-0.4.schema.json',
     'schemas/world-0.7.schema.json',
     'dist/esm/snapshots/index.js',
+    'dist/esm/geometry/index.js',
+    'dist/cjs/geometry/index.js',
+    'dist/types/geometry/index.d.ts',
+    'dist/esm/resources/index.js',
+    'dist/cjs/resources/index.js',
+    'dist/types/resources/index.d.ts',
     'dist/cjs/snapshots/index.js',
     'dist/types/snapshots/index.d.ts',
     'dist/esm/renderer-sekai64/index.js',
@@ -36,14 +42,17 @@ try {
     'dist/types/explore-xr/index.d.ts',
     'README.md',
     'docs/README.md',
-    'docs/world-schema.md',
     'docs/migrations/MIGRATION_WORLD_0.7.md',
+    'docs/entities.md',
+    'docs/geometry.md',
+    'docs/resources.md',
+    'docs/sekai64.md',
     'docs/production.md',
     'LICENSE',
   ]) {
     if (!names.has(required)) throw new Error(`Packed artifact is missing ${required}.`)
   }
-  if ([...names].some((name) => name.startsWith('src/') || name.startsWith('tests/'))) {
+  if ([...names].some((name) => name.startsWith('src/') || name.startsWith('tests/') || name.startsWith('.internal/') || name.startsWith('vendor/'))) {
     throw new Error('Packed artifact unexpectedly contains source or test files.')
   }
 
@@ -56,6 +65,12 @@ try {
   if (typeof (cjs.default ?? cjs).createWorld !== 'function') {
     throw new Error('CommonJS root export smoke test failed.')
   }
+
+  const geometry = await import(pathToFileURL(path.join(root, 'dist/esm/geometry/index.js')).href)
+  if (typeof geometry.compileGeometry !== 'function' || typeof geometry.GeometryCache !== 'function') throw new Error('Geometry export smoke test failed.')
+
+  const resources = await import(pathToFileURL(path.join(root, 'dist/esm/resources/index.js')).href)
+  if (typeof resources.createResourceGraphBuilder !== 'function' || typeof resources.ResourceGraph !== 'function') throw new Error('Resources export smoke test failed.')
 
   const sekai = await import(pathToFileURL(path.join(root, 'dist/esm/renderer-sekai64/index.js')).href)
   if (typeof sekai.Sekai64Renderer !== 'function') throw new Error('Sekai64 renderer export smoke test failed.')

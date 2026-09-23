@@ -1,6 +1,6 @@
-# Player integration
+# Player Foundation — Anyo 0.9.0-rc.3
 
-Use these APIs to connect your viewer's UI, loading state, and input to an Anyo world. Anyo keeps handling world behavior, collision, interaction, and XR.
+This contract lets a reusable browser shell display and explore an Anyo world without duplicating world, collision, interaction, or XR logic.
 
 ## Readiness
 
@@ -10,11 +10,11 @@ await world.whenReady()      // validated, compiled, mounted, runtime installed
 await world.whenIdle()       // renderer-managed assets have settled
 ```
 
-Read `world.getAssetProgress()` for a progress snapshot and listen to `assets:progress` for updates. A renderer without asset tracking reports a completed empty workload.
+Use `world.getAssetProgress()` for the current snapshot and `assets:progress` for updates. A renderer that does not expose asynchronous asset tracking safely reports a completed empty workload.
 
 ## Input ownership
 
-The exploration plugin can listen to canvas input directly. To use your own keyboard, touch, gamepad, or accessibility controls, disable browser input and forward movement commands:
+The built-in exploration plugin may own canvas-scoped browser input, or a player can disable it and drive abstract controls:
 
 ```ts
 explorePlugin({ browserInput: false })
@@ -53,8 +53,8 @@ Sekai64 forwards WebGL context loss/restoration, WebGPU device loss, asset failu
 await world.disposeAsync()
 ```
 
-Awaiting disposal stops the frame loop, exits XR, clears input, disposes plugins and systems, cancels asset loads, and releases renderer resources. Use this when your viewer unmounts or switches to a new player instance.
+Asynchronous disposal stops the frame loop, awaits native XR session exit, clears exploration input, disposes plugins and systems, aborts renderer assets, and then releases GPU resources. Existing synchronous `dispose()` remains available for backward compatibility, but browser players should use `disposeAsync()`.
 
 ## Material texture channels
 
-The current Sekai64 adapter maps base-color, normal, roughness, metalness, packed metallic-roughness, emissive, and occlusion textures. Packed metallic-roughness uses green for roughness and blue for metalness. Read `renderer.info.capabilities.materialTextureChannels` for the active backend and see [assets](assets.md).
+Sekai64 supports `baseColorTexture`, `metallicRoughnessTexture`, `normalTexture`, `emissiveTexture`, and `occlusionTexture`. The metallic-roughness texture follows glTF packing: roughness in the green channel and metalness in the blue channel. Renderer-neutral separate `roughnessTexture` and `metalnessTexture` fields are not advertised by the Sekai64 adapter.

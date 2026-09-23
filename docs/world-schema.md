@@ -1,78 +1,158 @@
 # World schema
 
-The current world-document version is `0.7`. It is separate from the npm package version, currently `0.10.0-rc.1`.
+The default package schema remains the stable 0.7 contract:
 
-Both `@blcklab/anyo/schema` and `@blcklab/anyo/schema/0.7` export `schemas/world-0.7.schema.json`.
+```txt
+@blcklab/anyo/schema
+@blcklab/anyo/schema/0.7
+schemas/world-0.7.schema.json
+```
+
+Use 0.7 for existing primitive/building worlds:
 
 ```json
 {
   "$schema": "./node_modules/@blcklab/anyo/schemas/world-0.7.schema.json",
-  "version": "0.7",
-  "revision": 0,
-  "entities": []
+  "version": "0.7"
 }
 ```
 
-Buildings are optional, so empty and entity-only worlds are valid. Older supported documents migrate to 0.7; see [migration details](migrations/MIGRATION_WORLD_0.7.md).
+S14 adds the opt-in 0.8 procedural authoring contract:
 
-## Main fields
+```txt
+@blcklab/anyo/schema/0.8
+schemas/world-0.8.schema.json
+```
 
-| Purpose | Fields |
-| --- | --- |
-| Identity and metadata | `$schema`, `version`, `revision`, `units`, `metadata` |
-| Content | `building`, `entities`, `prefabs`, `assets`, `materials` |
-| Presentation | `environment`, `cameras`, `activeCamera`, `channels` |
-| Runtime configuration | `data`, `exploration`, `visibility` |
-| Extensions | `extensions` |
+```json
+{
+  "$schema": "./node_modules/@blcklab/anyo/schemas/world-0.8.schema.json",
+  "version": "0.8"
+}
+```
 
-See the [schema](../schemas/world-0.7.schema.json) for the complete field definitions. JSON Schema checks document shape; registered plugins and semantic validation check references and behavior.
+`building` remains optional. Entity-only and empty worlds remain valid. Existing 0.2 through 0.6 documents migrate automatically to 0.7; 0.7 is not silently promoted to 0.8.
+
+## Top-level fields
+
+Stable fields include:
+
+- `$schema`
+- `version`
+- `revision`
+- `units`
+- `metadata`
+- `data`
+- `environment`
+- `rendering`
+- `cameras`
+- `activeCamera`
+- `channels`
+- `requires`
+- `events`
+- `materials`
+- `assets`
+- `prefabs`
+- `building`
+- `entities`
+- `exploration`
+- `visibility`
+- `extensions`
+
+World 0.8 additionally accepts reusable top-level `geometries`.
+
+## Procedural authoring in 0.8
+
+A reusable geometry definition is referenced by a normal stable entity id:
+
+```json
+{
+  "version": "0.8",
+  "geometries": {
+    "desk": {
+      "kind": "roundedBox",
+      "size": [5.4, 1.05, 1.1],
+      "radius": 0.08
+    }
+  },
+  "entities": [
+    {
+      "id": "reception",
+      "type": "geometry",
+      "geometry": "desk",
+      "material": "graphite"
+    }
+  ]
+}
+```
+
+`geometry` may also be an inline GeometryDefinition. `materialBindings` exposes the existing semantic geometry-region system, and `type: "construction"` accepts the existing S7 ArchitectureDefinition. These declarations compile internally to the content-addressed ResourceGraph; they do not introduce renderer-specific object types.
+
+Procedural entities may also opt into the existing Anyo collision system with `collision: true` or the more explicit schema-0.8 `collisionPolicy` field. `geometry` supports transformed `bounds` collision. S7 `construction` supports `semantic`/`parts` collision, which lowers the same solid parts used by construction so wall door/window openings remain traversable. `none` disables procedural collision.
+
+See `docs/migrations/MIGRATION_WORLD_0.8.md` for the full S14 contract and compatibility boundary.
 
 ## Authoring identity
 
-An entity's optional `authoringId` identifies its editable source declaration. Runtime IDs may change after prefab or repeat expansion; a persisted authoring ID lets an editor keep track of the same object.
+Entities may contain an optional `authoringId`. It is a stable, renderer-independent identity used by editor sessions and picking bridges. Runtime IDs can change after prefab or repeat expansion, while `authoringId` identifies the editable source declaration.
 
-Repeated instances carry compiler provenance. Detach an instance into an ordinary entity before editing it independently. See [editor APIs](editor-contract.md).
+Generated repeat instances expose compiler provenance but are not directly editable until an authoring tool detaches them into ordinary entities.
 
-## Web-surface targets
+## Assets, components, and materials
 
-A web surface can target a `plane`, a room `wall`, an `entity-slot`, or a `mesh`. An `anyo.surface-host` component declares named slots with a mesh name and non-negative material-slot index. Resolved slots default to UV set `0`.
+Typed assets, namespaced components, and texture-backed material contracts remain renderer-neutral. Asset decoding remains the responsibility of a compatible renderer or registered loader.
 
-References such as `$self`, `$parent`, and their child paths resolve after prefab expansion. Store these IDs and options in JSON; keep DOM nodes, textures, renderer handles, and functions in the host application. See [web surfaces](web-surfaces.md).
+The JSON Schema validates document shape. Anyo semantic validation then verifies references and registered capabilities. For world 0.8 this includes named geometry references and semantic material-binding references.
 
-## Validation modes
+## Web Surface target intent
 
-Use `inspectWorldDocument()` to get diagnostics before loading a world:
+Web Surface definitions may include an optional renderer-neutral `target`:
+
+- `plane`: current transform and size behavior; an optional target size overrides the plane dimensions.
+- `wall`: room and wall intent with an optional two-dimensional offset.
+- `entity-slot`: a named slot declared by an `anyo.surface-host` component.
+- `mesh`: a direct entity, optional mesh name, material-slot index, and UV-set index.
+
+`anyo.surface-host` is a built-in component. Each slot requires a mesh name and non-negative material-slot index; `uvSet` defaults to `0` when resolved.
+
+Local target references `$self`, `$parent`, `$self/...`, and `$parent/...` are normalized after prefab expansion. No DOM node, renderer object, function, texture, mesh handle, or GPU resource is serialized into world JSON.
+
+## Semantic validation modes
+
+Anyo keeps backward-compatible permissive loading while offering stricter validation for deployment and generated worlds:
 
 ```ts
-import { inspectWorldDocument } from '@blcklab/anyo'
-
-const result = inspectWorldDocument(worldDocument, {
-  mode: 'production',
-  rendererInfo: renderer.info
+const result = inspectWorldDocument(document, {
+  mode: 'generator',
+  actionRegistry,
+  webSurfaceRegistry,
+  componentTypeRegistry,
+  entityTypeRegistry,
+  handledComponents: new Set(['anyo.animation']),
+  rendererInfo: renderer.info,
 })
-
-for (const issue of result.errors) {
-  console.error(issue.code, issue.path, issue.message)
-}
 ```
 
-This example assumes your document is in `worldDocument` and you have a renderer instance. Pass `actionRegistry`, `webSurfaceRegistry`, `componentTypeRegistry`, and `entityTypeRegistry` when checking content that uses those registrations. Use `handledComponents` to identify components handled by installed systems.
+Modes:
 
-| Mode | Use |
-| --- | --- |
-| `permissive` | Load older or partially supported content; report warnings where a fallback is safe. |
-| `production` | Reject missing required references, registrations, and renderer capabilities. |
-| `generator` | Also reject unknown stable fields; store custom data in namespaced extensions. |
+- `permissive`: unresolved optional behavior and unknown stable fields produce warnings where safe.
+- `production`: missing required references, registrations, and renderer capabilities are errors.
+- `generator`: strictest mode; unknown stable fields are errors unless data is stored in a namespaced extension contract.
 
-The same checks can run during loading:
+Semantic validation covers room, floor, material, asset, geometry, prefab, opening, spawn, binding, action, web-application, custom-component, custom-entity, model-format, and material-texture references. Validation returns structured diagnostic codes and JSON-pointer paths.
+
+A world may opt into the same checks during loading:
 
 ```ts
-import { createWorld } from '@blcklab/anyo'
-
 const world = createWorld({
   renderer,
-  validation: { mode: 'production' }
+  validation: {
+    mode: 'production',
+    webSurfaceRegistry,
+    componentTypeRegistry,
+    entityTypeRegistry,
+  },
 })
 ```
 
-Actions registered with `world.registerAction()` are included automatically in load-time validation. Errors include diagnostic codes and JSON Pointer paths for locating the problem.
+Actions registered through `world.registerAction()` are included automatically when the world validates during `load()`.

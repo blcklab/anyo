@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -106,6 +106,5 @@ const lines = [
   '- Dependency graphs and renderer-change classification support selective updates, while insufficient dependency information still falls back to full compilation.',
   '- No benchmark claim here represents browser, WebGL2, WebGPU, or Sekai64 frame performance.', '',
 ]
-await mkdir(path.join(root, 'docs/reports'), { recursive: true })
 await writeFile(path.join(root, 'docs/reports/TRACK_A_BENCHMARK_REPORT.md'), `${lines.join('\n')}\n`)
 console.log(lines.join('\n'))

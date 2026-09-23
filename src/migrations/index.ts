@@ -5,7 +5,7 @@ export interface MigrationChange { path: string; description: string }
 export interface MigrationResult {
   document: WorldDocument
   from: string
-  to: '0.7'
+  to: '0.7' | '0.8'
   changed: boolean
   changes: MigrationChange[]
   warnings: string[]
@@ -36,7 +36,7 @@ function updateSchemaReference(value: string): string {
 
 const KNOWN_ROOT_FIELDS = new Set([
   '$schema', 'version', 'revision', 'units', 'metadata', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels',
-  'requires', 'events', 'materials', 'assets', 'prefabs', 'building', 'entities', 'exploration', 'visibility', 'extensions',
+  'requires', 'events', 'materials', 'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 
 export function migrateWorldDocument(input: WorldDocument): MigrationResult {
@@ -46,12 +46,16 @@ export function migrateWorldDocument(input: WorldDocument): MigrationResult {
   const changes: MigrationChange[] = []
   const warnings: string[] = []
 
+  if (from === '0.8' || from.startsWith('0.8.')) {
+    document.revision ??= 0
+    return { document, from, to: '0.8', changed: input.revision === undefined, changes: input.revision === undefined ? [{ path: '/revision', description: 'Added the default authored-document revision.' }] : [], warnings }
+  }
   if (from === '0.7' || from.startsWith('0.7.')) {
     document.revision ??= 0
     return { document, from, to: '0.7', changed: input.revision === undefined, changes: input.revision === undefined ? [{ path: '/revision', description: 'Added the default authored-document revision.' }] : [], warnings }
   }
   if (!['0.2', '0.3', '0.4', '0.5', '0.6'].some((version) => from.startsWith(version))) {
-    throw new Error(`Unsupported Anyo document version "${from}". Supported migrations are 0.2 through 0.6 to 0.7.`)
+    throw new Error(`Unsupported Anyo document version "${from}". Supported documents are 0.7/0.8; migrations are 0.2 through 0.6 to 0.7.`)
   }
 
   document.version = '0.7'

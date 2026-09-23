@@ -138,6 +138,7 @@ export class ThreeRenderer implements RendererAdapter {
           this.setRoomVisibility(change.roomId, change.visible)
           break
         case 'portal-state':
+        case 'resource-graph':
         case 'world-rebuild':
           break
       }
@@ -258,6 +259,23 @@ export class ThreeRenderer implements RendererAdapter {
         const radius = primitive.radius ?? size[0] / 2
         const height = primitive.height ?? size[1]
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 24)
+        return new THREE.Mesh(geometry, this.getMaterial(primitive.material, primitive))
+      }
+      case 'disc': {
+        const radius = primitive.radius ?? size[0] / 2
+        const height = primitive.height ?? size[1]
+        const geometry = new THREE.CylinderGeometry(radius, radius, height, 32)
+        return new THREE.Mesh(geometry, this.getMaterial(primitive.material, primitive))
+      }
+      case 'cone': {
+        const radius = primitive.radius ?? size[0] / 2
+        const height = primitive.height ?? size[1]
+        const geometry = new THREE.ConeGeometry(radius, height, 20)
+        return new THREE.Mesh(geometry, this.getMaterial(primitive.material, primitive))
+      }
+      case 'sphere': {
+        const radius = primitive.radius ?? size[0] / 2
+        const geometry = new THREE.SphereGeometry(radius, 16, 10)
         return new THREE.Mesh(geometry, this.getMaterial(primitive.material, primitive))
       }
       case 'text': {

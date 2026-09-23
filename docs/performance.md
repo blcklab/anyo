@@ -1,27 +1,21 @@
 # Performance
 
-Measure the application with representative worlds. Anyo compiles and updates world state; the renderer handles draw calls and GPU resources, so profile both sides.
+Anyo exposes renderer-neutral optimization metadata; Sekai64 decides how to realize it.
 
-## Reuse geometry and send small updates
+- `geometryKey`: reusable geometry identity
+- `batchKey`: compatible grouping identity
+- `static`: not expected to move independently
+- `loading`: eager or lazy asset intent
 
-Compiled primitives carry `geometryKey` for reusable geometry, `batchKey` for compatible groups, `static` for objects that do not move independently, and `loading` for eager or lazy asset loading.
+The Sekai64 adapter uses shared unit geometry and instancing for compatible static box, plane, and cylinder primitives. Interactive instances retain individual IDs for picking.
 
-The Sekai64 adapter can share unit geometry and instance compatible static boxes, planes, and cylinders while preserving IDs for picking. Non-structural changes use incremental updates. Changes that require rebuilding go through the compiler and remount path.
+Non-structural updates are sent incrementally. Structural changes safely rebuild the affected compiled world until finer room/floor invalidation is introduced.
 
-## Keep simulation out of document edits
 
-Animation and physics should use transient transforms. Anyo resolves dirty entity transforms and sends one renderer batch per frame through `applyRuntimeTransforms()` when supported. Older adapters fall back to incremental primitive updates.
+## Runtime transform hot path
 
-This avoids cloning, validating, adding history, and recompiling the document every frame. Use fixed-step systems for simulation and `update()` for animation or interpolation. See [runtime systems](runtime-systems.md).
+Animation and physics should write transient transforms instead of authoring JSON. Dirty entity transforms resolve once and are sent to renderers in one batch per frame through `applyRuntimeTransforms()` when available.
 
-## Run benchmarks
+This path avoids document cloning, validation, history, normalization, and world recompilation. Legacy renderers retain the incremental primitive-update fallback, but high-frequency engines should target renderers with the synchronous runtime-transform capability.
 
-```bash
-npm run benchmark
-npm run benchmark:track-a
-npm run benchmark:track-f
-```
-
-The first two commands write reports under `docs/reports/`; the production benchmark reports timing and memory in the terminal. Record the package version, machine, Node or browser version, renderer backend, scene size, and quality settings when comparing results.
-
-`tests/track-f-production.test.mjs` exercises 10,000-entity documents, transactions, hashing, and compiler dependencies as part of `npm test`. Passing it confirms behavior, not a frame-rate target or real GPU performance.
+Use fixed-step systems for deterministic simulation and normal update systems for animation/interpolation. See `runtime-systems.md` and the current benchmark report.

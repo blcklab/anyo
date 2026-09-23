@@ -1,6 +1,6 @@
-# Changes introduced in world 0.6
+# Migrating to Anyo 0.6
 
-World 0.6 added editor identity and operation-based history. This guide explains those changes; use the [world 0.7 migration guide](migrations/MIGRATION_WORLD_0.7.md) for current upgrades.
+Anyo automatically migrates documents from 0.2 through 0.5 to 0.6 during `world.load()` and `migrateWorldDocument()`. Existing runtime, building, component, asset, and material semantics remain compatible.
 
 ## Version and schema
 
@@ -13,7 +13,7 @@ World 0.6 added editor identity and operation-based history. This guide explains
 
 ## Optional authoring IDs
 
-Existing documents do not need an `authoringId`. Editors should save one on directly editable entities so selection can survive structural changes and recompilation. Otherwise, the compiler derives identity for the current session.
+No existing document must add `authoringId`. The compiler derives session-stable provenance when it is absent. Authoring tools should persist `authoringId` on directly editable entities so selection survives structural changes and recompilation.
 
 ```json
 {
@@ -26,12 +26,12 @@ Existing documents do not need an `authoringId`. Editors should save one on dire
 
 ## History behavior
 
-History stores forward and inverse operations. The public `undo()`, `redo()`, `canUndo`, and `canRedo` APIs remain compatible, and `world.getHistory()` returns summaries.
+History entries now store forward and inverse operations instead of complete document snapshots. Public `undo()`, `redo()`, `canUndo`, and `canRedo` behavior remains compatible. `world.getHistory()` exposes safe summaries.
 
 ## Editor package
 
-Import authoring APIs from `@blcklab/anyo/editor`. They work without Vue or the DOM. See [editor APIs](editor-contract.md).
+Import the optional authoring APIs from `@blcklab/anyo/editor`. No Vue or DOM dependency was added. Runtime-only applications do not need this subpath.
 
 ## Generated entities
 
-Compiled entities expose their source and prefab provenance. Detach repeated instances before editing them independently, since one repeat declaration can generate many instances.
+Repeated or prefab-generated runtime entities expose provenance. Repeated instances are protected from direct mutation until detached by an authoring workflow, preventing ambiguous edits to one instance of a mathematical source declaration.

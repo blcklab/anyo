@@ -1,19 +1,22 @@
-# Compatibility
+# Anyo 0.9 Stability Contract
 
-The package is currently `0.10.0-rc.1`, and the current world schema is `0.7`. Pin a tested package version while using release candidates and check the [changelog](../../CHANGELOG.md) before upgrading.
+Anyo 0.9.0 freezes the renderer-neutral world and Web Surface contracts proven through WS0–WS10.
 
-## Existing worlds and integrations
+## Guaranteed through the 0.9 line
 
-Earlier supported world documents migrate to 0.7 through the public migration API. Existing JSON Pointer patches remain available alongside stable-ID transactions. See the [migration guide](../migrations/MIGRATION_WORLD_0.7.md).
+- Existing 0.2–0.6 world documents continue to normalize or migrate without requiring advanced packages.
+- Existing root and documented subpath imports remain available.
+- `RendererAdapter` gains no new mandatory method during the 0.9 line.
+- Existing registered Web Surface applications remain valid.
+- `target` and `presentation` remain optional; legacy surfaces keep the plane/overlay path.
+- DOM, renderer, GPU, executable functions, and private application state are never serialized into world JSON.
+- Normal imports remain DOM-free and SSR-safe.
+- Unsupported advanced presentation degrades to overlay, snapshot, or external-link behavior.
 
-Web-surface `target` and `presentation` remain optional. Existing registered apps and plane/overlay surfaces continue to work. When advanced presentation is unavailable, integrations use overlay, snapshot, or external-link fallbacks.
+## Optional ecosystem
 
-World JSON contains authored data. DOM nodes, GPU resources, renderer objects, functions, and private application state stay outside it. Core imports remain usable in headless and server environments.
+`@blcklab/anyo-web-surface-texture` and `@blcklab/anyo-hologram` are optional packages. Anyo core has no runtime dependency on either package or on Sekai64.
 
-## Optional packages
+## Compatibility policy
 
-Sekai64, Three.js, `@blcklab/anyo-web-surface-texture`, and `@blcklab/anyo-hologram` are optional integrations. Your app installs the packages it uses; Anyo core does not load them from names found in world JSON.
-
-## The 0.9 compatibility policy
-
-The 0.9 line preserved documented imports, existing web-surface app contracts, and the required renderer-adapter methods. Bug fixes and additive diagnostics could ship in 0.9.x; breaking changes required a new minor line and migration notes. That policy describes 0.9 and should not be read as a blanket stability guarantee for later release candidates.
+Bug fixes and additive diagnostics may ship in 0.9.x. Breaking document, renderer, target, presentation, or application-contract changes require a new minor line and migration notes.

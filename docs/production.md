@@ -1,25 +1,44 @@
-# Preparing a release
+# Production guide
 
-Pin the package versions you test together. This checkout uses Anyo `0.10.0-rc.1` and Sekai64 `0.8.0-rc.33`; check your app's lockfile before deploying an upgrade.
+## Pin compatible versions
 
-## Validate the world and package
+```json
+{
+  "dependencies": {
+    "@blcklab/anyo": "0.6.0",
+    "@blcklab/sekai64": "0.6.1"
+  }
+}
+```
 
-Run `npm run check` before publishing Anyo. It runs type checks, tests, and package verification. See [tests](../tests/README.md) for individual commands.
+## Validate before deployment
 
-For world content, use `inspectWorldDocument()` during your build and `world.validate()` to inspect the loaded source. Production validation also checks registered actions, references, and renderer capabilities. See [validation modes](world-schema.md#validation-modes).
+Use `inspectWorldDocument` for build-time checks and `world.validate()` for the loaded source. Treat warnings and renderer capability diagnostics as deployment signals.
 
-## Handle lifecycle and persistence
+## Dispose worlds
 
-Await `world.disposeAsync()` when replacing a player or leaving a route. It stops the loop, exits XR, cleans up plugins and systems, and cancels pending renderer assets.
+Call `world.dispose()` when replacing a world or unmounting the host application. Disposal is idempotent and cancels pending renderer assets.
 
-Use `world.setData()` for values that update bindings without changing saved JSON. Call `world.commitRuntimeData()` when those values should become persistent. For animation and physics, use [runtime transforms](runtime-systems.md).
+## Keep runtime and persistent data intentional
 
-Editor tools should commit one transform preview after a drag ends. Use `world.transaction()` for broader document changes; see [editor APIs](editor-contract.md).
+`world.setData()` updates bindings without modifying serialized JSON. Use `world.commitRuntimeData()` only for values intended to persist.
 
-## Check the actual application
+## Use the editor contract for authoring tools
 
-Test world replacement, asset failures, resize, pointer lock, touch controls, incremental updates, context loss, and repeated disposal in each supported browser and renderer backend. Use the [VR checklist](vr-production-checklist.md) for headset builds.
+Use `@blcklab/anyo/editor` for selection, previews, clipboard operations, grouping, and world-preserving reparenting. Use `world.transaction()` for broader CMS/document changes. Commit one preview after a drag ends rather than creating one history entry per pointer movement.
 
-Cap pixel ratio on high-density displays to control rendering cost. For example, pass `pixelRatio: Math.min(devicePixelRatio, 2)` to the renderer and measure on your target devices.
+## Security
 
-Set trusted asset origins, response-size limits, and a Content Security Policy in your host app. Keep credentials out of world JSON. See [security](../SECURITY.md).
+Allowlist asset origins, apply Content Security Policy, limit remote asset sizes, and never place secrets in world JSON. Anyo does not execute code from documents.
+
+## Pixel ratio
+
+Use a conservative cap on high-density devices:
+
+```ts
+pixelRatio: Math.min(devicePixelRatio, 2)
+```
+
+## Browser matrix
+
+Verify the actual application in every supported browser/device/backend. Include world replacement, context loss, media/model failures, pointer lock, touch controls, resize, incremental updates, and repeated disposal.

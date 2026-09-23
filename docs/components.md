@@ -1,6 +1,6 @@
 # Declarative components
 
-Attach components to entities to describe behavior such as interaction or collision. Each component has a namespaced type and JSON data. Your app installs the code that handles it.
+Anyo 0.5 introduces namespaced components as renderer-independent JSON data. Components describe optional capability or behavior attached to an entity; they never contain executable JavaScript.
 
 ```json
 {
@@ -22,7 +22,7 @@ Attach components to entities to describe behavior such as interaction or collis
 }
 ```
 
-## Common built-in components
+## Built-in component contracts
 
 - `anyo.interactable`
 - `anyo.collider`
@@ -33,7 +33,7 @@ Attach components to entities to describe behavior such as interaction or collis
 - `anyo.animation`
 - `anyo.billboard`
 
-Animation and billboard components store settings for optional systems. Declaring them does not start an animation engine.
+The animation and billboard definitions are preserved as compiled component data for optional systems. They do not add a heavy animation or billboard engine to Anyo core.
 
 ## Legacy compatibility
 
@@ -48,12 +48,11 @@ trigger     → anyo.trigger
 visible     → anyo.visibility
 ```
 
-An explicit component takes precedence over the matching legacy field. Disable an explicit component to turn off behavior inherited from a prefab.
+An explicit component of the same type takes precedence over its legacy field. A disabled explicit component therefore provides a predictable way to turn off inherited or prefab behavior.
 
 ## Registering a component
 
 ```ts
-import { createWorld } from '@blcklab/anyo'
 import { createComponentTypeRegistry } from '@blcklab/anyo/components'
 import { entitiesPlugin } from '@blcklab/anyo/entities'
 
@@ -62,15 +61,14 @@ const registry = createComponentTypeRegistry()
 registry.register({
   type: 'community.health',
   validate(component) {
-    if (typeof component.maximum !== 'number' || !Number.isFinite(component.maximum) || component.maximum <= 0) {
+    if (typeof component.maximum !== 'number' || component.maximum <= 0) {
       throw new Error('maximum must be positive')
     }
   },
   compile(component) {
-    const maximum = component.maximum as number // Checked by validate().
     return {
-      current: typeof component.current === 'number' ? component.current : maximum,
-      maximum,
+      current: component.current ?? component.maximum,
+      maximum: component.maximum,
     }
   },
 })
@@ -80,7 +78,7 @@ const world = createWorld({
 })
 ```
 
-A registration validates the component and returns compiled JSON data. Keep DOM nodes, renderer objects, GPU resources, functions, and class instances outside world state.
+A registration may validate JSON and return JSON-safe renderer-independent compiled data. It must not store DOM nodes, renderer objects, GPU resources, functions, or class instances in world state.
 
 ## Unknown components
 
@@ -94,16 +92,16 @@ entitiesPlugin({ unknownComponents: 'preserve' })
 
 ## Host actions
 
-Register the actions used by interactive components in your app:
+Interactive component actions still resolve through the host registry:
 
 ```ts
 world.registerAction('toggle-door', ({ doorId }) => {
-  // Toggle the door in your application.
+  // Application-controlled behavior.
 })
 ```
 
 Anyo never evaluates JavaScript from JSON.
 
-## Components that need a system
+## Marker-system diagnostics
 
-If your app handles `anyo.animation` or `anyo.billboard`, include those types in validation's `handledComponents`. Without a declared handler, Anyo reports `ANYO_COMPONENT_SYSTEM_MISSING`. See [validation modes](world-schema.md#validation-modes).
+`anyo.animation` and `anyo.billboard` are marker contracts. They preserve JSON-safe component data but do not execute hidden renderer behavior. Strict generation or production tooling can declare installed handlers through `handledComponents`; otherwise Anyo reports `ANYO_COMPONENT_SYSTEM_MISSING` as a warning.

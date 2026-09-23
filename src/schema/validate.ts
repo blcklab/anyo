@@ -245,20 +245,41 @@ function validateEntity(
   path: string,
   issues: ValidationIssue[],
   prefabs: WorldDocument['prefabs'],
+  compositions: WorldDocument['compositions'],
   entityIds: Set<string>,
   namespace = '',
   allowMissingType = false,
 ): void {
   const effectiveId = namespace && entity.id ? `${namespace}/${entity.id}` : entity.id
   if (!entity.id?.trim()) issue(issues, 'ENTITY_ID_REQUIRED', `${path}/id`, 'Entity id must be a non-empty string.')
-  else if (entityIds.has(effectiveId)) issue(issues, 'ENTITY_ID_DUPLICATE', `${path}/id`, `Entity id "${effectiveId}" is duplicated.`)
-  else entityIds.add(effectiveId)
-
-  if (!allowMissingType && !entity.type?.trim() && !entity.use?.trim()) {
-    issue(issues, 'ENTITY_TYPE_REQUIRED', path, 'Entity must provide either type or use.')
+  if (entity.type === 'geometry') {
+    if (entity.geometry === undefined) issue(issues, 'ENTITY_GEOMETRY_REQUIRED', `${path}/geometry`, 'Geometry entities require a named or inline geometry definition.')
+    if (typeof entity.geometry === 'string' && !entity.geometry.trim()) issue(issues, 'ENTITY_GEOMETRY_REFERENCE_INVALID', `${path}/geometry`, 'Named geometry references must be non-empty strings.')
+    if (entity.geometry !== undefined && typeof entity.geometry !== 'string' && (!isRecord(entity.geometry) || typeof entity.geometry.kind !== 'string')) issue(issues, 'ENTITY_GEOMETRY_INVALID', `${path}/geometry`, 'Inline geometry must be an object with a kind.')
   }
+  if (entity.type === 'construction' && (!isRecord(entity.construction) || typeof entity.construction.type !== 'string')) issue(issues, 'ENTITY_CONSTRUCTION_REQUIRED', `${path}/construction`, 'Construction entities require an S7 construction object with a type.')
+  if (entity.materialBindings !== undefined && !isRecord(entity.materialBindings)) issue(issues, 'ENTITY_MATERIAL_BINDINGS_INVALID', `${path}/materialBindings`, 'materialBindings must map semantic names to material ids.')
+  if (entity.collisionPolicy !== undefined && !['none', 'bounds', 'semantic', 'parts'].includes(entity.collisionPolicy)) {
+    issue(issues, 'ENTITY_COLLISION_POLICY_INVALID', `${path}/collisionPolicy`, 'collisionPolicy must be one of none, bounds, semantic, or parts.')
+  }
+  if (entity.collisionPolicy !== undefined && entity.type !== 'geometry' && entity.type !== 'construction') {
+    issue(issues, 'ENTITY_COLLISION_POLICY_PROCEDURAL_ONLY', `${path}/collisionPolicy`, 'collisionPolicy is only supported by schema-0.8 geometry and construction entities.')
+  }
+
+  if (entity.id?.trim()) {
+    if (entityIds.has(effectiveId)) issue(issues, 'ENTITY_ID_DUPLICATE', `${path}/id`, `Entity id "${effectiveId}" is duplicated.`)
+    else entityIds.add(effectiveId)
+  }
+
+  if (!allowMissingType && !entity.type?.trim() && !entity.use?.trim() && !entity.composition?.trim()) {
+    issue(issues, 'ENTITY_TYPE_REQUIRED', path, 'Entity must provide type, use, or composition.')
+  }
+  if (entity.use && entity.composition) issue(issues, 'ENTITY_TEMPLATE_REFERENCE_CONFLICT', path, 'Entity cannot reference both use and composition.')
   if (entity.use && !prefabs?.[entity.use]) {
     issue(issues, 'PREFAB_NOT_FOUND', `${path}/use`, `Prefab "${entity.use}" does not exist.`)
+  }
+  if (entity.composition && !compositions?.[entity.composition]) {
+    issue(issues, 'COMPOSITION_NOT_FOUND', `${path}/composition`, `Composition "${entity.composition}" does not exist.`)
   }
   if (entity.position !== undefined && !isFiniteVector(entity.position, 3)) {
     issue(issues, 'ENTITY_POSITION_INVALID', `${path}/position`, 'Position must contain three finite numbers.')
@@ -325,36 +346,38 @@ function validateEntity(
       }
       const presentation = web.presentation
       if (presentation) {
-        if (presentation.type !== 'texture') {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_TYPE_INVALID', `${path}/webSurface/presentation/type`, 'Web-surface presentation type must be "texture".')
+        if (presentation.type !== 'texture' && presentation.type !== 'overlay') {
+          issue(issues, 'WEB_SURFACE_PRESENTATION_TYPE_INVALID', `${path}/webSurface/presentation/type`, 'Web-surface presentation type must be "texture" or "overlay".')
         }
         if (presentation.resolution && (!isPositiveFinitePair(presentation.resolution))) {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_RESOLUTION_INVALID', `${path}/webSurface/presentation/resolution`, 'Texture presentation resolution must contain two positive finite values.')
+          issue(issues, 'WEB_SURFACE_PRESENTATION_RESOLUTION_INVALID', `${path}/webSurface/presentation/resolution`, 'Web-surface presentation resolution must contain two positive finite values.')
         }
-        if (presentation.transform?.offset && !isFinitePair(presentation.transform.offset)) {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_OFFSET_INVALID', `${path}/webSurface/presentation/transform/offset`, 'Texture presentation offset must contain two finite values.')
-        }
-        if (presentation.transform?.scale && !isPositiveFinitePair(presentation.transform.scale)) {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_SCALE_INVALID', `${path}/webSurface/presentation/transform/scale`, 'Texture presentation scale must contain two positive finite values.')
-        }
-        if (presentation.transform?.rotation !== undefined && !Number.isFinite(presentation.transform.rotation)) {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_ROTATION_INVALID', `${path}/webSurface/presentation/transform/rotation`, 'Texture presentation rotation must be finite.')
-        }
-        if (presentation.emissive?.intensity !== undefined && (!Number.isFinite(presentation.emissive.intensity) || presentation.emissive.intensity < 0 || presentation.emissive.intensity > 100)) {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_EMISSIVE_INVALID', `${path}/webSurface/presentation/emissive/intensity`, 'Texture presentation emissive intensity must be between 0 and 100.')
-        }
-        if (presentation.opacity !== undefined && (!Number.isFinite(presentation.opacity) || presentation.opacity < 0 || presentation.opacity > 1)) {
-          issue(issues, 'WEB_SURFACE_PRESENTATION_OPACITY_INVALID', `${path}/webSurface/presentation/opacity`, 'Texture presentation opacity must be between 0 and 1.')
-        }
-        if (presentation.glass) {
-          if (!presentation.glass.mesh?.trim()) {
-            issue(issues, 'WEB_SURFACE_PRESENTATION_GLASS_MESH_REQUIRED', `${path}/webSurface/presentation/glass/mesh`, 'Glass overlay mesh must be a non-empty name.')
+        if (presentation.type === 'texture') {
+          if (presentation.transform?.offset && !isFinitePair(presentation.transform.offset)) {
+            issue(issues, 'WEB_SURFACE_PRESENTATION_OFFSET_INVALID', `${path}/webSurface/presentation/transform/offset`, 'Texture presentation offset must contain two finite values.')
           }
-          if (presentation.glass.materialSlot !== undefined && (!Number.isInteger(presentation.glass.materialSlot) || presentation.glass.materialSlot < 0)) {
-            issue(issues, 'WEB_SURFACE_PRESENTATION_GLASS_SLOT_INVALID', `${path}/webSurface/presentation/glass/materialSlot`, 'Glass overlay materialSlot must be a non-negative integer.')
+          if (presentation.transform?.scale && !isPositiveFinitePair(presentation.transform.scale)) {
+            issue(issues, 'WEB_SURFACE_PRESENTATION_SCALE_INVALID', `${path}/webSurface/presentation/transform/scale`, 'Texture presentation scale must contain two positive finite values.')
           }
-          if (presentation.glass.opacity !== undefined && (!Number.isFinite(presentation.glass.opacity) || presentation.glass.opacity < 0 || presentation.glass.opacity > 1)) {
-            issue(issues, 'WEB_SURFACE_PRESENTATION_GLASS_OPACITY_INVALID', `${path}/webSurface/presentation/glass/opacity`, 'Glass overlay opacity must be between 0 and 1.')
+          if (presentation.transform?.rotation !== undefined && !Number.isFinite(presentation.transform.rotation)) {
+            issue(issues, 'WEB_SURFACE_PRESENTATION_ROTATION_INVALID', `${path}/webSurface/presentation/transform/rotation`, 'Texture presentation rotation must be finite.')
+          }
+          if (presentation.emissive?.intensity !== undefined && (!Number.isFinite(presentation.emissive.intensity) || presentation.emissive.intensity < 0 || presentation.emissive.intensity > 100)) {
+            issue(issues, 'WEB_SURFACE_PRESENTATION_EMISSIVE_INVALID', `${path}/webSurface/presentation/emissive/intensity`, 'Texture presentation emissive intensity must be between 0 and 100.')
+          }
+          if (presentation.opacity !== undefined && (!Number.isFinite(presentation.opacity) || presentation.opacity < 0 || presentation.opacity > 1)) {
+            issue(issues, 'WEB_SURFACE_PRESENTATION_OPACITY_INVALID', `${path}/webSurface/presentation/opacity`, 'Texture presentation opacity must be between 0 and 1.')
+          }
+          if (presentation.glass) {
+            if (!presentation.glass.mesh?.trim()) {
+              issue(issues, 'WEB_SURFACE_PRESENTATION_GLASS_MESH_REQUIRED', `${path}/webSurface/presentation/glass/mesh`, 'Glass overlay mesh must be a non-empty name.')
+            }
+            if (presentation.glass.materialSlot !== undefined && (!Number.isInteger(presentation.glass.materialSlot) || presentation.glass.materialSlot < 0)) {
+              issue(issues, 'WEB_SURFACE_PRESENTATION_GLASS_SLOT_INVALID', `${path}/webSurface/presentation/glass/materialSlot`, 'Glass overlay materialSlot must be a non-negative integer.')
+            }
+            if (presentation.glass.opacity !== undefined && (!Number.isFinite(presentation.glass.opacity) || presentation.glass.opacity < 0 || presentation.glass.opacity > 1)) {
+              issue(issues, 'WEB_SURFACE_PRESENTATION_GLASS_OPACITY_INVALID', `${path}/webSurface/presentation/glass/opacity`, 'Glass overlay opacity must be between 0 and 1.')
+            }
           }
         }
       }
@@ -399,8 +422,21 @@ function validateEntity(
   }
 
   entity.children?.forEach((child, index) => {
-    validateEntity(child, `${path}/children/${index}`, issues, prefabs, entityIds, effectiveId)
+    validateEntity(child, `${path}/children/${index}`, issues, prefabs, compositions, entityIds, effectiveId)
   })
+}
+
+function validateProceduralEntityVersion(entity: EntityDefinition, path: string, allowProcedural: boolean, issues: ValidationIssue[]): void {
+  if (!allowProcedural && (entity.type === 'geometry' || entity.type === 'construction')) {
+    issue(issues, 'PROCEDURAL_ENTITIES_REQUIRE_0_8', `${path}/type`, `Entity type "${entity.type}" requires Anyo world schema 0.8 or newer.`)
+  }
+  if (!allowProcedural && entity.collisionPolicy !== undefined) {
+    issue(issues, 'PROCEDURAL_COLLISION_POLICY_REQUIRES_0_8', `${path}/collisionPolicy`, 'Procedural collision policies require Anyo world schema 0.8 or newer.')
+  }
+  if (!allowProcedural && entity.composition !== undefined) {
+    issue(issues, 'COMPOSITIONS_REQUIRE_0_8', `${path}/composition`, 'Composition instances require Anyo world schema 0.8 or newer.')
+  }
+  entity.children?.forEach((child, index) => validateProceduralEntityVersion(child, `${path}/children/${index}`, allowProcedural, issues))
 }
 
 export function inspectWorldDocument(document: WorldDocument, options: WorldValidationOptions = {}): ValidationResult {
@@ -412,22 +448,42 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
   }
 
   const version = String(document.version ?? '')
-  if (!version.startsWith('0.2') && !version.startsWith('0.3') && !version.startsWith('0.4') && !version.startsWith('0.5') && !version.startsWith('0.6') && !version.startsWith('0.7')) {
+  if (!version.startsWith('0.2') && !version.startsWith('0.3') && !version.startsWith('0.4') && !version.startsWith('0.5') && !version.startsWith('0.6') && !version.startsWith('0.7') && !version.startsWith('0.8')) {
     issue(
       issues,
       'VERSION_UNSUPPORTED',
       '/version',
       `Unsupported document version "${version}".`,
-      'Use version "0.7", or migrate a version "0.2" through "0.6" document.',
+      'Use version "0.8" for procedural worlds, or version "0.7" for the stable legacy contract.',
     )
-  } else if (!version.startsWith('0.7')) {
+  } else if (!version.startsWith('0.7') && !version.startsWith('0.8')) {
     issue(issues, 'VERSION_LEGACY', '/version', `Version ${version} is supported through automatic migration.`, 'Save the document again to upgrade it to 0.7.', 'warning')
   }
+
+  const allowProcedural = version.startsWith('0.8')
+  document.entities?.forEach((entity, index) => validateProceduralEntityVersion(entity, `/entities/${index}`, allowProcedural, issues))
+  for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {
+    for (const [roomIndex, room] of floor.rooms.entries()) {
+      room.entities?.forEach((entity, entityIndex) => validateProceduralEntityVersion(entity, `/building/floors/${floorIndex}/rooms/${roomIndex}/entities/${entityIndex}`, allowProcedural, issues))
+    }
+  }
+  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) validateProceduralEntityVersion({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, allowProcedural, issues)
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) validateProceduralEntityVersion({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, allowProcedural, issues)
+  if (!allowProcedural && document.compositions !== undefined) issue(issues, 'COMPOSITIONS_REQUIRE_0_8', '/compositions', 'Top-level compositions require Anyo world schema 0.8 or newer.')
 
   validateEnvironment(document, issues)
 
   if (document.building && !Array.isArray(document.building.floors)) {
     issue(issues, 'FLOORS_REQUIRED', '/building/floors', 'building.floors must be an array when a building is provided.')
+  }
+
+  if (!version.startsWith('0.8') && document.geometries !== undefined) {
+    issue(issues, 'GEOMETRIES_REQUIRE_0_8', '/geometries', 'Top-level procedural geometries require Anyo world schema 0.8 or newer.')
+  }
+  for (const [geometryId, geometry] of Object.entries(document.geometries ?? {})) {
+    const path = `/geometries/${geometryId}`
+    if (!geometryId.trim()) issue(issues, 'GEOMETRY_ID_REQUIRED', path, 'Geometry ids must be non-empty strings.')
+    if (!isRecord(geometry) || typeof geometry.kind !== 'string' || !geometry.kind.trim()) issue(issues, 'GEOMETRY_DEFINITION_INVALID', path, 'Geometry definitions must be objects with a non-empty kind.')
   }
 
   for (const [assetId, asset] of Object.entries(document.assets ?? {})) {
@@ -440,7 +496,7 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     if (typeof asset.src !== 'string' && !(asset.src && typeof asset.src === 'object' && '$bind' in asset.src)) {
       issue(issues, 'ASSET_SOURCE_REQUIRED', `${path}/src`, 'Asset src must be a string or binding.')
     }
-    if ((version.startsWith('0.4') || version.startsWith('0.5') || version.startsWith('0.6') || version.startsWith('0.7')) && (typeof asset.type !== 'string' || !asset.type.trim())) {
+    if ((version.startsWith('0.4') || version.startsWith('0.5') || version.startsWith('0.6') || version.startsWith('0.7') || version.startsWith('0.8')) && (typeof asset.type !== 'string' || !asset.type.trim())) {
       issue(issues, 'ASSET_TYPE_REQUIRED', `${path}/type`, 'Anyo 0.4, 0.5, and 0.6 assets must provide a non-empty type.')
     } else if (asset.type !== undefined && (typeof asset.type !== 'string' || !asset.type.trim())) {
       issue(issues, 'ASSET_TYPE_INVALID', `${path}/type`, 'Asset type must be a non-empty string when provided.')
@@ -664,18 +720,23 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
       }
 
       for (const [entityIndex, entity] of (room.entities ?? []).entries()) {
-        validateEntity(entity, `${roomPath}/entities/${entityIndex}`, issues, document.prefabs, entityIds)
+        validateEntity(entity, `${roomPath}/entities/${entityIndex}`, issues, document.prefabs, document.compositions, entityIds)
       }
     }
   }
 
   for (const [entityIndex, entity] of (document.entities ?? []).entries()) {
-    validateEntity(entity, `/entities/${entityIndex}`, issues, document.prefabs, entityIds)
+    validateEntity(entity, `/entities/${entityIndex}`, issues, document.prefabs, document.compositions, entityIds)
   }
 
   const prefabIds = new Set<string>()
   for (const [name, prefab] of Object.entries(document.prefabs ?? {})) {
-    validateEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, issues, document.prefabs, prefabIds, '', Boolean(prefab.extends))
+    validateEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, issues, document.prefabs, document.compositions, prefabIds, '', Boolean(prefab.extends))
+  }
+  const compositionIds = new Set<string>()
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) {
+    validateEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, issues, document.prefabs, document.compositions, compositionIds, '', Boolean(composition.extends))
+    if (composition.extends && !document.compositions?.[composition.extends]) issue(issues, 'COMPOSITION_EXTENDS_UNKNOWN', `/compositions/${name}/extends`, `Unknown base composition "${composition.extends}".`)
   }
 
   for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {

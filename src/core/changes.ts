@@ -143,6 +143,7 @@ export function classifyWorldChanges(
   }
 
   const changes: WorldChange[] = []
+  if ((previous.resourceGraph?.key ?? null) !== (next.resourceGraph?.key ?? null)) changes.push({ type: 'resource-graph' })
   appendArchitectureChanges(changes, previous, next, previousDocument, nextDocument)
   const materialIds = changedMaterialIds(previousDocument, nextDocument)
 

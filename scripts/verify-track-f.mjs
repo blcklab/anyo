@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const required = ['docs/performance.md', 'tests/track-f-production.test.mjs', 'scripts/benchmark-track-f.mjs']
+const required = ['.internal/docs/track-f-production-validation.md', 'tests/track-f-production.test.mjs', 'scripts/benchmark-track-f.mjs']
 for (const relative of required) {
   const info = await stat(path.join(root, relative))
   if (!info.isFile()) throw new Error(`Missing Track F file: ${relative}`)

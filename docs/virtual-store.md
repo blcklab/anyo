@@ -1,8 +1,8 @@
-# Virtual stores
+# Virtual store guide
 
-Use Anyo for the store layout and object interactions. Keep product data, inventory, carts, routing, analytics, and checkout in your application.
+Anyo controls space and interaction plumbing. Your application controls products, inventory, cart state, routing, analytics, and checkout.
 
-## Organize the content
+## Recommended layers
 
 ```text
 building.json      rooms, doors, windows, stairs
@@ -35,8 +35,6 @@ application code   cart, API, checkout, UI
 
 ## Application action
 
-Register the action referenced by the product. In this example, `api` and `productPanel` belong to your app:
-
 ```ts
 world.registerAction('inspect-product', async ({ sku }) => {
   const product = await api.products.get(String(sku))
@@ -52,10 +50,11 @@ Use `$bind` for values that should update with application data:
 await world.setData('store.inventory', inventory)
 ```
 
-## Keep the store responsive
+## Performance recommendations
 
-- Reuse prefabs for shelves and other repeated fixtures.
-- Keep product models small and use LOD for distant objects when the renderer supports it.
-- Generate architecture from room definitions.
-- Add product collision only where interaction requires it.
-- Split large stores into connected rooms so portal visibility can hide rooms outside the visible portal chain.
+- use prefabs for repeated fixtures
+- use low-poly glTF assets
+- use entity LOD for detailed products
+- keep architecture procedural
+- do not add collision to small products unless necessary
+- split large stores into connected rooms so portal visibility can hide unreachable chunks

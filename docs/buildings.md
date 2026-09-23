@@ -1,10 +1,8 @@
-# Buildings
-
-Define rooms and connections in JSON. The compiler builds wall segments, floors, colliders, and visibility portals from those declarations.
+# Building construction
 
 ## Rooms
 
-A rectangular room uses a position, size, and height:
+Rooms are rectangular in version 0.2:
 
 ```json
 {
@@ -107,8 +105,8 @@ The compiler creates:
 
 Place the stair footprint inside rooms on both floors so the compiler can associate it with room chunks.
 
-## Automatic doors
+## Automatic door intent
 
-A door starts closed unless you set `open: true`. Setting `automatic: true` records the intended behavior but does not implement it.
+`automatic: true` is declarative intent only. It no longer changes the initial `open` state. A door is closed unless `open: true` is explicitly declared.
 
-Install a system or plugin to detect proximity, animate the door, update its state, and synchronize collision. Validation reports `ANYO_AUTOMATIC_DOOR_SYSTEM_REQUIRED` for automatic-door declarations.
+A complete automatic door still requires an installed runtime system or plugin responsible for proximity detection, actions, animation, state transitions, and collider synchronization. Validation emits `ANYO_AUTOMATIC_DOOR_SYSTEM_REQUIRED` when automatic intent is present without claiming that the behavior exists.

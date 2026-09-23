@@ -1,6 +1,6 @@
 # Anime visual style
 
-Set an environment profile to give ordinary materials a consistent anime style:
+Anyo keeps anime styling renderer-neutral. A world opts into a profile through its environment:
 
 ```json
 {
@@ -18,7 +18,7 @@ Set an environment profile to give ordinary materials a consistent anime style:
 
 Available profiles are `standard`, `anime-soft`, `anime`, and `anime-cinematic`.
 
-Override individual materials when needed. Here, the pink material adjusts toon shading and the glass keeps PBR:
+A material may override the world profile:
 
 ```json
 {
@@ -40,4 +40,4 @@ Override individual materials when needed. Here, the pink material adjusts toon 
 }
 ```
 
-The Sekai64 adapter applies the profile to ordinary materials. Explicit PBR materials and generated windows keep PBR shading. See [visual settings](visual-contract.md) for lighting and color management.
+The Sekai64 renderer applies the global toon profile to ordinary materials. Explicit PBR materials and generated window primitives remain PBR, which prevents glass and transparent surfaces from receiving an unsuitable opaque toon treatment.

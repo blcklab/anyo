@@ -1,22 +1,26 @@
 # Contributing
 
-Install dependencies and run the checks from the project root:
+## Setup
 
 ```bash
-npm ci
+npm install
 npm run check
 ```
 
-Use `npm test` for the build and test suite, or `npm run test:run` after a build. See [tests](tests/README.md) for details.
+## Design rules
 
-## Working on Anyo
-
-Keep the world compiler independent of rendering engines. Add renderer-specific code in adapters and optional behavior in plugins or systems. Core modules should keep working without mandatory runtime dependencies or a browser DOM.
-
-World JSON is data. Register executable behavior in application code, and keep renderer handles and other live objects out of serialized documents.
-
-Add regression tests for behavior changes, especially geometry, validation, collision, updates, and lifecycle. Update the public docs when an API or its behavior changes.
+- Keep the architectural compiler renderer-independent.
+- Do not add mandatory runtime dependencies to core modules.
+- Add new behavior through focused plugins or adapters.
+- Preserve declarative JSON and avoid executable code in documents.
+- Include tests for geometry, normalization, collision, and runtime changes.
+- Keep public APIs typed and SSR-safe where practical.
 
 ## Pull requests
 
-Explain the problem, what changes for the caller, and how you tested it. Include a small before/after example when it makes the change easier to review. Leave generated `dist` files out of the commit.
+A pull request should include:
+
+- a clear problem statement
+- tests for behavior changes
+- documentation for public API changes
+- no generated `dist` files unless the repository policy changes

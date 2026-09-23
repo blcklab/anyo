@@ -1,6 +1,6 @@
-# Plugins
+# Plugin architecture
 
-Use a plugin to extend world compilation, set up behavior, listen for events, or clean up resources when a world is replaced.
+A plugin may participate in compile time, setup, frame updates, and disposal.
 
 ```ts
 import type { WorldPlugin } from '@blcklab/anyo'
@@ -12,20 +12,19 @@ export function analyticsPlugin(): WorldPlugin {
     name: 'example:analytics',
 
     setup({ world }) {
-      off = world.on<{ roomId: string }>('room:enter', ({ roomId }) => {
+      off = world.on('room:enter', ({ roomId }) => {
         console.log('Entered', roomId)
       })
     },
 
-    teardown() {
+    dispose() {
       off?.()
-      off = undefined
     },
   }
 }
 ```
 
-## Extend compilation
+## Compile plugin
 
 ```ts
 export function customCompiler(): WorldPlugin {
@@ -40,7 +39,7 @@ export function customCompiler(): WorldPlugin {
 
 ## Plugin order
 
-Plugins compile in the order you pass them. The standard preset runs:
+Compilation runs in array order. The standard preset uses:
 
 1. building
 2. entities
@@ -53,18 +52,14 @@ Building must compile before entities because room chunks need to exist before e
 
 Duplicate plugin names are rejected.
 
-`teardown()` releases resources for the loaded document before the same plugin is set up for a replacement. Use `dispose()` for final cleanup when the world itself is disposed. Keep subscriptions and per-document state in the teardown path.
-
 ## Runtime systems versus plugins
 
-Use plugins for compilation, interactions, DOM integration, and exploration.
+Plugins remain the correct extension point for compilation, interactions, DOM integration, exploration, and lower-frequency runtime behavior.
 
-Use a `WorldSystem` for simulation that needs fixed steps or temporary transforms:
+Use a `WorldSystem` for high-frequency simulation that needs deterministic phases or transient transforms:
 
 ```ts
-import type { WorldSystem } from '@blcklab/anyo'
-
-const system: WorldSystem = {
+const system = {
   name: 'example:motion',
   fixedUpdate(delta, context) {
     // Physics or deterministic simulation.
@@ -78,4 +73,6 @@ const system: WorldSystem = {
 }
 ```
 
-A package can expose both: a plugin for setup and compilation, and a system for simulation. See [runtime systems](runtime-systems.md).
+Systems do not replace plugins. A package may expose both: a plugin for compile/setup behavior and a system for its hot runtime loop.
+
+See `runtime-systems.md`.

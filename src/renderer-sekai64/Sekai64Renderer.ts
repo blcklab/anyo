@@ -17,6 +17,7 @@ import {
   PlaneGeometry,
   PointLight,
   Scene,
+  SphereGeometry,
   StandardMaterial,
   TextMesh,
   SEKAI64_VERSION,
@@ -61,6 +62,8 @@ import { Sekai64FrameDriver } from './Sekai64FrameDriver.js'
 import { Sekai64XRBridge } from './Sekai64XRBridge.js'
 import { toSekaiTextOptions } from './textOptions.js'
 import { normalizeEnvironmentDefinition } from '../core/visualContract.js'
+import { createSekai64ResourceAdapterFromNativeAccess, type Sekai64ResourceAdapter } from './Sekai64ResourceAdapter.js'
+import { createResourceAssetLoaderOptions } from './resourceAssetHooks.js'
 
 const RENDER_MASK_LIMIT = 0x7fff
 const PICKING_SHIFT = 16
@@ -311,6 +314,8 @@ export class Sekai64Renderer implements RendererAdapter {
   private unitBeveledBox: BeveledBoxGeometry | null = null
   private unitPlane: PlaneGeometry | null = null
   private unitCylinder: CylinderGeometry | null = null
+  private unitCone: CylinderGeometry | null = null
+  private unitSphere: SphereGeometry | null = null
   private readonly nodes = new Map<string, Node>()
   private readonly roomGroups = new Map<string, Node>()
   private readonly materials = new Map<string, Material>()
@@ -333,6 +338,7 @@ export class Sekai64Renderer implements RendererAdapter {
   private readonly assetControllers = new Map<string, AbortController>()
   private worldAbort: AbortController | null = null
   private mountGeneration = 0
+  private resourceAdapter: Sekai64ResourceAdapter | null = null
   private document: NormalizedWorldDocument | null = null
   private compiled: CompiledWorld | null = null
   private readonly namedCameras = new Map<string, CompiledCamera>()
@@ -423,6 +429,7 @@ export class Sekai64Renderer implements RendererAdapter {
     this.assertAlive()
     const started = now()
     const engine = await this.ensureEngine()
+    if (this.resourceAdapter) { await this.resourceAdapter.dispose(); this.resourceAdapter = null }
     this.clearMountedWorld()
     this.document = document
     this.compiled = compiled
@@ -449,7 +456,9 @@ export class Sekai64Renderer implements RendererAdapter {
     }
     this.unitPlane = scope.track(new PlaneGeometry({ width: 1, height: 1, label: 'anyo-unit-plane' }))
     this.unitCylinder = scope.track(new CylinderGeometry({ radiusTop: 0.5, radiusBottom: 0.5, height: 1, label: 'anyo-unit-cylinder' }))
-    this.metrics.sharedGeometryCount = this.unitBeveledBox ? 4 : 3
+    this.unitCone = scope.track(new CylinderGeometry({ radiusTop: 0, radiusBottom: 0.5, height: 1, radialSegments: 20, label: 'anyo-unit-cone' }))
+    this.unitSphere = scope.track(new SphereGeometry({ radius: 0.5, widthSegments: 16, heightSegments: 10, label: 'anyo-unit-sphere' }))
+    this.metrics.sharedGeometryCount = this.unitBeveledBox ? 6 : 5
     this.applyVisualConfiguration(engine, document)
     engine.setClearColor(normalizeEnvironmentDefinition(document.environment).background)
     if (compiled.activeCameraId) {
@@ -465,6 +474,12 @@ export class Sekai64Renderer implements RendererAdapter {
 
     this.installEnvironment(document)
     this.mountPrimitiveBatches(compiled.primitives, generation)
+    if (compiled.resourceGraph) {
+      const native = this.getNativeAccess()
+      if (!native) throw new Error('Sekai64 native access is unavailable for Anyo ResourceGraph realization.')
+      this.resourceAdapter = createSekai64ResourceAdapterFromNativeAccess(native, createResourceAssetLoaderOptions(this.assetLoaders))
+      await this.resourceAdapter.transition(compiled.resourceGraph)
+    }
     this.metrics.mountDurationMs = now() - started
     this.metrics.mountedPrimitives = compiled.primitives.length
     this.metrics.pendingAssets = this.pendingAssets.size
@@ -534,6 +549,15 @@ export class Sekai64Renderer implements RendererAdapter {
         case 'channels-update':
           await this.updateChannels(change.channels)
           break
+        case 'resource-graph':
+          if (!this.resourceAdapter && compiled.resourceGraph) {
+            const native = this.getNativeAccess()
+            if (!native) throw new Error('Sekai64 native access is unavailable for Anyo ResourceGraph realization.')
+            this.resourceAdapter = createSekai64ResourceAdapterFromNativeAccess(native, createResourceAssetLoaderOptions(this.assetLoaders))
+          }
+          await this.resourceAdapter?.transition(compiled.resourceGraph ?? null)
+          if (!compiled.resourceGraph && this.resourceAdapter) { await this.resourceAdapter.dispose(); this.resourceAdapter = null }
+          break
         case 'rendering-intent':
           this.applyVisualConfiguration(this.engine as Engine, document)
           break
@@ -548,7 +572,11 @@ export class Sekai64Renderer implements RendererAdapter {
 
   applyRuntimeTransforms(updates: readonly RuntimeTransformUpdate[]): void {
     this.assertAlive()
-    for (const update of updates) this.applyPrimitiveTransform(update.primitive)
+    for (const update of updates) {
+      if (update.primitive) { this.applyPrimitiveTransform(update.primitive); continue }
+      const node = this.externalNodeByPrimitiveId.get(update.resourceInstanceId ?? update.primitiveId)
+      if (node) node.setTransform({ position: update.transform.position, rotation: update.transform.rotation, scale: update.transform.scale })
+    }
   }
 
   async updatePrimitive(primitive: CompiledPrimitive): Promise<void> {
@@ -966,7 +994,7 @@ export class Sekai64Renderer implements RendererAdapter {
       this.primitiveCache.set(primitive.id, primitive)
       const canInstance = this.capabilityState.instancing
         && primitive.static === true
-        && (primitive.kind === 'box' || primitive.kind === 'plane' || primitive.kind === 'cylinder')
+        && (primitive.kind === 'box' || primitive.kind === 'plane' || primitive.kind === 'cylinder' || primitive.kind === 'disc' || primitive.kind === 'cone' || primitive.kind === 'sphere')
         && Boolean(primitive.batchKey)
       if (!canInstance) {
         singles.push(primitive)
@@ -1040,6 +1068,9 @@ export class Sekai64Renderer implements RendererAdapter {
       case 'box':
       case 'plane':
       case 'cylinder':
+      case 'disc':
+      case 'cone':
+      case 'sphere':
         node = new Mesh({
           id: primitive.id,
           geometry: this.geometryFor(primitive),
@@ -1190,7 +1221,9 @@ export class Sekai64Renderer implements RendererAdapter {
     if (primitive.kind === 'box' && primitive.tags?.includes('entity') && this.unitBeveledBox) return this.unitBeveledBox
     if (primitive.kind === 'box' && this.unitBox) return this.unitBox
     if (primitive.kind === 'plane' && this.unitPlane) return this.unitPlane
-    if (primitive.kind === 'cylinder' && this.unitCylinder) return this.unitCylinder
+    if ((primitive.kind === 'cylinder' || primitive.kind === 'disc') && this.unitCylinder) return this.unitCylinder
+    if (primitive.kind === 'cone' && this.unitCone) return this.unitCone
+    if (primitive.kind === 'sphere' && this.unitSphere) return this.unitSphere
     throw new Error(`No shared Sekai64 geometry is available for primitive "${primitive.id}" (${primitive.kind}).`)
   }
 
@@ -1514,6 +1547,15 @@ export class Sekai64Renderer implements RendererAdapter {
       layerMask: RENDER_MASK_LIMIT,
     })
     directional.setTransform({ position: sun.position })
+    const sunLengthSquared = sun.position[0] ** 2 + sun.position[1] ** 2 + sun.position[2] ** 2
+    if (Number.isFinite(sunLengthSquared) && sunLengthSquared > 1e-12) {
+      // Anyo's renderer-neutral sun.position describes the apparent sun location.
+      // Sekai64 DirectionalLight instead consumes the direction that light rays travel,
+      // so point those rays from the authored sun position toward the world origin.
+      directional.direction.set(-sun.position[0], -sun.position[1], -sun.position[2]).normalize()
+    } else {
+      directional.direction.set(0, -1, 0)
+    }
     directional.castShadow = Boolean(sun.castShadow && sun.shadow.enabled && this.capabilityState.shadows)
     this.scene.add(directional)
   }
@@ -1549,7 +1591,7 @@ export class Sekai64Renderer implements RendererAdapter {
   private effectiveScale(primitive: CompiledPrimitive): Vec3 {
     const base = primitive.transform.scale
     const size = primitive.size ?? [1, 1, 1]
-    if (primitive.kind === 'box' || primitive.kind === 'plane' || primitive.kind === 'cylinder') {
+    if (primitive.kind === 'box' || primitive.kind === 'plane' || primitive.kind === 'cylinder' || primitive.kind === 'disc' || primitive.kind === 'cone' || primitive.kind === 'sphere') {
       return [base[0] * size[0], base[1] * size[1], base[2] * size[2]]
     }
     return [base[0], base[1], base[2]]
@@ -1580,6 +1622,7 @@ export class Sekai64Renderer implements RendererAdapter {
   }
 
   private clearMountedWorld(): void {
+    this.resourceAdapter = null
     this.mountGeneration += 1
     this.worldAbort?.abort()
     this.worldAbort = null
@@ -1603,6 +1646,8 @@ export class Sekai64Renderer implements RendererAdapter {
     this.unitBeveledBox = null
     this.unitPlane = null
     this.unitCylinder = null
+    this.unitCone = null
+    this.unitSphere = null
     this.nodes.clear()
     this.roomGroups.clear()
     this.materials.clear()

@@ -12,8 +12,8 @@ import type { ValidationIssue } from './errors.js'
 import { getDataPath } from './bindings.js'
 
 const BUILTIN_ENTITY_TYPES = new Set([
-  'box', 'plane', 'cylinder', 'text', 'image', 'model', 'light', 'group',
-  'trigger', 'audio', 'portal', 'web-surface',
+  'box', 'plane', 'cylinder', 'disc', 'cone', 'sphere', 'text', 'image', 'model', 'light', 'group',
+  'trigger', 'audio', 'portal', 'web-surface', 'geometry', 'construction',
 ])
 const BUILTIN_COMPONENT_TYPES = new Set([
   'anyo.interactable', 'anyo.collider', 'anyo.audio', 'anyo.vfx', 'anyo.map', 'anyo.mapFeature', 'anyo.lod',
@@ -22,13 +22,13 @@ const BUILTIN_COMPONENT_TYPES = new Set([
 const MARKER_COMPONENTS = new Set(['anyo.vfx', 'anyo.map', 'anyo.mapFeature', 'anyo.animation', 'anyo.rigidBody', 'anyo.characterController', 'anyo.joint', 'anyo.billboard'])
 
 const TOP_LEVEL_FIELDS = new Set([
-  '$schema', 'version', 'revision', 'units', 'metadata', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials',
-  'assets', 'prefabs', 'building', 'entities', 'exploration', 'visibility', 'extensions',
+  '$schema', 'version', 'revision', 'units', 'metadata', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'geometries',
+  'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 const ENTITY_FIELDS = new Set([
-  'id', 'authoringId', 'instanceId', 'use', 'overrides', 'repeat', 'type', 'room', 'position', 'rotation',
-  'scale', 'size', 'radius', 'height', 'surface', 'material', 'asset', 'src',
-  'content', 'color', 'intensity', 'lightType', 'range', 'decay', 'castShadow', 'receiveShadow', 'shadow', 'collision', 'visible', 'children',
+  'id', 'authoringId', 'instanceId', 'use', 'composition', 'overrides', 'repeat', 'type', 'room', 'position', 'rotation',
+  'scale', 'size', 'radius', 'height', 'surface', 'material', 'geometry', 'construction', 'materialBindings', 'asset', 'src',
+  'content', 'color', 'intensity', 'lightType', 'range', 'decay', 'castShadow', 'receiveShadow', 'shadow', 'collision', 'collisionPolicy', 'visible', 'children',
   'components', 'interaction', 'trigger', 'audio', 'lod', 'loading', 'webSurface',
   'data', 'style', 'enabled', 'layers', 'pickLayers', 'editorLayers', 'events', 'extensions',
   'version', 'extends', 'provenance',
@@ -138,6 +138,7 @@ function inspectEntity(
   roomIds: ReadonlySet<string>,
   materialIds: ReadonlySet<string>,
   assetIds: ReadonlySet<string>,
+  geometryIds: ReadonlySet<string>,
   options: WorldValidationOptions,
   mode: ValidationMode,
   issues: ValidationIssue[],
@@ -151,6 +152,12 @@ function inspectEntity(
   }
   if (entity.material && !materialIds.has(entity.material)) {
     add(issues, severity(mode, true), 'ANYO_MATERIAL_NOT_FOUND', `${path}/material`, `Material "${entity.material}" does not exist.`)
+  }
+  if (entity.type === 'geometry' && typeof entity.geometry === 'string' && !geometryIds.has(entity.geometry)) {
+    add(issues, severity(mode, true), 'ANYO_GEOMETRY_NOT_FOUND', `${path}/geometry`, `Geometry "${entity.geometry}" does not exist.`)
+  }
+  for (const [binding, materialId] of Object.entries(entity.materialBindings ?? {})) {
+    if (!materialIds.has(materialId)) add(issues, severity(mode, true), 'ANYO_MATERIAL_NOT_FOUND', `${path}/materialBindings/${binding}`, `Material "${materialId}" does not exist.`)
   }
   if (entity.asset && !assetIds.has(entity.asset)) {
     add(issues, severity(mode, true), 'ANYO_ASSET_NOT_FOUND', `${path}/asset`, `Asset "${entity.asset}" does not exist.`)
@@ -169,7 +176,7 @@ function inspectEntity(
     }
   }
   inspectComponents(entity, path, options, mode, issues)
-  entity.children?.forEach((child, index) => inspectEntity(child, `${path}/children/${index}`, document, roomIds, materialIds, assetIds, options, mode, issues))
+  entity.children?.forEach((child, index) => inspectEntity(child, `${path}/children/${index}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues))
 }
 
 function inspectBindings(value: unknown, path: string, data: unknown, options: WorldValidationOptions, mode: ValidationMode, issues: ValidationIssue[], seen = new WeakSet<object>()): void {
@@ -255,6 +262,7 @@ export function inspectWorldSemantics(document: WorldDocument, options: WorldVal
   const roomIds = new Set(rooms.map((room) => room.id))
   const materialIds = new Set(Object.keys(document.materials ?? {}))
   const assetIds = new Set(Object.keys(document.assets ?? {}))
+  const geometryIds = new Set(Object.keys(document.geometries ?? {}))
 
   const environmentMap = document.environment?.lighting?.environmentMap
   if (environmentMap && !assetIds.has(environmentMap)) add(issues, severity(mode, true), 'ANYO_ENVIRONMENT_MAP_ASSET_NOT_FOUND', '/environment/lighting/environmentMap', `Environment-map asset "${environmentMap}" does not exist.`)
@@ -270,15 +278,16 @@ export function inspectWorldSemantics(document: WorldDocument, options: WorldVal
         if (opening.material && !materialIds.has(opening.material)) add(issues, severity(mode, true), 'ANYO_MATERIAL_NOT_FOUND', `${roomPath}/openings/${openingIndex}/material`, `Material "${opening.material}" does not exist.`)
         if (opening.automatic) add(issues, 'warning', 'ANYO_AUTOMATIC_DOOR_SYSTEM_REQUIRED', `${roomPath}/openings/${openingIndex}/automatic`, 'Automatic door intent requires an installed trigger/action/animation system; it does not automatically open the door.')
       }
-      room.entities?.forEach((entity, index) => inspectEntity(entity, `${roomPath}/entities/${index}`, document, roomIds, materialIds, assetIds, options, mode, issues))
+      room.entities?.forEach((entity, index) => inspectEntity(entity, `${roomPath}/entities/${index}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues))
     }
     for (const [stairIndex, stair] of (floor.stairs ?? []).entries()) {
       if (stair.material && !materialIds.has(stair.material)) add(issues, severity(mode, true), 'ANYO_MATERIAL_NOT_FOUND', `/building/floors/${floorIndex}/stairs/${stairIndex}/material`, `Material "${stair.material}" does not exist.`)
       if (!floorIds.has(stair.fromFloor) || !floorIds.has(stair.toFloor)) continue
     }
   }
-  document.entities?.forEach((entity, index) => inspectEntity(entity, `/entities/${index}`, document, roomIds, materialIds, assetIds, options, mode, issues))
-  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) inspectEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, document, roomIds, materialIds, assetIds, options, mode, issues)
+  document.entities?.forEach((entity, index) => inspectEntity(entity, `/entities/${index}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues))
+  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) inspectEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues)
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) inspectEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues)
   for (const [event, actions] of Object.entries(document.events ?? {})) actions.forEach((action, index) => inspectAction(action, `/events/${event}/${index}`, options, mode, issues))
   if (document.exploration?.spawn?.room && !roomIds.has(document.exploration.spawn.room)) add(issues, severity(mode, true), 'ANYO_SPAWN_ROOM_NOT_FOUND', '/exploration/spawn/room', `Spawn room "${document.exploration.spawn.room}" does not exist.`)
   inspectBindings(document, '', document.data ?? {}, options, mode, issues)

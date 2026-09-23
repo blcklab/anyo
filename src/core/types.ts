@@ -1,3 +1,6 @@
+import type { GeometryDefinition } from '../geometry/types/index.js'
+import type { ArchitectureDefinition } from '../geometry/architecture/types.js'
+import type { ResourceGraph } from '../resources/graph.js'
 export type Vec2 = readonly [number, number]
 export type Vec3 = readonly [number, number, number]
 export type Euler = readonly [number, number, number]
@@ -381,7 +384,7 @@ export interface LodSourceDefinition {
 }
 
 
-export type WorldDocumentVersion = '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '0.7' | string
+export type WorldDocumentVersion = '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '0.7' | '0.8' | string
 
 export type CameraLookAtDefinition = Vec3 | { entity: string; offset?: Vec3 }
 export interface CameraFollowDefinition {
@@ -530,11 +533,21 @@ export interface ExtensionResolutionDiagnostic {
   message: string
 }
 
-export interface PrefabDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use'> {
+export interface PrefabDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition'> {
   id?: string
   version?: string
   extends?: string
   provenance?: { package?: string; source?: string; license?: string }
+}
+
+
+export interface CompositionDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition' | 'type'> {
+  id?: string
+  version?: string
+  extends?: string
+  provenance?: { package?: string; source?: string; license?: string }
+  /** Compositions normalize to renderer-neutral group roots. */
+  type?: 'group'
 }
 
 export interface AssetDefinition {
@@ -970,7 +983,14 @@ export interface WebSurfaceTexturePresentation {
   glass?: WebSurfaceGlassOverlayDefinition
 }
 
-export type WebSurfacePresentation = WebSurfaceTexturePresentation
+/** Browser-native DOM/iframe presentation composited above the renderer canvas. */
+export interface WebSurfaceOverlayPresentation {
+  type: 'overlay'
+  /** Stable logical CSS viewport. Camera distance changes projection only, not responsive layout. */
+  resolution?: Size2
+}
+
+export type WebSurfacePresentation = WebSurfaceTexturePresentation | WebSurfaceOverlayPresentation
 
 /** Existing transform and entity size continue to define the ordinary renderer-neutral plane. */
 export interface WebSurfacePlaneTarget {
@@ -1065,7 +1085,9 @@ export interface EntityDefinition {
   /** Optional globally stable authoring identity. Editors may add this without changing runtime meaning. */
   authoringId?: string
   use?: string
-  /** Stable prefab instance identity; defaults to id. */
+  /** Schema-0.8 reusable composition id. Compositions normalize through the existing template engine. */
+  composition?: string
+  /** Stable prefab/composition instance identity; defaults to id. */
   instanceId?: string
   /** JSON-Pointer keyed overrides applied to the referenced prefab before instance fields. */
   overrides?: Record<string, JsonValue>
@@ -1074,6 +1096,9 @@ export interface EntityDefinition {
     | 'box'
     | 'plane'
     | 'cylinder'
+    | 'disc'
+    | 'cone'
+    | 'sphere'
     | 'text'
     | 'image'
     | 'model'
@@ -1083,6 +1108,8 @@ export interface EntityDefinition {
     | 'audio'
     | 'portal'
     | 'web-surface'
+    | 'geometry'
+    | 'construction'
     | string
   room?: string
   position?: Vec3
@@ -1093,6 +1120,12 @@ export interface EntityDefinition {
   height?: number
   surface?: SurfaceAttachmentDefinition
   material?: string
+  /** Named geometry id or inline procedural geometry definition (world schema 0.8+). */
+  geometry?: string | GeometryDefinition
+  /** Existing S7 semantic construction definition (world schema 0.8+). */
+  construction?: ArchitectureDefinition
+  /** Semantic geometry-group name (or construction role) to world material id. */
+  materialBindings?: Record<string, string>
   asset?: string
   src?: Bindable<string>
   content?: Bindable<string>
@@ -1105,6 +1138,12 @@ export interface EntityDefinition {
   receiveShadow?: Bindable<boolean>
   shadow?: ShadowDefinition
   collision?: boolean
+  /**
+   * Procedural collision lowering policy for schema 0.8 geometry/construction entities.
+   * `bounds` emits a coarse collider from geometry bounds; `semantic`/`parts` lower
+   * semantic construction parts so openings remain traversable; `none` disables it.
+   */
+  collisionPolicy?: 'none' | 'bounds' | 'semantic' | 'parts'
   visible?: Bindable<boolean>
   children?: EntityDefinition[]
   components?: ComponentDefinition[]
@@ -1203,8 +1242,12 @@ export interface WorldDocument {
   requires?: Record<string, ExtensionRequirementDefinition>
   events?: Record<string, ActionDefinition[]>
   materials?: Record<string, MaterialDefinition>
+  /** Reusable renderer-neutral procedural geometry definitions (world schema 0.8+). */
+  geometries?: Record<string, GeometryDefinition>
   assets?: Record<string, AssetDefinition>
   prefabs?: Record<string, PrefabDefinition>
+  /** Reusable renderer-neutral semantic subtrees (world schema 0.8+). */
+  compositions?: Record<string, CompositionDefinition>
   building?: BuildingDefinition
   entities?: EntityDefinition[]
   exploration?: ExplorationDefinition
@@ -1274,6 +1317,9 @@ export type PrimitiveKind =
   | 'box'
   | 'plane'
   | 'cylinder'
+  | 'disc'
+  | 'cone'
+  | 'sphere'
   | 'text'
   | 'image'
   | 'model'
@@ -1294,6 +1340,10 @@ export interface CompiledEntityNode {
   sourcePath: string
   authoring: AuthoringReference
   primitiveIds: string[]
+  /** Stable ResourceGraph instance identities owned by this entity. */
+  resourceInstanceIds: string[]
+  /** Authored world transforms for ResourceGraph instances, used to preserve local offsets during runtime entity motion. */
+  resourceInstanceTransforms: Record<string, TransformDefinition>
   enabled?: boolean
   renderMask?: number
   pickingMask?: number
@@ -1420,6 +1470,8 @@ export interface CompiledWorld {
   materialById: Map<string, CompiledMaterial>
   entityById: Map<string, CompiledEntityNode>
   entityByAuthoringId: Map<string, CompiledEntityNode>
+  /** Internal renderer-neutral procedural resource graph compiled from the world document. */
+  resourceGraph?: ResourceGraph
   metadata?: Readonly<Record<string, unknown>>
 }
 
@@ -1634,6 +1686,7 @@ export type WorldChange =
   | { type: 'camera-activate'; cameraId: string; transition?: CameraTransitionDefinition }
   | { type: 'channels-update'; channels: CompiledWorldChannels }
   | { type: 'rendering-intent'; rendering: RenderingIntentDefinition }
+  | { type: 'resource-graph' }
   | { type: 'world-rebuild'; reason: string }
 
 export type RuntimeTransformMode = 'override' | 'additive'
@@ -1668,9 +1721,12 @@ export interface RuntimeTransformLayerSnapshot {
 export interface RuntimeTransformUpdate {
   entityId: string
   authoringId: string
+  /** Legacy primitive id or ResourceGraph semantic instance id. */
   primitiveId: string
   transform: TransformDefinition
-  primitive: CompiledPrimitive
+  /** Present for legacy compiled primitives; omitted for ResourceGraph-backed instances. */
+  primitive?: CompiledPrimitive
+  resourceInstanceId?: string
 }
 
 export interface RuntimeTransformStoreLike {
@@ -1846,6 +1902,7 @@ export type StablePatchTarget =
   | { materialId: string }
   | { assetId: string }
   | { prefabId: string }
+  | { compositionId: string }
   | { cameraId: string }
   | { componentId: string; entityId?: string }
 
@@ -1908,6 +1965,7 @@ export interface CompilerDependencyGraph {
   materialConsumers: ReadonlyMap<string, ReadonlySet<string>>
   assetConsumers: ReadonlyMap<string, ReadonlySet<string>>
   prefabInstances: ReadonlyMap<string, ReadonlySet<string>>
+  compositionInstances: ReadonlyMap<string, ReadonlySet<string>>
   cameraDependents: ReadonlyMap<string, ReadonlySet<string>>
   variableBindings: ReadonlyMap<string, ReadonlySet<string>>
 }

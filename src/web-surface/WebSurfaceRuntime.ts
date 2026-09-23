@@ -104,7 +104,7 @@ function createSurfaceElement(definition: CompiledWebSurface, primitive: Compile
     position: 'fixed',
     left: '0',
     top: '0',
-    transformOrigin: 'center',
+    transformOrigin: '0 0',
     overflow: definition.interaction.scroll ? 'auto' : 'hidden',
     pointerEvents: 'none',
     visibility: 'hidden',
@@ -136,6 +136,65 @@ function presentationIdentity(definition: CompiledWebSurface): string {
 
 function roundLayout(value: number): number {
   return Math.round(value * 1000) / 1000
+}
+
+function formatProjectiveCoefficient(value: number): string {
+  // Perspective terms can be far smaller than one CSS pixel. Rounding them to
+  // layout precision (1e-3) destroys the homography at oblique view angles.
+  const normalized = Math.abs(value) <= 1e-12 ? 0 : Math.round(value * 1e12) / 1e12
+  return String(normalized)
+}
+
+function domLogicalViewport(definition: CompiledWebSurface, projectedWidth: number, projectedHeight: number): readonly [number, number] {
+  const resolution = definition.presentation?.resolution
+  if (resolution
+    && Number.isFinite(resolution[0]) && resolution[0] > 0
+    && Number.isFinite(resolution[1]) && resolution[1] > 0) {
+    return [Math.max(1, roundLayout(resolution[0])), Math.max(1, roundLayout(resolution[1]))]
+  }
+  // Legacy DOM-only surfaces without an authored presentation resolution keep
+  // the historical projected-pixel viewport for compatibility. Authors that
+  // need stable responsive layout should declare presentation.resolution.
+  return [Math.max(1, roundLayout(projectedWidth)), Math.max(1, roundLayout(projectedHeight))]
+}
+
+function projectiveMatrix3d(
+  corners: readonly [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }, { x: number; y: number }],
+  width: number,
+  height: number,
+): string | null {
+  if (!(width > 0) || !(height > 0)) return null
+  const [p0, p1, p2, p3] = corners
+  const dx1 = p1.x - p2.x
+  const dx2 = p3.x - p2.x
+  const dx3 = p0.x - p1.x + p2.x - p3.x
+  const dy1 = p1.y - p2.y
+  const dy2 = p3.y - p2.y
+  const dy3 = p0.y - p1.y + p2.y - p3.y
+
+  let g = 0
+  let h = 0
+  const denominator = dx1 * dy2 - dx2 * dy1
+  if (Math.abs(dx3) > 1e-9 || Math.abs(dy3) > 1e-9) {
+    if (!Number.isFinite(denominator) || Math.abs(denominator) <= 1e-9) return null
+    g = (dx3 * dy2 - dx2 * dy3) / denominator
+    h = (dx1 * dy3 - dx3 * dy1) / denominator
+  }
+
+  const a = p1.x - p0.x + g * p1.x
+  const b = p3.x - p0.x + h * p3.x
+  const c = p0.x
+  const d = p1.y - p0.y + g * p1.y
+  const e = p3.y - p0.y + h * p3.y
+  const f = p0.y
+  const values = [
+    a / width, d / width, 0, g / width,
+    b / height, e / height, 0, h / height,
+    0, 0, 1, 0,
+    c, f, 0, 1,
+  ]
+  if (!values.every(Number.isFinite)) return null
+  return `matrix3d(${values.map(formatProjectiveCoefficient).join(',')})`
 }
 
 export class WebSurfaceRuntime {
@@ -418,19 +477,32 @@ export class WebSurfaceRuntime {
   }
 
   private applyLayout(surface: MountedSurface, projection: NonNullable<ReturnType<typeof projectWebSurface>>): void {
-    const width = Math.max(1, roundLayout(projection.width))
-    const height = Math.max(1, roundLayout(projection.height))
-    const left = roundLayout(projection.centerX - width / 2)
-    const top = roundLayout(projection.centerY - height / 2)
-    const angle = roundLayout(projection.angle)
+    // Keep the application's CSS/layout viewport independent from camera
+    // distance. When an authored presentation resolution exists, that stable
+    // logical size is projected onto the four world-space screen corners.
+    // Only the on-screen transform changes as the camera moves; responsive
+    // layout does not collapse simply because the monitor is farther away.
+    const [width, height] = domLogicalViewport(surface.definition, projection.width, projection.height)
     const zIndex = Math.max(0, Math.round((1 - projection.depth) * 100000))
-    const key = `${left}|${top}|${width}|${height}|${angle}|${zIndex}`
+    const rootRect = typeof this.root?.getBoundingClientRect === 'function'
+      ? this.root.getBoundingClientRect()
+      : null
+    const rootLeft = rootRect && Number.isFinite(rootRect.left) ? rootRect.left : 0
+    const rootTop = rootRect && Number.isFinite(rootRect.top) ? rootRect.top : 0
+    const localCorners = projection.corners.map(point => ({
+      ...point,
+      x: point.x - rootLeft,
+      y: point.y - rootTop,
+    })) as unknown as typeof projection.corners
+    const transform = projectiveMatrix3d(localCorners, width, height)
+      ?? `translate3d(${roundLayout(projection.centerX - rootLeft - width / 2)}px,${roundLayout(projection.centerY - rootTop - height / 2)}px,0) rotate(${roundLayout(projection.angle)}rad)`
+    const key = `${width}|${height}|${zIndex}|${transform}`
     if (surface.layoutKey === key) return
     surface.layoutKey = key
     surface.element.style.width = `${width}px`
     surface.element.style.height = `${height}px`
     surface.element.style.zIndex = String(zIndex)
-    surface.element.style.transform = `translate3d(${left}px,${top}px,0) rotate(${angle}rad)`
+    surface.element.style.transform = transform
   }
 
   private setActive(surface: MountedSurface, active: boolean, manageFallback = true): void {

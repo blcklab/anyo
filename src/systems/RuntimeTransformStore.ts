@@ -151,15 +151,16 @@ function inferredStaticParent(entity: CompiledEntityNode): ComposableTransform |
   }
 }
 
-function transformPrimitive(
+function transformOwnedTransform(
   entity: CompiledEntityNode,
   finalEntityTransform: TransformDefinition,
-  primitive: CompiledPrimitive,
+  baseTransform: TransformDefinition,
+  direct = false,
 ): TransformDefinition {
-  if (primitive.transform === entity.transform || primitive.id === `entity:${entity.id}`) return finalEntityTransform
+  if (direct || baseTransform === entity.transform) return finalEntityTransform
   const entityMatrix = entity.transform.matrix
   const finalMatrix = finalEntityTransform.matrix
-  const primitiveMatrix = primitive.transform.matrix
+  const primitiveMatrix = baseTransform.matrix
   if (entityMatrix && finalMatrix && primitiveMatrix) {
     try {
       const delta = multiplyMatrix4(finalMatrix, invertMatrix4(entityMatrix))
@@ -171,23 +172,31 @@ function transformPrimitive(
 
   const baseQuaternion = entity.transform.quaternion ?? quaternionFromEulerXYZ(entity.transform.rotation)
   const finalQuaternion = finalEntityTransform.quaternion ?? quaternionFromEulerXYZ(finalEntityTransform.rotation)
-  const primitiveQuaternion = primitive.transform.quaternion ?? quaternionFromEulerXYZ(primitive.transform.rotation)
+  const primitiveQuaternion = baseTransform.quaternion ?? quaternionFromEulerXYZ(baseTransform.rotation)
   const deltaQuaternion = multiplyQuaternions(finalQuaternion, [-baseQuaternion[0], -baseQuaternion[1], -baseQuaternion[2], baseQuaternion[3]])
   const quaternion = multiplyQuaternions(deltaQuaternion, primitiveQuaternion)
   return finalizeTransform({
     position: [
-      primitive.transform.position[0] + finalEntityTransform.position[0] - entity.transform.position[0],
-      primitive.transform.position[1] + finalEntityTransform.position[1] - entity.transform.position[1],
-      primitive.transform.position[2] + finalEntityTransform.position[2] - entity.transform.position[2],
+      baseTransform.position[0] + finalEntityTransform.position[0] - entity.transform.position[0],
+      baseTransform.position[1] + finalEntityTransform.position[1] - entity.transform.position[1],
+      baseTransform.position[2] + finalEntityTransform.position[2] - entity.transform.position[2],
     ],
     rotation: eulerXYZFromQuaternion(quaternion),
     quaternion,
     scale: [
-      primitive.transform.scale[0] * finalEntityTransform.scale[0] / (entity.transform.scale[0] || 1),
-      primitive.transform.scale[1] * finalEntityTransform.scale[1] / (entity.transform.scale[1] || 1),
-      primitive.transform.scale[2] * finalEntityTransform.scale[2] / (entity.transform.scale[2] || 1),
+      baseTransform.scale[0] * finalEntityTransform.scale[0] / (entity.transform.scale[0] || 1),
+      baseTransform.scale[1] * finalEntityTransform.scale[1] / (entity.transform.scale[1] || 1),
+      baseTransform.scale[2] * finalEntityTransform.scale[2] / (entity.transform.scale[2] || 1),
     ],
   })
+}
+
+function transformPrimitive(
+  entity: CompiledEntityNode,
+  finalEntityTransform: TransformDefinition,
+  primitive: CompiledPrimitive,
+): TransformDefinition {
+  return transformOwnedTransform(entity, finalEntityTransform, primitive.transform, primitive.id === `entity:${entity.id}`)
 }
 
 export class RuntimeTransformStore implements RuntimeTransformStoreLike {
@@ -447,6 +456,19 @@ export class RuntimeTransformStore implements RuntimeTransformStoreLike {
           primitiveId,
           transform,
           primitive: { ...primitive, transform },
+        })
+      }
+      for (const resourceInstanceId of entity.resourceInstanceIds) {
+        const baseTransform = entity.resourceInstanceTransforms[resourceInstanceId] ?? entity.transform
+        const transform = isInfluenced
+          ? transformOwnedTransform(entity, finalTransform, baseTransform, baseTransform === entity.transform)
+          : baseTransform
+        updates.push({
+          entityId,
+          authoringId: entity.authoringId,
+          primitiveId: resourceInstanceId,
+          resourceInstanceId,
+          transform,
         })
       }
     }

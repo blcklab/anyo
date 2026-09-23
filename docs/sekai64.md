@@ -1,12 +1,12 @@
 # Sekai64 renderer
 
-Use the Sekai64 adapter to render Anyo worlds with WebGPU or WebGL2. Install the versions tested by this checkout:
+Install:
 
 ```bash
-npm install @blcklab/anyo@0.10.0-rc.1 @blcklab/sekai64@0.8.0-rc.33
+npm install @blcklab/anyo @blcklab/sekai64
 ```
 
-The example assumes an HTML canvas named `canvas`:
+Use:
 
 ```ts
 import { createWorld, explorableBuildingPreset } from '@blcklab/anyo'
@@ -20,8 +20,7 @@ const renderer = new Sekai64Renderer({
 })
 
 const world = createWorld({ renderer, plugins: explorableBuildingPreset() })
-await world.load('/world.json')
-await world.whenReady()
+await world.load(document)
 world.start()
 ```
 
@@ -40,9 +39,9 @@ Anyo point light      → Sekai64 PointLight
 Anyo room             → Sekai64 Node group
 ```
 
-## Shared resources
+## Stable mappings
 
-The adapter maps primitive IDs, rooms, and materials to Sekai64 objects. Repeated shapes share unit geometry and use transforms for sizing. Compatible static primitives may use instancing, with a separate Anyo ID for each instance.
+The adapter maintains deterministic primitive-node, room-group, material, and instance mappings. Shared unit geometry is scaled through transforms. Compatible static primitives may be instanced while preserving per-instance primitive identity.
 
 ## Picking
 
@@ -50,10 +49,24 @@ Interactive products, models, and panels use triangle precision when available. 
 
 ## Assets
 
-Images use `ImageMesh.setSource()` and glTF/GLB models use the registered loader. Loads can be cancelled independently. Results from an earlier world are ignored after replacement. See [assets](assets.md) for custom formats.
+Images use `ImageMesh.setSource()` and models use the glTF loader. Loads are independently cancellable and guarded by a world-generation token so stale completions cannot attach to a replacement world.
 
 ## Diagnostics and metrics
 
-Use the renderer's `getDiagnostics()`, `getMetrics()`, and `whenIdle()` methods. Backend and feature reports come from the active Sekai64 engine.
+Use `getDiagnostics()`, `getMetrics()`, and `whenIdle()`. Reported backend and features come from Sekai64’s actual engine capabilities.
 
-Await `world.disposeAsync()` when removing the player so loading and renderer resources are cleaned up.
+
+## Resource DAG realization (S12)
+
+`@blcklab/anyo/renderer-sekai64` can now realize the S9-S11 resource graph directly. For an already-mounted `Sekai64Renderer`, use the convenience bridge:
+
+```ts
+import { createSekai64RendererResourceAdapter } from '@blcklab/anyo/renderer-sekai64'
+
+const resources = createSekai64RendererResourceAdapter(renderer)
+await resources.transition(graph)
+```
+
+The factory uses `renderer.getNativeAccess()` and registers each realized semantic instance through the existing external-node identity bridge, so trusted resource-graph nodes can participate in Sekai64/Anyo picking identity while the adapter remains responsible for their lifetime. The renderer itself does not own the resource DAG.
+
+S12 does not modify the Sekai64 package and does not replace the legacy compiled-world mount path. It is an additive bridge for the procedural/resource pipeline.

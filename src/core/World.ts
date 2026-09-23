@@ -61,6 +61,8 @@ import type {
 import { HeadlessRenderer, isHeadlessRenderer } from './HeadlessRenderer.js'
 import { validateWorldRuntimeSnapshot } from '../snapshots/index.js'
 import { prepareFastEntityMutation, type FastEntityMutation } from './fastEntityMutation.js'
+import { compileWorldResourceGraph } from '../resources/world.js'
+import { compileProceduralColliders } from '../collision/procedural.js'
 
 export type ChangeClassification = 'data' | 'entity' | 'structure' | 'document' | 'history'
 
@@ -470,19 +472,21 @@ export class World {
       this.renderer.applyRuntimeTransforms(updates)
       return
     }
-    const changes: WorldChange[] = updates.map((update) => ({
+    const primitiveUpdates = updates.filter((update): update is RuntimeTransformUpdate & { primitive: CompiledPrimitive } => Boolean(update.primitive))
+    const changes: WorldChange[] = primitiveUpdates.map((update) => ({
       type: 'primitive-transform',
       primitiveId: update.primitiveId,
       primitive: update.primitive,
     }))
-    if (this.renderer.applyChanges && this.compiled && this.document) {
+    if (this.renderer.applyChanges && this.compiled && this.document && changes.length > 0) {
       await this.renderer.applyChanges(changes, this.compiled, this.document)
       return
     }
-    if (this.renderer.updatePrimitive) {
-      for (const update of updates) await this.renderer.updatePrimitive(update.primitive)
+    if (this.renderer.updatePrimitive && primitiveUpdates.length > 0) {
+      for (const update of primitiveUpdates) await this.renderer.updatePrimitive(update.primitive)
       return
     }
+    if (primitiveUpdates.length === 0) return
     throw new Error('The attached renderer does not support runtime transform synchronization.')
   }
 
@@ -1393,11 +1397,13 @@ Detach the surface attachment before committing a runtime world transform.`)
     output.activeCameraId = cameras.activeCameraId
     output.revision = document.revision
     for (const plugin of this.plugins) plugin.compile?.({ document, output, warn: this.warningHandler })
+    compileProceduralColliders(document, output)
     const compiled = finalizeCompiledWorld(output)
+    compiled.resourceGraph = compileWorldResourceGraph(document, compiled)
     const graphStart = typeof performance === 'undefined' ? Date.now() : performance.now()
     this.dependencyGraph = buildCompilerDependencyGraph(document)
     const graphEnd = typeof performance === 'undefined' ? Date.now() : performance.now()
-    const edges = [...this.dependencyGraph.materialConsumers.values(), ...this.dependencyGraph.assetConsumers.values(), ...this.dependencyGraph.prefabInstances.values(), ...this.dependencyGraph.cameraDependents.values(), ...this.dependencyGraph.variableBindings.values()].reduce((sum, set) => sum + set.size, 0)
+    const edges = [...this.dependencyGraph.materialConsumers.values(), ...this.dependencyGraph.assetConsumers.values(), ...this.dependencyGraph.prefabInstances.values(), ...this.dependencyGraph.compositionInstances.values(), ...this.dependencyGraph.cameraDependents.values(), ...this.dependencyGraph.variableBindings.values()].reduce((sum, set) => sum + set.size, 0)
     this.compilerReport = {
       fullCompileMs: graphEnd - started,
       dependencyGraphMs: graphEnd - graphStart,
@@ -1494,6 +1500,7 @@ Detach the surface attachment before committing a runtime world transform.`)
           if (!this.renderer.updateChannels) return false
           await this.renderer.updateChannels(change.channels)
           break
+        case 'resource-graph':
         case 'rendering-intent':
           return false
         case 'world-rebuild':
