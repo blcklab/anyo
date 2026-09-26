@@ -33,6 +33,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
+function validateVariationRange(value: unknown, path: string, issues: ValidationIssue[], positive = false): void {
+  if (value === undefined) return
+  if (!Array.isArray(value) || value.length !== 2 || value.some((item) => typeof item !== 'number' || !Number.isFinite(item))) {
+    issue(issues, 'REPEAT_VARIATION_RANGE_INVALID', path, 'Variation ranges must contain exactly two finite numbers [min, max].')
+    return
+  }
+  const [min, max] = value as [number, number]
+  if (min > max) issue(issues, 'REPEAT_VARIATION_RANGE_ORDER_INVALID', path, 'Variation range minimum must not exceed maximum.')
+  if (positive && min <= 0) issue(issues, 'REPEAT_VARIATION_SCALE_INVALID', path, 'Scale variation ranges must remain greater than zero.')
+}
+
+function validateAxisVariation(value: unknown, path: string, issues: ValidationIssue[], positive = false, allowUniform = false): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    issue(issues, 'REPEAT_VARIATION_INVALID', path, 'Variation axis configuration must be an object.')
+    return
+  }
+  for (const axis of ['x', 'y', 'z'] as const) validateVariationRange(value[axis], `${path}/${axis}`, issues, positive)
+  if (allowUniform) validateVariationRange(value.uniform, `${path}/uniform`, issues, positive)
+}
 
 function validateShadowDefinition(value: unknown, path: string, issues: ValidationIssue[]): void {
   if (value === undefined) return
@@ -299,6 +319,16 @@ function validateEntity(
     if (!Number.isFinite(entity.repeat.spacing)) {
       issue(issues, 'REPEAT_SPACING_INVALID', `${path}/repeat/spacing`, 'Repeat spacing must be finite.')
     }
+    const variation = entity.repeat.variation
+    if (variation !== undefined) {
+      if (!isRecord(variation)) issue(issues, 'REPEAT_VARIATION_INVALID', `${path}/repeat/variation`, 'repeat.variation must be an object.')
+      else {
+        if (variation.seed !== undefined && (!Number.isSafeInteger(variation.seed) || Math.abs(Number(variation.seed)) > 0xffffffff)) issue(issues, 'REPEAT_VARIATION_SEED_INVALID', `${path}/repeat/variation/seed`, 'Variation seed must be a safe integer within 32-bit range.')
+        validateAxisVariation(variation.position, `${path}/repeat/variation/position`, issues)
+        validateAxisVariation(variation.rotation, `${path}/repeat/variation/rotation`, issues)
+        validateAxisVariation(variation.scale, `${path}/repeat/variation/scale`, issues, true, true)
+      }
+    }
   }
   if (entity.type === 'light') {
     if (entity.intensity !== undefined && typeof entity.intensity === 'number') {
@@ -524,6 +554,29 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     if (material.ior !== undefined && (!Number.isFinite(material.ior) || material.ior < 1 || material.ior > 2.5)) issue(issues, 'MATERIAL_IOR_INVALID', `${path}/ior`, 'ior must be between 1 and 2.5.')
     if (material.thickness !== undefined && (!Number.isFinite(material.thickness) || material.thickness < 0)) issue(issues, 'MATERIAL_THICKNESS_INVALID', `${path}/thickness`, 'thickness must be finite and non-negative.')
     if (material.attenuationDistance !== undefined && (!Number.isFinite(material.attenuationDistance) || material.attenuationDistance <= 0)) issue(issues, 'MATERIAL_ATTENUATION_DISTANCE_INVALID', `${path}/attenuationDistance`, 'attenuationDistance must be a positive finite number.')
+    if (material.textureTransform !== undefined) {
+      const transform = material.textureTransform
+      if (!isRecord(transform)) issue(issues, 'MATERIAL_TEXTURE_TRANSFORM_INVALID', `${path}/textureTransform`, 'textureTransform must be an object.')
+      else {
+        if (transform.offset !== undefined && !isFiniteVector(transform.offset, 2)) issue(issues, 'MATERIAL_TEXTURE_OFFSET_INVALID', `${path}/textureTransform/offset`, 'textureTransform.offset must contain two finite numbers.')
+        if (transform.scale !== undefined) {
+          if (!isFiniteVector(transform.scale, 2)) issue(issues, 'MATERIAL_TEXTURE_SCALE_INVALID', `${path}/textureTransform/scale`, 'textureTransform.scale must contain two finite numbers.')
+          else if ((transform.scale as number[]).some((value) => Math.abs(value) < 1e-8)) issue(issues, 'MATERIAL_TEXTURE_SCALE_ZERO', `${path}/textureTransform/scale`, 'textureTransform.scale components must be non-zero.')
+        }
+        if (transform.rotation !== undefined && (typeof transform.rotation !== 'number' || !Number.isFinite(transform.rotation))) issue(issues, 'MATERIAL_TEXTURE_ROTATION_INVALID', `${path}/textureTransform/rotation`, 'textureTransform.rotation must be finite radians.')
+      }
+    }
+    if (material.textureWrap !== undefined) {
+      const validWraps = new Set(['clamp-to-edge', 'repeat', 'mirror-repeat'])
+      const wrap = material.textureWrap
+      if (typeof wrap === 'string') {
+        if (!validWraps.has(wrap)) issue(issues, 'MATERIAL_TEXTURE_WRAP_INVALID', `${path}/textureWrap`, 'textureWrap must be clamp-to-edge, repeat, or mirror-repeat.')
+      } else if (!isRecord(wrap)) {
+        issue(issues, 'MATERIAL_TEXTURE_WRAP_INVALID', `${path}/textureWrap`, 'textureWrap must be a wrap mode string or { s, t } object.')
+      } else {
+        for (const axis of ['s', 't'] as const) if (wrap[axis] !== undefined && (typeof wrap[axis] !== 'string' || !validWraps.has(wrap[axis] as string))) issue(issues, 'MATERIAL_TEXTURE_WRAP_INVALID', `${path}/textureWrap/${axis}`, 'textureWrap axes must be clamp-to-edge, repeat, or mirror-repeat.')
+      }
+    }
     for (const field of ['castShadow', 'receiveShadow', 'doubleSided', 'transparent', 'alphaDither'] as const) if (material[field] !== undefined && typeof material[field] !== 'boolean') issue(issues, 'MATERIAL_BOOLEAN_INVALID', `${path}/${field}`, `${field} must be boolean.`)
     if (material.alphaMode !== undefined && !['opaque', 'mask', 'blend'].includes(material.alphaMode)) {
       issue(issues, 'MATERIAL_ALPHA_MODE_INVALID', `${path}/alphaMode`, 'alphaMode must be opaque, mask, or blend.')

@@ -182,6 +182,56 @@
       "minItems": 3,
       "maxItems": 3
     },
+    "variationRange": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    },
+    "positiveVariationRange": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "axisVariation": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/variationRange"
+        },
+        "y": {
+          "$ref": "#/$defs/variationRange"
+        },
+        "z": {
+          "$ref": "#/$defs/variationRange"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scaleVariation": {
+      "type": "object",
+      "properties": {
+        "uniform": {
+          "$ref": "#/$defs/positiveVariationRange"
+        },
+        "x": {
+          "$ref": "#/$defs/positiveVariationRange"
+        },
+        "y": {
+          "$ref": "#/$defs/positiveVariationRange"
+        },
+        "z": {
+          "$ref": "#/$defs/positiveVariationRange"
+        }
+      },
+      "additionalProperties": false
+    },
     "wall": {
       "enum": [
         "north",
@@ -287,6 +337,52 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "textureTransform": {
+          "type": "object",
+          "properties": {
+            "offset": {
+              "$ref": "#/$defs/vec2"
+            },
+            "scale": {
+              "$ref": "#/$defs/vec2"
+            },
+            "rotation": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "textureWrap": {
+          "oneOf": [
+            {
+              "enum": [
+                "clamp-to-edge",
+                "repeat",
+                "mirror-repeat"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "s": {
+                  "enum": [
+                    "clamp-to-edge",
+                    "repeat",
+                    "mirror-repeat"
+                  ]
+                },
+                "t": {
+                  "enum": [
+                    "clamp-to-edge",
+                    "repeat",
+                    "mirror-repeat"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
         },
         "transmission": {
           "type": "number",
@@ -2147,6 +2243,26 @@
             },
             "start": {
               "type": "number"
+            },
+            "variation": {
+              "type": "object",
+              "properties": {
+                "seed": {
+                  "type": "integer",
+                  "minimum": -4294967295,
+                  "maximum": 4294967295
+                },
+                "position": {
+                  "$ref": "#/$defs/axisVariation"
+                },
+                "rotation": {
+                  "$ref": "#/$defs/axisVariation"
+                },
+                "scale": {
+                  "$ref": "#/$defs/scaleVariation"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -3627,6 +3743,26 @@
             },
             "start": {
               "type": "number"
+            },
+            "variation": {
+              "type": "object",
+              "properties": {
+                "seed": {
+                  "type": "integer",
+                  "minimum": -4294967295,
+                  "maximum": 4294967295
+                },
+                "position": {
+                  "$ref": "#/$defs/axisVariation"
+                },
+                "rotation": {
+                  "$ref": "#/$defs/axisVariation"
+                },
+                "scale": {
+                  "$ref": "#/$defs/scaleVariation"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false

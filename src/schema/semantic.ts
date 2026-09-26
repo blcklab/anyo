@@ -226,7 +226,7 @@ function inspectRenderer(document: WorldDocument, info: RendererInfo | undefined
     }
     const features: Array<[keyof MaterialDefinition, NonNullable<RendererInfo['capabilities']['materialFeatures']>[number]]> = [
       ['normalScale', 'normalScale'], ['occlusionStrength', 'occlusionStrength'], ['emissiveIntensity', 'emissiveIntensity'],
-      ['transmission', 'transmission'], ['ior', 'ior'], ['thickness', 'thickness'], ['attenuationDistance', 'attenuation'], ['toon', 'toonShading'],
+      ['transmission', 'transmission'], ['ior', 'ior'], ['thickness', 'thickness'], ['attenuationDistance', 'attenuation'], ['textureTransform', 'textureTransform'], ['textureWrap', 'textureWrap'], ['toon', 'toonShading'],
     ]
     for (const [field, feature] of features) {
       if (material[field] !== undefined && !caps.materialFeatures?.includes(feature)) {

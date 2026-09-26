@@ -1,3 +1,12 @@
+## 0.10.0-rc.4 — generic realism authoring foundation
+
+- Added deterministic `repeat.variation` for author-time position, rotation, and scale variation without per-frame runtime cost.
+- Variation is seeded and identity-stable so repeated vegetation, rocks, props, clouds, debris, and architectural details remain reproducible.
+- Added generic material `textureTransform` authoring with UV scale, offset, and rotation, realized by Sekai64 WebGL2/WebGPU.
+- Added renderer-neutral `textureWrap` (`clamp-to-edge`, `repeat`, `mirror-repeat`, including per-axis control) so transformed UVs can intentionally tile instead of clamping at the 0–1 range.
+- Kept the feature renderer-neutral and object-agnostic: no tree, cloud, rock, weather, or realism-specific engine systems were introduced.
+- Added validation for bounded variation ranges, safe non-zero texture scales, and valid texture wrap modes.
+
 ## 0.10.0-rc.3 — first-class browser-native Web Surface overlay
 
 - Add `presentation.type: "overlay"` as the canonical browser-native DOM/iframe-over-canvas presentation contract.
