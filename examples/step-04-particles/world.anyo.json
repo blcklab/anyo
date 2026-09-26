@@ -1,0 +1,128 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.8.schema.json",
+  "version": "0.8",
+  "revision": 0,
+  "metadata": {
+    "id": "step-04-generic-particles",
+    "name": "Step 04 Generic Particle Rendering"
+  },
+  "materials": {
+    "dust-particle": { "baseColor": "#d6c3a0", "roughness": 1, "transparent": true, "opacity": 0.5, "side": "double" },
+    "rain-particle": { "baseColor": "#b9dcff", "roughness": 0.35, "transparent": true, "opacity": 0.55, "side": "double" },
+    "snow-particle": { "baseColor": "#ffffff", "roughness": 0.9, "transparent": true, "opacity": 0.82, "side": "double" },
+    "ember-particle": { "baseColor": "#ff8b32", "roughness": 0.7, "emissive": "#ff5a1f", "emissiveIntensity": 1.4, "transparent": true, "opacity": 0.82, "side": "double" },
+    "firefly-particle": { "baseColor": "#dfff8a", "roughness": 0.8, "emissive": "#c8ff5f", "emissiveIntensity": 1.8, "transparent": true, "opacity": 0.9, "side": "double" }
+  },
+  "entities": [
+    {
+      "id": "dust",
+      "type": "group",
+      "position": [-6, 1.2, 0],
+      "components": [{
+        "type": "anyo.vfx",
+        "seed": 101,
+        "maxParticles": 300,
+        "emission": { "rate": 36, "burst": 40 },
+        "lifetime": { "min": 3.5, "max": 7 },
+        "spawnShape": { "type": "box", "size": [5, 1, 5] },
+        "velocity": { "min": [-0.08, 0.04, -0.08], "max": [0.08, 0.18, 0.08] },
+        "gravity": [0, -0.01, 0],
+        "drag": 0.18,
+        "size": { "start": 0.035, "end": 0.12 },
+        "material": "dust-particle",
+        "opacity": { "min": 0.18, "max": 0.55 },
+        "rotation": { "min": -3.14, "max": 3.14 },
+        "importance": 0.65,
+        "space": "world"
+      }]
+    },
+    {
+      "id": "rain",
+      "type": "group",
+      "position": [0, 7, 0],
+      "components": [{
+        "type": "anyo.vfx",
+        "seed": 202,
+        "maxParticles": 700,
+        "emission": { "rate": 180, "burst": 180 },
+        "lifetime": { "min": 1.2, "max": 2.1 },
+        "spawnShape": { "type": "box", "size": [8, 1, 8] },
+        "velocity": { "min": [-0.18, -5.8, -0.12], "max": [0.18, -4.5, 0.12] },
+        "gravity": [0, -1.4, 0],
+        "drag": 0.01,
+        "size": { "start": 0.018, "end": 0.03 },
+        "material": "rain-particle",
+        "opacity": { "min": 0.35, "max": 0.68 },
+        "rotation": { "min": -0.06, "max": 0.06 },
+        "importance": 0.9,
+        "space": "world"
+      }]
+    },
+    {
+      "id": "snow",
+      "type": "group",
+      "position": [6, 6, 0],
+      "components": [{
+        "type": "anyo.vfx",
+        "seed": 303,
+        "maxParticles": 480,
+        "emission": { "rate": 85, "burst": 110 },
+        "lifetime": { "min": 4, "max": 7 },
+        "spawnShape": { "type": "box", "size": [7, 1, 7] },
+        "velocity": { "min": [-0.3, -0.75, -0.2], "max": [0.3, -0.35, 0.2] },
+        "gravity": [0, -0.08, 0],
+        "drag": 0.08,
+        "size": { "start": 0.035, "end": 0.085 },
+        "material": "snow-particle",
+        "opacity": { "min": 0.62, "max": 0.95 },
+        "rotation": { "min": -3.14, "max": 3.14 },
+        "importance": 0.82,
+        "space": "world"
+      }]
+    },
+    {
+      "id": "embers",
+      "type": "group",
+      "position": [-2.5, 0.6, -5],
+      "components": [{
+        "type": "anyo.vfx",
+        "seed": 404,
+        "maxParticles": 180,
+        "emission": { "rate": 28, "burst": 36 },
+        "lifetime": { "min": 1.2, "max": 3.2 },
+        "spawnShape": { "type": "sphere", "radius": 0.8 },
+        "velocity": { "min": [-0.35, 0.9, -0.35], "max": [0.35, 2.2, 0.35] },
+        "gravity": [0, 0.16, 0],
+        "drag": 0.11,
+        "size": { "start": 0.025, "end": 0.075 },
+        "material": "ember-particle",
+        "opacity": { "min": 0.65, "max": 1 },
+        "rotation": { "min": -3.14, "max": 3.14 },
+        "importance": 0.8,
+        "space": "world"
+      }]
+    },
+    {
+      "id": "fireflies",
+      "type": "group",
+      "position": [3, 1.3, -5],
+      "components": [{
+        "type": "anyo.vfx",
+        "seed": 505,
+        "maxParticles": 120,
+        "emission": { "rate": 10, "burst": 48 },
+        "lifetime": { "min": 5, "max": 10 },
+        "spawnShape": { "type": "box", "size": [5, 2.5, 5] },
+        "velocity": { "min": [-0.16, -0.05, -0.16], "max": [0.16, 0.18, 0.16] },
+        "gravity": [0, 0, 0],
+        "drag": 0.2,
+        "size": { "start": 0.025, "end": 0.06 },
+        "material": "firefly-particle",
+        "opacity": { "min": 0.72, "max": 1 },
+        "rotation": { "min": -3.14, "max": 3.14 },
+        "importance": 0.72,
+        "space": "world"
+      }]
+    }
+  ]
+}

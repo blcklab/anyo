@@ -7,7 +7,7 @@
 
 `@blcklab/anyo` defines, validates, compiles, updates, and runs spatial worlds from declarative JSON. Rendering stays behind explicit adapters, so authored world data remains portable across supported renderers and headless environments.
 
-> `0.10.0-rc.4` is a release candidate on the JSON-native world-authoring track. Install it explicitly or through the `next` npm dist-tag.
+> `0.10.0-rc.8` is a release candidate on the JSON-native world-authoring track. Install it explicitly or through the `next` npm dist-tag.
 
 ## Installation
 
@@ -376,4 +376,4 @@ Variation is expanded once at authoring normalization time. It does not add a ru
 }
 ```
 
-`textureTransform` is renderer-neutral. Pair it with `textureWrap: "repeat"` (or per-axis `{ "s", "t" }`) when UVs should tile beyond the 0–1 range. The Sekai64 adapter reports both capabilities and Sekai64 0.8.0-rc.35 implements them in WebGL2 and WebGPU. Anyo still has no `TreeSystem`, `CloudRenderer`, `RockEntity`, or other object-specific realism subsystem.
+`textureTransform` is renderer-neutral. Pair it with `textureWrap: "repeat"` (or per-axis `{ "s", "t" }`) when UVs should tile beyond the 0–1 range. The Sekai64 adapter reports both capabilities and Sekai64 0.8.0-rc.37 implements them in WebGL2 and WebGPU. Anyo still has no `TreeSystem`, `CloudRenderer`, `RockEntity`, or other object-specific realism subsystem.

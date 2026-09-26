@@ -55,6 +55,9 @@ try {
   if ([...names].some((name) => name.startsWith('src/') || name.startsWith('tests/') || name.startsWith('.internal/') || name.startsWith('vendor/'))) {
     throw new Error('Packed artifact unexpectedly contains source or test files.')
   }
+  if ([...names].some((name) => name.endsWith('.map'))) {
+    throw new Error('Packed artifact unexpectedly contains generated source maps.')
+  }
 
   const esm = await import(pathToFileURL(path.join(root, 'dist/esm/index.js')).href)
   if (typeof esm.createWorld !== 'function' || typeof esm.migrateWorldDocument !== 'function' || typeof esm.applyStableTransaction !== 'function' || typeof esm.createPortableWorldPackageDescriptor !== 'function') {

@@ -25,7 +25,7 @@ function isPositive(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
 }
 
-function isFiniteVector(value: unknown, length: number): boolean {
+function isFiniteVector(value: unknown, length: number): value is number[] {
   return Array.isArray(value) && value.length === length && value.every((item) => typeof item === 'number' && Number.isFinite(item))
 }
 
@@ -120,6 +120,20 @@ function validateEnvironment(document: WorldDocument, issues: ValidationIssue[])
       }
       if (sky.sunDirection !== undefined && !isFiniteVector(sky.sunDirection, 3)) issue(issues, 'PROCEDURAL_SKY_DIRECTION_INVALID', `${path}/sunDirection`, 'sunDirection must contain three finite numbers.')
       if (sky.seed !== undefined && (typeof sky.seed !== 'number' || !Number.isFinite(sky.seed))) issue(issues, 'PROCEDURAL_SKY_SEED_INVALID', `${path}/seed`, 'seed must be finite.')
+      if (sky.stars !== undefined) {
+        const stars: unknown = sky.stars
+        const starsPath = `${path}/stars`
+        if (!isRecord(stars)) issue(issues, 'PROCEDURAL_STARS_INVALID', starsPath, 'stars must be an object.')
+        else {
+          if (stars.enabled !== undefined && typeof stars.enabled !== 'boolean') issue(issues, 'PROCEDURAL_STARS_ENABLED_INVALID', `${starsPath}/enabled`, 'enabled must be boolean.')
+          for (const field of ['density', 'brightnessVariation', 'sizeVariation', 'colorTemperatureVariation'] as const) {
+            const value = stars[field]
+            if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1)) issue(issues, 'PROCEDURAL_STARS_RATIO_INVALID', `${starsPath}/${field}`, `${field} must be finite and between 0 and 1.`)
+          }
+          if (stars.intensity !== undefined && (typeof stars.intensity !== 'number' || !Number.isFinite(stars.intensity) || stars.intensity < 0)) issue(issues, 'PROCEDURAL_STARS_INTENSITY_INVALID', `${starsPath}/intensity`, 'intensity must be finite and non-negative.')
+          if (stars.seed !== undefined && (typeof stars.seed !== 'number' || !Number.isFinite(stars.seed))) issue(issues, 'PROCEDURAL_STARS_SEED_INVALID', `${starsPath}/seed`, 'seed must be finite.')
+        }
+      }
     }
   }
   if (environment.sun?.intensity !== undefined) {
@@ -226,10 +240,14 @@ function validateMapFeatureComponent(component: Record<string, unknown>, path: s
 function validateVfxComponent(component: Record<string, unknown>, path: string, issues: ValidationIssue[]): void {
   if ((component.enabled ?? true) === false) return
   if (component.effect !== undefined && component.effect !== 'sprite-particles') {
-    issue(issues, 'VFX_EFFECT_UNSUPPORTED', `${path}/effect`, 'Anyo VFX 0.1 supports only sprite-particles.')
+    issue(issues, 'VFX_EFFECT_UNSUPPORTED', `${path}/effect`, 'Anyo VFX supports only the generic sprite-particles effect.')
   }
+  // Legacy presets remain accepted for old worlds, but new particle authoring should use generic fields.
   if (component.preset !== undefined && !['smoke', 'sparks', 'dust', 'custom'].includes(String(component.preset))) {
     issue(issues, 'VFX_PRESET_UNSUPPORTED', `${path}/preset`, 'VFX preset must be smoke, sparks, dust, or custom.')
+  }
+  if (component.seed !== undefined && (!Number.isInteger(component.seed) || Math.abs(Number(component.seed)) > 4294967295)) {
+    issue(issues, 'VFX_SEED_INVALID', `${path}/seed`, 'VFX seed must be an integer between -4294967295 and 4294967295.')
   }
   if (component.maxParticles !== undefined && (!Number.isInteger(component.maxParticles) || Number(component.maxParticles) < 1 || Number(component.maxParticles) > 4096)) {
     issue(issues, 'VFX_MAX_PARTICLES_INVALID', `${path}/maxParticles`, 'VFX maxParticles must be an integer between 1 and 4096.')
@@ -239,24 +257,106 @@ function validateVfxComponent(component: Record<string, unknown>, path: string, 
   }
   if (component.space !== undefined && component.space !== 'local' && component.space !== 'world') issue(issues, 'VFX_SPACE_INVALID', `${path}/space`, 'VFX space must be local or world.')
   if (component.texture !== undefined && typeof component.texture !== 'string') issue(issues, 'VFX_TEXTURE_INVALID', `${path}/texture`, 'VFX texture must be a string URL.')
-  const validateRange = (key: 'lifetime' | 'speed'): void => {
+  if (component.material !== undefined && (typeof component.material !== 'string' || !component.material.trim())) issue(issues, 'VFX_MATERIAL_INVALID', `${path}/material`, 'VFX material must be a non-empty material id.')
+  if (component.color !== undefined && (typeof component.color !== 'string' || !component.color.trim())) issue(issues, 'VFX_COLOR_INVALID', `${path}/color`, 'VFX color must be a non-empty string.')
+  if (component.importance !== undefined && (typeof component.importance !== 'number' || !Number.isFinite(component.importance) || component.importance < 0 || component.importance > 1)) {
+    issue(issues, 'VFX_IMPORTANCE_INVALID', `${path}/importance`, 'VFX importance must be a finite number from 0 to 1.')
+  }
+  if (component.drag !== undefined && (typeof component.drag !== 'number' || !Number.isFinite(component.drag) || component.drag < 0)) {
+    issue(issues, 'VFX_DRAG_INVALID', `${path}/drag`, 'VFX drag must be a non-negative finite number.')
+  }
+
+  const validateRange = (key: 'lifetime' | 'speed' | 'opacity' | 'rotation', options: { nonNegative?: boolean; unit?: boolean } = {}): void => {
     const value = component[key]
     if (value === undefined) return
     if (!value || typeof value !== 'object' || Array.isArray(value)) { issue(issues, 'VFX_RANGE_INVALID', `${path}/${key}`, `${key} must be an object.`); return }
     const range = value as Record<string, unknown>
-    for (const field of ['min', 'max']) if (range[field] !== undefined && (typeof range[field] !== 'number' || !Number.isFinite(range[field]) || Number(range[field]) < 0)) issue(issues, 'VFX_RANGE_VALUE_INVALID', `${path}/${key}/${field}`, `${key}.${field} must be a non-negative finite number.`)
-    if (typeof range.min === 'number' && typeof range.max === 'number' && range.max < range.min) issue(issues, 'VFX_RANGE_ORDER_INVALID', `${path}/${key}`, `${key}.max must be greater than or equal to ${key}.min.`)
+    for (const field of ['min', 'max']) {
+      const item = range[field]
+      if (item === undefined) continue
+      if (typeof item !== 'number' || !Number.isFinite(item)) issue(issues, 'VFX_RANGE_VALUE_INVALID', `${path}/${key}/${field}`, `${key}.${field} must be a finite number.`)
+      else if (options.nonNegative && item < 0) issue(issues, 'VFX_RANGE_VALUE_INVALID', `${path}/${key}/${field}`, `${key}.${field} must be non-negative.`)
+      else if (options.unit && (item < 0 || item > 1)) issue(issues, 'VFX_RANGE_VALUE_INVALID', `${path}/${key}/${field}`, `${key}.${field} must be between 0 and 1.`)
+    }
+    if (typeof range.min === 'number' && Number.isFinite(range.min) && typeof range.max === 'number' && Number.isFinite(range.max) && range.max < range.min) {
+      issue(issues, 'VFX_RANGE_ORDER_INVALID', `${path}/${key}`, `${key}.max must be greater than or equal to ${key}.min.`)
+    }
   }
-  validateRange('lifetime'); validateRange('speed')
+  validateRange('lifetime', { nonNegative: true })
+  validateRange('speed', { nonNegative: true })
+  validateRange('opacity', { unit: true })
+  validateRange('rotation')
+
+  if (component.size !== undefined) {
+    if (!isRecord(component.size)) issue(issues, 'VFX_SIZE_INVALID', `${path}/size`, 'VFX size must be an object.')
+    else {
+      for (const field of ['start', 'end'] as const) {
+        const value = component.size[field]
+        if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) issue(issues, 'VFX_SIZE_VALUE_INVALID', `${path}/size/${field}`, `size.${field} must be a non-negative finite number.`)
+      }
+    }
+  }
+
+  if (component.overLife !== undefined) {
+    if (!isRecord(component.overLife)) issue(issues, 'VFX_OVER_LIFE_INVALID', `${path}/overLife`, 'VFX overLife must be an object.')
+    else {
+      for (const key of ['size', 'opacity', 'rotation'] as const) {
+        const curve = component.overLife[key]
+        if (curve === undefined) continue
+        if (!isRecord(curve)) { issue(issues, 'VFX_OVER_LIFE_CURVE_INVALID', `${path}/overLife/${key}`, `overLife.${key} must be an object.`); continue }
+        for (const field of ['start', 'end'] as const) {
+          const value = curve[field]
+          if (value === undefined) continue
+          const invalid = typeof value !== 'number' || !Number.isFinite(value) || (key === 'size' && value < 0) || (key === 'opacity' && (value < 0 || value > 1))
+          if (invalid) issue(issues, 'VFX_OVER_LIFE_VALUE_INVALID', `${path}/overLife/${key}/${field}`, `overLife.${key}.${field} is outside the supported range.`)
+        }
+      }
+      const color = component.overLife.color
+      if (color !== undefined) {
+        if (!isRecord(color)) issue(issues, 'VFX_OVER_LIFE_COLOR_INVALID', `${path}/overLife/color`, 'overLife.color must be an object.')
+        else for (const field of ['start', 'end'] as const) {
+          const value = color[field]
+          if (value !== undefined && (typeof value !== 'string' || !value.trim())) issue(issues, 'VFX_OVER_LIFE_COLOR_INVALID', `${path}/overLife/color/${field}`, `overLife.color.${field} must be a non-empty color string.`)
+        }
+      }
+    }
+  }
+
   const emission = component.emission
   if (emission !== undefined) {
     if (!emission || typeof emission !== 'object' || Array.isArray(emission)) issue(issues, 'VFX_EMISSION_INVALID', `${path}/emission`, 'VFX emission must be an object.')
-    else for (const field of ['rate', 'burst']) { const value=(emission as Record<string,unknown>)[field]; if(value!==undefined&&(typeof value!=='number'||!Number.isFinite(value)||value<0)) issue(issues,'VFX_EMISSION_VALUE_INVALID',`${path}/emission/${field}`,`emission.${field} must be a non-negative finite number.`) }
+    else for (const field of ['rate', 'burst']) {
+      const value = (emission as Record<string, unknown>)[field]
+      if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) issue(issues, 'VFX_EMISSION_VALUE_INVALID', `${path}/emission/${field}`, `emission.${field} must be a non-negative finite number.`)
+    }
   }
+
   const shape = component.spawnShape
   if (shape !== undefined) {
     if (!shape || typeof shape !== 'object' || Array.isArray(shape)) issue(issues, 'VFX_SPAWN_SHAPE_INVALID', `${path}/spawnShape`, 'VFX spawnShape must be an object.')
-    else { const data=shape as Record<string,unknown>; if(!['point','sphere','box'].includes(String(data.type))) issue(issues,'VFX_SPAWN_SHAPE_TYPE_INVALID',`${path}/spawnShape/type`,'Spawn shape type must be point, sphere, or box.'); if(data.type==='sphere'&&(typeof data.radius!=='number'||!Number.isFinite(data.radius)||data.radius<=0)) issue(issues,'VFX_SPAWN_RADIUS_INVALID',`${path}/spawnShape/radius`,'Sphere spawn radius must be positive.'); if(data.type==='box'&&(!isFiniteVector(data.size,3)||(data.size as number[]).some(value=>value<=0))) issue(issues,'VFX_SPAWN_SIZE_INVALID',`${path}/spawnShape/size`,'Box spawn size must contain three positive finite values.') }
+    else {
+      const data = shape as Record<string, unknown>
+      if (!['point', 'sphere', 'box', 'surface'].includes(String(data.type))) issue(issues, 'VFX_SPAWN_SHAPE_TYPE_INVALID', `${path}/spawnShape/type`, 'Spawn shape type must be point, sphere, box, or surface.')
+      if (data.type === 'sphere' && (typeof data.radius !== 'number' || !Number.isFinite(data.radius) || data.radius <= 0)) issue(issues, 'VFX_SPAWN_RADIUS_INVALID', `${path}/spawnShape/radius`, 'Sphere spawn radius must be positive.')
+      if (data.type === 'box' && (!isFiniteVector(data.size, 3) || (data.size as number[]).some(value => value <= 0))) issue(issues, 'VFX_SPAWN_SIZE_INVALID', `${path}/spawnShape/size`, 'Box spawn size must contain three positive finite values.')
+    }
+  }
+
+  if (component.velocity !== undefined) {
+    if (!isRecord(component.velocity)) issue(issues, 'VFX_VELOCITY_INVALID', `${path}/velocity`, 'VFX velocity must be a { min, max } object.')
+    else {
+      const min = component.velocity.min
+      const max = component.velocity.max
+      if (min === undefined && max === undefined) issue(issues, 'VFX_VELOCITY_RANGE_REQUIRED', `${path}/velocity`, 'VFX velocity requires min and/or max.')
+      if (min !== undefined && !isFiniteVector(min, 3)) issue(issues, 'VFX_VELOCITY_VECTOR_INVALID', `${path}/velocity/min`, 'velocity.min must contain three finite values.')
+      if (max !== undefined && !isFiniteVector(max, 3)) issue(issues, 'VFX_VELOCITY_VECTOR_INVALID', `${path}/velocity/max`, 'velocity.max must contain three finite values.')
+      if (isFiniteVector(min, 3) && isFiniteVector(max, 3)) {
+        for (let axis = 0; axis < 3; axis += 1) if (max[axis]! < min[axis]!) issue(issues, 'VFX_VELOCITY_RANGE_ORDER_INVALID', `${path}/velocity`, 'velocity.max must be greater than or equal to velocity.min on every axis.')
+      }
+    }
+  }
+  for (const key of ['acceleration', 'gravity', 'direction'] as const) {
+    if (component[key] !== undefined && !isFiniteVector(component[key], 3)) issue(issues, 'VFX_VECTOR_INVALID', `${path}/${key}`, `${key} must contain three finite values.`)
   }
 }
 
@@ -554,6 +654,20 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     if (material.ior !== undefined && (!Number.isFinite(material.ior) || material.ior < 1 || material.ior > 2.5)) issue(issues, 'MATERIAL_IOR_INVALID', `${path}/ior`, 'ior must be between 1 and 2.5.')
     if (material.thickness !== undefined && (!Number.isFinite(material.thickness) || material.thickness < 0)) issue(issues, 'MATERIAL_THICKNESS_INVALID', `${path}/thickness`, 'thickness must be finite and non-negative.')
     if (material.attenuationDistance !== undefined && (!Number.isFinite(material.attenuationDistance) || material.attenuationDistance <= 0)) issue(issues, 'MATERIAL_ATTENUATION_DISTANCE_INVALID', `${path}/attenuationDistance`, 'attenuationDistance must be a positive finite number.')
+    if (material.detail !== undefined) {
+      const detail = material.detail
+      if (!isRecord(detail)) issue(issues, 'MATERIAL_DETAIL_INVALID', `${path}/detail`, 'detail must be an object.')
+      else {
+        for (const field of ['normalTexture', 'roughnessTexture', 'heightTexture'] as const) {
+          const value = detail[field]
+          if (value !== undefined && (typeof value !== 'string' || !value.trim())) issue(issues, 'MATERIAL_DETAIL_TEXTURE_INVALID', `${path}/detail/${field}`, `${field} must be a non-empty asset id.`)
+        }
+        if (detail.scale !== undefined && (typeof detail.scale !== 'number' || !Number.isFinite(detail.scale) || detail.scale <= 0 || detail.scale > 1024)) issue(issues, 'MATERIAL_DETAIL_SCALE_INVALID', `${path}/detail/scale`, 'detail.scale must be a positive finite number no greater than 1024.')
+        if (detail.strength !== undefined && (typeof detail.strength !== 'number' || !Number.isFinite(detail.strength) || detail.strength < 0 || detail.strength > 10)) issue(issues, 'MATERIAL_DETAIL_STRENGTH_INVALID', `${path}/detail/strength`, 'detail.strength must be between 0 and 10.')
+        if (detail.roughnessStrength !== undefined && (typeof detail.roughnessStrength !== 'number' || !Number.isFinite(detail.roughnessStrength) || detail.roughnessStrength < 0 || detail.roughnessStrength > 1)) issue(issues, 'MATERIAL_DETAIL_ROUGHNESS_STRENGTH_INVALID', `${path}/detail/roughnessStrength`, 'detail.roughnessStrength must be between 0 and 1.')
+        if (detail.heightScale !== undefined && (typeof detail.heightScale !== 'number' || !Number.isFinite(detail.heightScale) || detail.heightScale < 0 || detail.heightScale > 0.25)) issue(issues, 'MATERIAL_DETAIL_HEIGHT_SCALE_INVALID', `${path}/detail/heightScale`, 'detail.heightScale must be between 0 and 0.25.')
+      }
+    }
     if (material.textureTransform !== undefined) {
       const transform = material.textureTransform
       if (!isRecord(transform)) issue(issues, 'MATERIAL_TEXTURE_TRANSFORM_INVALID', `${path}/textureTransform`, 'textureTransform must be an object.')
@@ -605,11 +719,17 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     if (material.water !== undefined) {
       if (!material.water || typeof material.water !== 'object' || Array.isArray(material.water)) issue(issues, 'MATERIAL_WATER_INVALID', `${path}/water`, 'water must be an object.')
       else {
-        for (const field of ['reflectionStrength', 'absorptionStrength'] as const) {
+        for (const field of ['reflectionStrength', 'absorptionStrength', 'waveStrength', 'foamStrength'] as const) {
           const value = material.water[field]
           if (value !== undefined && (!Number.isFinite(value) || value < 0 || value > 1)) issue(issues, 'MATERIAL_WATER_VALUE_INVALID', `${path}/water/${field}`, `${field} must be between 0 and 1.`)
         }
         if (material.water.fresnelPower !== undefined && (!Number.isFinite(material.water.fresnelPower) || material.water.fresnelPower <= 0 || material.water.fresnelPower > 16)) issue(issues, 'MATERIAL_WATER_FRESNEL_INVALID', `${path}/water/fresnelPower`, 'fresnelPower must be greater than 0 and at most 16.')
+        if (material.water.waveScale !== undefined && (!Number.isFinite(material.water.waveScale) || material.water.waveScale <= 0 || material.water.waveScale > 64)) issue(issues, 'MATERIAL_WATER_WAVE_SCALE_INVALID', `${path}/water/waveScale`, 'waveScale must be greater than 0 and at most 64.')
+        if (material.water.waveSpeed !== undefined && (!Number.isFinite(material.water.waveSpeed) || material.water.waveSpeed < 0 || material.water.waveSpeed > 8)) issue(issues, 'MATERIAL_WATER_WAVE_SPEED_INVALID', `${path}/water/waveSpeed`, 'waveSpeed must be between 0 and 8.')
+        if (material.water.flowDirection !== undefined) {
+          if (!isFiniteVector(material.water.flowDirection, 2)) issue(issues, 'MATERIAL_WATER_FLOW_DIRECTION_INVALID', `${path}/water/flowDirection`, 'flowDirection must contain two finite numbers.')
+          else if (Math.hypot(...material.water.flowDirection) < 1e-8) issue(issues, 'MATERIAL_WATER_FLOW_DIRECTION_ZERO', `${path}/water/flowDirection`, 'flowDirection must not be the zero vector.')
+        }
       }
     }
     if ((material.transparent || (material.opacity ?? 1) < 1 || (material.transmission ?? 0) > 0) && material.castShadow === true) {

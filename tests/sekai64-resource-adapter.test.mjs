@@ -253,3 +253,29 @@ test('S13 custom asset instance hooks bridge model-like AssetResources without m
   assert.equal(node.disposed, true)
   assert.equal(released, true)
 })
+
+test('Step 1 realizes nested detail textures through explicit ResourceGraph dependencies', async () => {
+  const scene = new Scene()
+  const builder = createResourceGraphBuilder()
+  const data = 'data:image/png;base64,AA=='
+  const detailNormal = builder.addAsset({ type: 'texture', src: data, colorSpace: 'linear', options: { slot: 'detail-normal' } })
+  const detailRoughness = builder.addAsset({ type: 'texture', src: data, colorSpace: 'linear', options: { slot: 'detail-roughness' } })
+  const materialId = builder.addMaterial({
+    roughness: 0.75,
+    detail: { normalTexture: detailNormal, roughnessTexture: detailRoughness, scale: 14, strength: 0.32, roughnessStrength: 0.4 },
+  }, { assets: [detailNormal, detailRoughness] })
+  const geometryId = builder.addGeometry({ kind: 'box' })
+  builder.addInstance({ id: 'scene/detail-wall', source: geometryId, materials: [materialId] })
+  const adapter = createSekai64ResourceAdapter({ scene })
+
+  await adapter.transition(builder.build())
+  const mesh = scene.require('scene/detail-wall')
+  assert.ok(mesh.material instanceof StandardMaterial)
+  assert.ok(mesh.material.detailNormalTexture instanceof Texture)
+  assert.ok(mesh.material.detailRoughnessTexture instanceof Texture)
+  assert.equal(mesh.material.detailScale, 14)
+  assert.equal(mesh.material.detailNormalStrength, 0.32)
+  assert.equal(mesh.material.detailRoughnessStrength, 0.4)
+  assert.notEqual(mesh.material.detailNormalTexture, mesh.material.detailRoughnessTexture)
+  await adapter.dispose()
+})

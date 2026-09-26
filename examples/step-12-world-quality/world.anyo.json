@@ -1,0 +1,1479 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.8.schema.json",
+  "version": "0.8",
+  "revision": 0,
+  "metadata": {
+    "id": "step-12-world-quality",
+    "name": "Step 12 Asterfall Research Garden"
+  },
+  "assets": {
+    "micro-normal": {
+      "type": "texture",
+      "format": "png",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABKklEQVR42pWTwUrDQBCGPzehRrFLCsUqFg/Fk3gQDyJ9HF/I1xIPIj15KoKxikqLxUoSIvWwjrvJplEHBnZ2w88/30zWzi8Wy60cqnm9+7c7NZjB8RMA6AzGHXjdhDyAqIDtBUza8N4CtYQ4hbsYphtQKFCJhvm6EbjZgf7cCJwlRuC2CwfTssD+mxUIBzMrIA7S0HeQhkZg1IPTB3OfhhAmGlqfJnUG3Q9zFgGdwWXffiMtSK3qHAiDqz3bwsljfQsq0WWIwuA3iEfP3wKuA4F4+GIFqhBHvQrERPMT0oJEVJictE3tOpDwGNS10DRGj8G447fQyGDVIlUhyhQ8BnVjzIOyQJz6DvLAgSiwdGbPUWH2wK2jwgi4742LtAqi9zP9Z5FcBsN7+AL6iu8xvf/B7AAAAABJRU5ErkJggg==",
+      "colorSpace": "linear"
+    },
+    "micro-rough": {
+      "type": "texture",
+      "format": "png",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB9UlEQVR42pWRW07rMBCGvyJ2QFtaoTRO4lycdL0sg3VQCDiqbcql3BYAKrdCBaI8oBqOOOdIPIz8fTMvnn9a29vby42NDVa1u7vLb3w9CALa7TbtdpvRaEQURX94mqaeZ7MZSinvj4+PtJqmWe7t7dHpdHx99//NOp0O6+PxmMFgQLfbZX9/n263SxzH3tM09Xx/f49Syvt8Pv9cYXNzk7quEUJ4vr29RUpJXdfc3d2R57mfPT09UVUVdV3Tmk6ny4ODA3q9Hr1ej99ya2dnZ9nv9+n3+xweHvJbXg+CAK01Nzc3CCHQWjObzUiSBK01Dw8PZFmG1pr5fI5SCq01i8WC4XD4FeLW1hZN0xBFkWcppec8z2mahpeXF8qypGkaXl9fWQuCgMFggLUWIQRRFDGZTEiShJOTE05PT8myjOl0SlEUKKW4vLykqiqur69pTSaT5Xg8JggCVu+/+G89v4IxBiGE5yRJMMbw/PxMlmUYYyiKAmMMb29vVFWFMeYzRGMMYRgShiHWWuI4xlqLlNL38jzHWotSCmst7+/vXyEKIQjDEOccURThnCNJEpxzLBYLsizDOUdRFDjnKMsS5xzAzxCPjo6I45jj42OklKRpytnZGXmec35+/iPEte8rrH6wuoKU8scVLi4uKMuSq6srhsMhHx/QULDG4tEVAAAAAElFTkSuQmCC",
+      "colorSpace": "linear"
+    },
+    "micro-height": {
+      "type": "texture",
+      "format": "png",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACLUlEQVR42o2SYWfzUBiGr3btmBEy4ViJxmKxWCwWqx1mY/RX7Nf0f40x8qk2arFaJBYOsViYla7EOt2HWl59t3feDw/n3Ifbfd3PaVxcXCw2Nzf511xeXv761hJCoGnaylxdXdVn3/e/aVVVMZ/P6ff7SwNd17m+vkbXdXRdx3Gcb1qv16u1+XzOYrGg2WwuDcIwxDRNDMPAMAzCMMQwDDzPq++z2Yyqqjg5OSEMQ5rNJu12mzUhxGB7e5tOp8PNzQ1vb290u10sy+Lu7o7393d2d3cZj8cANBoN9vf3SdOU9fV1mkIIOp0Ot7e3WJaFbduMx2PiOMbzPLIsQylFr9ejKArKsuTl5YXz83Om0+nSYDgcYpomlmURRRGO4+C6Lmma4vs+QRCQ5zlSytpgMpkwnU5Z03V9YJom3W6X0WjEzs4OURTx8fGB4zg8PDzQaDRIkoRWq8XBwQFZlrGxsYFS6jvCTwn+Rjg7O2MymdDv91cRRqMRtm3jOM5KB78htIQQvL6+Ypoms9msLtF1XeI4xvd94jgmz3M0TaMsSwzD+NOBEGJg2zb39/c1s+u6JElSryrLMg4PD1FKcXR0RJ7nHB8fUxTFzwhfCf4boaoqTNNksVgQRRFBEBDHMUopgiCoS1RK1SUqpZYIW1tbg729PeI4JkkSPM/j8fHxx9hPT09IKXl+fqYsS05PT5cJhsMhUkra7TZRFCGlRNM00jRFSolSiqIoVn7iF8InXqZrrcaoxqAAAAAASUVORK5CYII=",
+      "colorSpace": "linear"
+    },
+    "wood-normal": {
+      "type": "texture",
+      "format": "png",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoklEQVR42qWSMQ7CMBAE59ap6PhxHkxPIoU7iiNSiK1gi8LN2FrJo7F5XuK+wFrgcYN1gvsTepkmB4BN8BIoYIR9DxgUPz3+wVQCglwNgxJ5epmKg1suQ66OMCly9XgxwmSff20HMSNMuxi32nYPU5BW/WB2hOkfgW6NAUX9+IppF2MNWT1Me5qlkWsP06aUcc61l+mcplud6xVTVVtD1hV7A2YA3Bfb1D6VAAAAAElFTkSuQmCC",
+      "colorSpace": "linear"
+    },
+    "wood-rough": {
+      "type": "texture",
+      "format": "png",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABEklEQVR42p2TzZGGIBAFm4HhZggG4MF0zcybERgCA7IHCwutb92fM8Xr4fXglmWp4ziybRv7vjNNE8MwsK4rZsY8z5gZ67oyDAPTNLHvO9u2MY4joqrUWjEzRIQQAqUUcs6EEPDek3OmlIKq4pwjpQRAjPEMOI4DM8N7j6peAaqKiJBSotZKjBEAMwM4z/sLjWhmHMdxBfQXWoCInOefRu4DnsR+2hDCGZBzfiWmlC5iKeUe8EaMMd4KbgGtUO890oh9SSklnHO3Qhsx53w9V0SQXstvlPbTOueQt5JU9SL2/fTTylPLpyV6K1ieWv6qVJqWEAL/USo/Efu9/6RU2kdpWp4lmdmrUmnEGCNvSr/7M19b6FkR06SPiQAAAABJRU5ErkJggg==",
+      "colorSpace": "linear"
+    },
+    "leaf-mask": {
+      "type": "texture",
+      "format": "png",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABG0lEQVR42mO0q3ZjGEjAQo4mQXHO/9jE37/8zkhTB+CyGF2eFIcwUctyctWyUMNAARHOu1jE7ty/+k6FYgfgsxybxchAUVvoDgMDAwM+h7CQYzmyxRwrrivD2D8iNO+S6hAmSiwnFcAcQlYipNRyXI5gojQVUwqY6Ol7bKHAxDDAgImY4Kem79FDYfCFwKgDRh1ACiCmHqCKAz68+a5MbZ/DKiYmajSr6BIF1AwF5Gp5cCZCXNFAjVBAb5SQHAKUOAJbiwhnk+z9y++MuNoFMEdIUGAxUW1CfI4gNrQI5SqCrWJiHYEtaojJ0kSlAXLKBmL1MFHbQFLVspDjK1iUvHBRYGBgYGCQ2POAPp1TXD58ryvOwPDyO1kJFQDOg4jjHoWpywAAAABJRU5ErkJggg==",
+      "colorSpace": "srgb"
+    }
+  },
+  "geometries": {
+    "rock-mass": {
+      "kind": "noise",
+      "source": {
+        "kind": "sphere",
+        "radius": 1.2,
+        "segments": 28,
+        "rings": 14
+      },
+      "seed": 12012,
+      "frequency": 1.15,
+      "strength": 0.24,
+      "octaves": 4,
+      "lacunarity": 2.05,
+      "persistence": 0.47
+    },
+    "cloud-large": {
+      "kind": "noise",
+      "source": {
+        "kind": "lathe",
+        "profile": [
+          [
+            1.55,
+            0
+          ],
+          [
+            2.2,
+            0.18
+          ],
+          [
+            2.65,
+            0.72
+          ],
+          [
+            2.35,
+            1.35
+          ],
+          [
+            1.45,
+            2.05
+          ],
+          [
+            0.45,
+            2.55
+          ],
+          [
+            0,
+            2.72
+          ]
+        ],
+        "segments": 40,
+        "cap": true
+      },
+      "seed": 1042,
+      "frequency": 0.62,
+      "strength": 0.17,
+      "octaves": 4,
+      "lacunarity": 2,
+      "persistence": 0.48
+    },
+    "cloud-medium": {
+      "kind": "noise",
+      "source": {
+        "kind": "lathe",
+        "profile": [
+          [
+            1.2,
+            0
+          ],
+          [
+            1.7,
+            0.14
+          ],
+          [
+            1.95,
+            0.55
+          ],
+          [
+            1.68,
+            1.08
+          ],
+          [
+            0.95,
+            1.55
+          ],
+          [
+            0.25,
+            1.9
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "segments": 32,
+        "cap": true
+      },
+      "seed": 2081,
+      "frequency": 0.78,
+      "strength": 0.14,
+      "octaves": 4,
+      "lacunarity": 2.04,
+      "persistence": 0.46
+    },
+    "cloud-small": {
+      "kind": "noise",
+      "source": {
+        "kind": "lathe",
+        "profile": [
+          [
+            0.72,
+            0
+          ],
+          [
+            1.05,
+            0.1
+          ],
+          [
+            1.12,
+            0.34
+          ],
+          [
+            0.88,
+            0.72
+          ],
+          [
+            0.42,
+            1.02
+          ],
+          [
+            0,
+            1.14
+          ]
+        ],
+        "segments": 28,
+        "cap": true
+      },
+      "seed": 3017,
+      "frequency": 1.05,
+      "strength": 0.11,
+      "octaves": 3,
+      "lacunarity": 2.08,
+      "persistence": 0.44
+    }
+  },
+  "materials": {
+    "meadow": {
+      "shadingModel": "pbr",
+      "baseColor": "#6c7d58",
+      "roughness": 0.94,
+      "metalness": 0
+    },
+    "concrete": {
+      "shadingModel": "pbr",
+      "baseColor": "#a8a39a",
+      "roughness": 0.78,
+      "metalness": 0,
+      "detail": {
+        "normalTexture": "micro-normal",
+        "roughnessTexture": "micro-rough",
+        "heightTexture": "micro-height",
+        "scale": 18,
+        "strength": 0.32,
+        "roughnessStrength": 0.28,
+        "heightScale": 0.018
+      }
+    },
+    "wet-stone": {
+      "shadingModel": "pbr",
+      "baseColor": "#626b72",
+      "roughness": 0.18,
+      "metalness": 0.04,
+      "clearcoat": 0.78,
+      "clearcoatRoughness": 0.1,
+      "detail": {
+        "normalTexture": "micro-normal",
+        "roughnessTexture": "micro-rough",
+        "scale": 13,
+        "strength": 0.22,
+        "roughnessStrength": 0.18
+      }
+    },
+    "wood": {
+      "shadingModel": "pbr",
+      "baseColor": "#6f4d34",
+      "roughness": 0.5,
+      "metalness": 0,
+      "detail": {
+        "normalTexture": "wood-normal",
+        "roughnessTexture": "wood-rough",
+        "scale": 9,
+        "strength": 0.34,
+        "roughnessStrength": 0.24
+      }
+    },
+    "metal": {
+      "shadingModel": "pbr",
+      "baseColor": "#2f3840",
+      "roughness": 0.26,
+      "metalness": 0.88,
+      "clearcoat": 0.16,
+      "clearcoatRoughness": 0.18
+    },
+    "glass": {
+      "shadingModel": "pbr",
+      "baseColor": "#b9ddec",
+      "roughness": 0.06,
+      "metalness": 0,
+      "transmission": 0.92,
+      "ior": 1.5,
+      "transparent": true,
+      "opacity": 0.34,
+      "castShadow": false,
+      "side": "double"
+    },
+    "leaf": {
+      "shadingModel": "pbr",
+      "baseColor": "#78a765",
+      "baseColorTexture": "leaf-mask",
+      "roughness": 0.84,
+      "metalness": 0,
+      "alphaMode": "mask",
+      "alphaCutoff": 0.42,
+      "doubleSided": true,
+      "side": "double",
+      "castShadow": true,
+      "receiveShadow": true
+    },
+    "trunk": {
+      "shadingModel": "pbr",
+      "baseColor": "#5d4635",
+      "roughness": 0.9,
+      "metalness": 0
+    },
+    "rock": {
+      "shadingModel": "pbr",
+      "baseColor": "#777d80",
+      "roughness": 0.88,
+      "metalness": 0,
+      "detail": {
+        "normalTexture": "micro-normal",
+        "roughnessTexture": "micro-rough",
+        "scale": 7,
+        "strength": 0.25,
+        "roughnessStrength": 0.22
+      }
+    },
+    "water": {
+      "shadingModel": "water",
+      "baseColor": "#2b6d7f",
+      "roughness": 0.065,
+      "transmission": 0.68,
+      "ior": 1.333,
+      "transparent": true,
+      "opacity": 0.92,
+      "castShadow": false,
+      "water": {
+        "shallowColor": "#67bbc0",
+        "deepColor": "#123e5c",
+        "foamColor": "#efffff",
+        "fresnelPower": 5.3,
+        "reflectionStrength": 0.86,
+        "absorptionStrength": 0.62,
+        "waveScale": 0.48,
+        "waveStrength": 0.105,
+        "waveSpeed": 0.44,
+        "flowDirection": [
+          0.86,
+          0.28
+        ],
+        "foamStrength": 0.045
+      }
+    },
+    "warm-light": {
+      "shadingModel": "pbr",
+      "baseColor": "#ffd2a0",
+      "emissiveColor": "#ffad5c",
+      "emissiveIntensity": 3.2,
+      "roughness": 0.38,
+      "metalness": 0
+    },
+    "ember": {
+      "shadingModel": "pbr",
+      "baseColor": "#ff9a3d",
+      "emissive": "#ff5f24",
+      "emissiveIntensity": 2.4,
+      "roughness": 0.7,
+      "transparent": true,
+      "opacity": 0.86,
+      "side": "double"
+    },
+    "firefly": {
+      "shadingModel": "pbr",
+      "baseColor": "#e6ff93",
+      "emissive": "#cfff62",
+      "emissiveIntensity": 2.6,
+      "roughness": 0.8,
+      "transparent": true,
+      "opacity": 0.9,
+      "side": "double"
+    },
+    "pollen": {
+      "shadingModel": "pbr",
+      "baseColor": "#f1dca6",
+      "roughness": 1,
+      "transparent": true,
+      "opacity": 0.45,
+      "side": "double"
+    },
+    "cloud-sunlit": {
+      "shadingModel": "pbr",
+      "role": "environment",
+      "baseColor": "#eef3ff",
+      "roughness": 0.95,
+      "metalness": 0,
+      "sheenColor": "#ffe2c7",
+      "sheenIntensity": 0.32,
+      "sheenRoughness": 0.86,
+      "castShadow": true,
+      "receiveShadow": true
+    },
+    "cloud-soft": {
+      "shadingModel": "pbr",
+      "role": "environment",
+      "baseColor": "#ced8ec",
+      "roughness": 0.98,
+      "metalness": 0,
+      "sheenColor": "#f2d5c4",
+      "sheenIntensity": 0.17,
+      "sheenRoughness": 0.92,
+      "castShadow": true,
+      "receiveShadow": true
+    },
+    "cloud-base": {
+      "shadingModel": "pbr",
+      "role": "environment",
+      "baseColor": "#8493b0",
+      "roughness": 1,
+      "metalness": 0,
+      "castShadow": true,
+      "receiveShadow": true
+    }
+  },
+  "compositions": {
+    "garden-tree": {
+      "children": [
+        {
+          "id": "trunk",
+          "type": "cylinder",
+          "radius": 0.22,
+          "height": 3.4,
+          "position": [
+            0,
+            1.7,
+            0
+          ],
+          "material": "trunk"
+        },
+        {
+          "id": "crown-a",
+          "type": "plane",
+          "size": [
+            4.4,
+            4.4
+          ],
+          "position": [
+            0,
+            4.25,
+            0
+          ],
+          "material": "leaf",
+          "rotation": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "crown-b",
+          "type": "plane",
+          "size": [
+            4.2,
+            4.2
+          ],
+          "position": [
+            0,
+            4.25,
+            0
+          ],
+          "material": "leaf",
+          "rotation": [
+            0,
+            1.5707963268,
+            0
+          ]
+        },
+        {
+          "id": "crown-c",
+          "type": "plane",
+          "size": [
+            3.6,
+            3.6
+          ],
+          "position": [
+            0,
+            4.8,
+            0
+          ],
+          "material": "leaf",
+          "rotation": [
+            0,
+            0.7853981634,
+            0
+          ]
+        }
+      ]
+    },
+    "cumulus-mass": {
+      "children": [
+        {
+          "id": "foundation",
+          "type": "geometry",
+          "geometry": "cloud-large",
+          "material": "cloud-soft",
+          "materialBindings": {
+            "startCap": "cloud-base"
+          },
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            2.3,
+            0.72,
+            1.55
+          ]
+        },
+        {
+          "id": "crown",
+          "type": "geometry",
+          "geometry": "cloud-large",
+          "material": "cloud-sunlit",
+          "materialBindings": {
+            "startCap": "cloud-soft"
+          },
+          "position": [
+            0.25,
+            1.35,
+            0
+          ],
+          "scale": [
+            1.2,
+            1.1,
+            1.05
+          ]
+        },
+        {
+          "id": "shoulder-west",
+          "type": "geometry",
+          "geometry": "cloud-medium",
+          "material": "cloud-soft",
+          "materialBindings": {
+            "startCap": "cloud-base"
+          },
+          "position": [
+            -2.3,
+            0.72,
+            0.1
+          ],
+          "scale": [
+            1.25,
+            0.82,
+            1.12
+          ]
+        },
+        {
+          "id": "shoulder-east",
+          "type": "geometry",
+          "geometry": "cloud-medium",
+          "material": "cloud-sunlit",
+          "materialBindings": {
+            "startCap": "cloud-soft"
+          },
+          "position": [
+            2.4,
+            0.86,
+            -0.15
+          ],
+          "scale": [
+            1.15,
+            0.9,
+            1.05
+          ]
+        },
+        {
+          "id": "upper-west",
+          "type": "geometry",
+          "geometry": "cloud-medium",
+          "material": "cloud-sunlit",
+          "position": [
+            -1.1,
+            2.05,
+            -0.2
+          ],
+          "scale": [
+            0.88,
+            1.05,
+            0.92
+          ]
+        },
+        {
+          "id": "upper-east",
+          "type": "geometry",
+          "geometry": "cloud-small",
+          "material": "cloud-sunlit",
+          "position": [
+            1.45,
+            2.18,
+            0.3
+          ],
+          "scale": [
+            1.06,
+            1.08,
+            1
+          ]
+        },
+        {
+          "id": "detail-west",
+          "type": "geometry",
+          "geometry": "cloud-small",
+          "material": "cloud-soft",
+          "position": [
+            -3.25,
+            0.42,
+            -0.35
+          ],
+          "scale": [
+            0.95,
+            0.58,
+            0.88
+          ]
+        },
+        {
+          "id": "detail-east",
+          "type": "geometry",
+          "geometry": "cloud-small",
+          "material": "cloud-soft",
+          "position": [
+            3.28,
+            0.54,
+            0.25
+          ],
+          "scale": [
+            0.9,
+            0.64,
+            0.82
+          ]
+        }
+      ]
+    },
+    "research-pavilion": {
+      "children": [
+        {
+          "id": "foundation",
+          "type": "box",
+          "size": [
+            18,
+            0.7,
+            11
+          ],
+          "position": [
+            0,
+            0.35,
+            0
+          ],
+          "material": "concrete"
+        },
+        {
+          "id": "deck",
+          "type": "box",
+          "size": [
+            16,
+            0.24,
+            9
+          ],
+          "position": [
+            0,
+            0.82,
+            0
+          ],
+          "material": "wood"
+        },
+        {
+          "id": "column-a",
+          "type": "cylinder",
+          "radius": 0.22,
+          "height": 5.1,
+          "position": [
+            -7.1,
+            3.2,
+            -3.8
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "column-b",
+          "type": "cylinder",
+          "radius": 0.22,
+          "height": 5.1,
+          "position": [
+            7.1,
+            3.2,
+            -3.8
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "column-c",
+          "type": "cylinder",
+          "radius": 0.22,
+          "height": 5.1,
+          "position": [
+            -7.1,
+            3.2,
+            3.8
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "column-d",
+          "type": "cylinder",
+          "radius": 0.22,
+          "height": 5.1,
+          "position": [
+            7.1,
+            3.2,
+            3.8
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "roof",
+          "type": "box",
+          "size": [
+            18.5,
+            0.36,
+            11.5
+          ],
+          "position": [
+            0,
+            5.85,
+            0
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "glass-north",
+          "type": "plane",
+          "size": [
+            13.2,
+            4.3
+          ],
+          "position": [
+            0,
+            3.25,
+            -4.48
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "material": "glass"
+        },
+        {
+          "id": "glass-east",
+          "type": "plane",
+          "size": [
+            7.1,
+            4.3
+          ],
+          "position": [
+            7.45,
+            3.25,
+            0
+          ],
+          "rotation": [
+            0,
+            1.5707963268,
+            0
+          ],
+          "material": "glass"
+        },
+        {
+          "id": "bench",
+          "type": "box",
+          "size": [
+            5.2,
+            0.45,
+            1.0
+          ],
+          "position": [
+            -2.5,
+            1.35,
+            2.8
+          ],
+          "material": "wood"
+        },
+        {
+          "id": "bench-leg-a",
+          "type": "box",
+          "size": [
+            0.35,
+            1,
+            0.7
+          ],
+          "position": [
+            -4.3,
+            0.9,
+            2.8
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "bench-leg-b",
+          "type": "box",
+          "size": [
+            0.35,
+            1,
+            0.7
+          ],
+          "position": [
+            -0.7,
+            0.9,
+            2.8
+          ],
+          "material": "metal"
+        },
+        {
+          "id": "warm-panel-a",
+          "type": "box",
+          "size": [
+            0.18,
+            0.5,
+            0.18
+          ],
+          "position": [
+            -5.8,
+            1.3,
+            -3.1
+          ],
+          "material": "warm-light"
+        },
+        {
+          "id": "warm-panel-b",
+          "type": "box",
+          "size": [
+            0.18,
+            0.5,
+            0.18
+          ],
+          "position": [
+            5.8,
+            1.3,
+            -3.1
+          ],
+          "material": "warm-light"
+        }
+      ]
+    }
+  },
+  "environment": {
+    "background": "#101722",
+    "visualStyle": {
+      "profile": "anime-cinematic"
+    },
+    "sky": {
+      "enabled": true,
+      "width": 1024,
+      "height": 512,
+      "zenithColor": "#17335e",
+      "horizonColor": "#d49784",
+      "groundColor": "#18202a",
+      "sunColor": "#ffd5a3",
+      "sunDirection": [
+        0.46,
+        0.42,
+        -0.77
+      ],
+      "sunIntensity": 2.8,
+      "haze": 0.2,
+      "cloudCoverage": 0.24,
+      "cloudDensity": 0.62,
+      "cloudScale": 3.2,
+      "seed": 12012,
+      "stars": {
+        "enabled": true,
+        "density": 0.24,
+        "intensity": 2.6,
+        "brightnessVariation": 0.72,
+        "sizeVariation": 0.46,
+        "colorTemperatureVariation": 0.34,
+        "seed": 121212
+      }
+    },
+    "lighting": {
+      "enabled": true,
+      "skyColor": "#52698f",
+      "groundColor": "#1e2422",
+      "diffuseIntensity": 0.58,
+      "specularIntensity": 0.78,
+      "environmentRotation": 0.12
+    },
+    "ambientLight": {
+      "color": "#536787",
+      "intensity": 0.26
+    },
+    "sun": {
+      "color": "#ffd8ad",
+      "intensity": 1.65,
+      "position": [
+        46,
+        42,
+        28
+      ],
+      "castShadow": true
+    },
+    "atmosphere": {
+      "enabled": true,
+      "mode": "exp2",
+      "color": "#b6c8dc",
+      "density": 0.0065,
+      "baseHeight": 0,
+      "heightFalloff": 0.019,
+      "maxOpacity": 0.62
+    },
+    "shadows": {
+      "enabled": true,
+      "cascades": 3,
+      "filter": "pcf5",
+      "cascadeBlend": 0.14,
+      "distanceFade": 0.22
+    },
+    "postProcessing": {
+      "enabled": true,
+      "bloom": {
+        "enabled": true,
+        "levels": 4,
+        "strength": 0.11
+      },
+      "ssao": {
+        "enabled": true,
+        "mode": "gtao",
+        "denoise": true
+      }
+    }
+  },
+  "entities": [
+    {
+      "id": "terrain",
+      "type": "box",
+      "size": [
+        150,
+        0.5,
+        120
+      ],
+      "position": [
+        0,
+        -0.5,
+        0
+      ],
+      "material": "meadow"
+    },
+    {
+      "id": "lake",
+      "type": "box",
+      "size": [
+        46,
+        0.09,
+        31
+      ],
+      "position": [
+        18,
+        0.015,
+        -5
+      ],
+      "material": "water"
+    },
+    {
+      "id": "wet-plaza",
+      "type": "box",
+      "size": [
+        28,
+        0.18,
+        17
+      ],
+      "position": [
+        -24,
+        0.1,
+        6
+      ],
+      "material": "wet-stone"
+    },
+    {
+      "id": "pavilion",
+      "composition": "research-pavilion",
+      "position": [
+        -24,
+        0.18,
+        6
+      ]
+    },
+    {
+      "id": "boardwalk",
+      "type": "box",
+      "size": [
+        4,
+        0.28,
+        25
+      ],
+      "position": [
+        2,
+        0.28,
+        -2
+      ],
+      "material": "wood"
+    },
+    {
+      "id": "boardwalk-rail-a",
+      "type": "box",
+      "size": [
+        0.12,
+        1.25,
+        25
+      ],
+      "position": [
+        0.25,
+        0.92,
+        -2
+      ],
+      "material": "metal"
+    },
+    {
+      "id": "boardwalk-rail-b",
+      "type": "box",
+      "size": [
+        0.12,
+        1.25,
+        25
+      ],
+      "position": [
+        3.75,
+        0.92,
+        -2
+      ],
+      "material": "metal"
+    },
+    {
+      "id": "tree-north",
+      "composition": "garden-tree",
+      "position": [
+        -50,
+        0,
+        -31
+      ],
+      "repeat": {
+        "count": 11,
+        "axis": "x",
+        "spacing": 9,
+        "variation": {
+          "seed": 12101,
+          "position": {
+            "z": [
+              -2.2,
+              2.2
+            ]
+          },
+          "rotation": {
+            "y": [
+              -0.55,
+              0.55
+            ]
+          },
+          "scale": {
+            "uniform": [
+              0.78,
+              1.18
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "tree-west",
+      "composition": "garden-tree",
+      "position": [
+        -56,
+        0,
+        -27
+      ],
+      "rotation": [
+        0,
+        0.2,
+        0
+      ],
+      "repeat": {
+        "count": 8,
+        "axis": "z",
+        "spacing": 8.5,
+        "variation": {
+          "seed": 12102,
+          "position": {
+            "x": [
+              -2,
+              2
+            ]
+          },
+          "rotation": {
+            "y": [
+              -0.65,
+              0.65
+            ]
+          },
+          "scale": {
+            "uniform": [
+              0.82,
+              1.22
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "rock-bank",
+      "type": "geometry",
+      "geometry": "rock-mass",
+      "material": "rock",
+      "position": [
+        7,
+        0.75,
+        -19
+      ],
+      "repeat": {
+        "count": 8,
+        "axis": "x",
+        "spacing": 5.4,
+        "variation": {
+          "seed": 12103,
+          "position": {
+            "z": [
+              -3,
+              3
+            ],
+            "y": [
+              -0.15,
+              0.35
+            ]
+          },
+          "rotation": {
+            "x": [
+              -0.3,
+              0.3
+            ],
+            "y": [
+              -1.2,
+              1.2
+            ],
+            "z": [
+              -0.18,
+              0.18
+            ]
+          },
+          "scale": {
+            "uniform": [
+              0.65,
+              1.45
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lantern-row",
+      "type": "box",
+      "size": [
+        0.18,
+        0.7,
+        0.18
+      ],
+      "position": [
+        -38,
+        0.48,
+        15
+      ],
+      "material": "warm-light",
+      "repeat": {
+        "count": 7,
+        "axis": "x",
+        "spacing": 4.5,
+        "variation": {
+          "seed": 12104,
+          "position": {
+            "z": [
+              -0.3,
+              0.3
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "cloud-near",
+      "composition": "cumulus-mass",
+      "position": [
+        -48,
+        21,
+        -42
+      ],
+      "scale": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "components": [
+        {
+          "type": "anyo.animation",
+          "autoplay": true,
+          "tracks": [
+            {
+              "id": "drift",
+              "target": "transform.position",
+              "from": [
+                -48,
+                21,
+                -42
+              ],
+              "to": [
+                54,
+                21.7,
+                -35
+              ],
+              "duration": 215,
+              "loop": "repeat",
+              "easing": "linear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-far",
+      "composition": "cumulus-mass",
+      "position": [
+        -70,
+        30,
+        -72
+      ],
+      "rotation": [
+        0,
+        -0.25,
+        0
+      ],
+      "scale": [
+        1.28,
+        1.08,
+        1.38
+      ],
+      "components": [
+        {
+          "type": "anyo.animation",
+          "autoplay": true,
+          "tracks": [
+            {
+              "id": "drift",
+              "target": "transform.position",
+              "from": [
+                -70,
+                30,
+                -72
+              ],
+              "to": [
+                72,
+                30.4,
+                -66
+              ],
+              "duration": 330,
+              "loop": "repeat",
+              "easing": "linear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pollen-field",
+      "type": "group",
+      "position": [
+        -15,
+        2,
+        14
+      ],
+      "components": [
+        {
+          "type": "anyo.vfx",
+          "seed": 12601,
+          "maxParticles": 280,
+          "emission": {
+            "rate": 30,
+            "burst": 55
+          },
+          "lifetime": {
+            "min": 4,
+            "max": 8
+          },
+          "spawnShape": {
+            "type": "box",
+            "size": [
+              24,
+              3,
+              18
+            ]
+          },
+          "velocity": {
+            "min": [
+              -0.09,
+              0.02,
+              -0.08
+            ],
+            "max": [
+              0.12,
+              0.18,
+              0.11
+            ]
+          },
+          "gravity": [
+            0,
+            -0.005,
+            0
+          ],
+          "drag": 0.14,
+          "size": {
+            "start": 0.025,
+            "end": 0.07
+          },
+          "material": "pollen",
+          "opacity": {
+            "min": 0.18,
+            "max": 0.5
+          },
+          "rotation": {
+            "min": -3.14,
+            "max": 3.14
+          },
+          "importance": 0.58,
+          "space": "world",
+          "overLife": {
+            "opacity": {
+              "start": 0,
+              "end": 0
+            },
+            "size": {
+              "start": 0.02,
+              "end": 0.08
+            },
+            "color": {
+              "start": "#fff2c9",
+              "end": "#c5a975"
+            },
+            "rotation": {
+              "start": 0,
+              "end": 2.2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fireflies",
+      "type": "group",
+      "position": [
+        25,
+        2.5,
+        3
+      ],
+      "components": [
+        {
+          "type": "anyo.vfx",
+          "seed": 12602,
+          "maxParticles": 160,
+          "emission": {
+            "rate": 18,
+            "burst": 30
+          },
+          "lifetime": {
+            "min": 3,
+            "max": 7
+          },
+          "spawnShape": {
+            "type": "box",
+            "size": [
+              23,
+              5,
+              18
+            ]
+          },
+          "velocity": {
+            "min": [
+              -0.12,
+              -0.03,
+              -0.12
+            ],
+            "max": [
+              0.12,
+              0.18,
+              0.12
+            ]
+          },
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "drag": 0.28,
+          "size": {
+            "start": 0.035,
+            "end": 0.065
+          },
+          "material": "firefly",
+          "opacity": {
+            "min": 0.55,
+            "max": 0.95
+          },
+          "rotation": {
+            "min": -3.14,
+            "max": 3.14
+          },
+          "importance": 0.72,
+          "space": "world",
+          "overLife": {
+            "opacity": {
+              "start": 0,
+              "end": 0
+            },
+            "size": {
+              "start": 0.025,
+              "end": 0.07
+            },
+            "color": {
+              "start": "#f4ffb2",
+              "end": "#aef35d"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "embers",
+      "type": "group",
+      "position": [
+        -18,
+        1.2,
+        9
+      ],
+      "components": [
+        {
+          "type": "anyo.vfx",
+          "seed": 12603,
+          "maxParticles": 110,
+          "emission": {
+            "rate": 15,
+            "burst": 18
+          },
+          "lifetime": {
+            "min": 1.4,
+            "max": 3.4
+          },
+          "spawnShape": {
+            "type": "sphere",
+            "radius": 0.6
+          },
+          "velocity": {
+            "min": [
+              -0.08,
+              0.25,
+              -0.08
+            ],
+            "max": [
+              0.08,
+              1.05,
+              0.08
+            ]
+          },
+          "gravity": [
+            0,
+            0.05,
+            0
+          ],
+          "drag": 0.06,
+          "size": {
+            "start": 0.025,
+            "end": 0.055
+          },
+          "material": "ember",
+          "opacity": {
+            "min": 0.62,
+            "max": 0.95
+          },
+          "rotation": {
+            "min": -1,
+            "max": 1
+          },
+          "importance": 0.66,
+          "space": "world",
+          "overLife": {
+            "opacity": {
+              "start": 0.9,
+              "end": 0
+            },
+            "size": {
+              "start": 0.04,
+              "end": 0.015
+            },
+            "color": {
+              "start": "#ffd068",
+              "end": "#ff4d23"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

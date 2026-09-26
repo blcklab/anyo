@@ -338,6 +338,44 @@
           "minimum": 0,
           "maximum": 1
         },
+        "detail": {
+          "type": "object",
+          "properties": {
+            "normalTexture": {
+              "type": "string",
+              "minLength": 1
+            },
+            "roughnessTexture": {
+              "type": "string",
+              "minLength": 1
+            },
+            "heightTexture": {
+              "type": "string",
+              "minLength": 1
+            },
+            "scale": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1024
+            },
+            "strength": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "roughnessStrength": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "heightScale": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.25
+            }
+          },
+          "additionalProperties": false
+        },
         "textureTransform": {
           "type": "object",
           "properties": {
@@ -659,6 +697,34 @@
             "absorptionStrength": {
               "type": "number",
               "minimum": 0
+            },
+            "waveScale": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 64
+            },
+            "waveStrength": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "waveSpeed": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8
+            },
+            "flowDirection": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            "foamStrength": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
             }
           },
           "additionalProperties": false
@@ -1573,6 +1639,42 @@
             },
             "seed": {
               "type": "number"
+            },
+            "stars": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "density": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "intensity": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "brightnessVariation": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "sizeVariation": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "colorTemperatureVariation": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "seed": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false

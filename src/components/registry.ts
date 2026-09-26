@@ -103,6 +103,115 @@ function componentData(component: ComponentDefinition): Readonly<Record<string, 
   return data
 }
 
+function finiteVec3(value: unknown): readonly [number, number, number] | undefined {
+  if (!Array.isArray(value) || value.length !== 3) return undefined
+  if (!value.every((item) => typeof item === 'number' && Number.isFinite(item))) return undefined
+  return [Number(value[0]), Number(value[1]), Number(value[2])]
+}
+
+function scalarRange(value: unknown, fallback: number): { min: number; max: number } {
+  const record = isRecord(value) ? value : undefined
+  const minValue = typeof record?.min === 'number' && Number.isFinite(record.min) ? record.min : undefined
+  const maxValue = typeof record?.max === 'number' && Number.isFinite(record.max) ? record.max : undefined
+  const min = minValue ?? maxValue ?? fallback
+  const max = maxValue ?? minValue ?? fallback
+  return { min, max }
+}
+
+function vectorRange(value: unknown): { min: readonly [number, number, number]; max: readonly [number, number, number] } | undefined {
+  if (!isRecord(value)) return undefined
+  const minValue = finiteVec3(value.min)
+  const maxValue = finiteVec3(value.max)
+  if (!minValue && !maxValue) return undefined
+  return { min: minValue ?? maxValue!, max: maxValue ?? minValue! }
+}
+
+function legacyVelocity(component: ComponentDefinition): { min: readonly [number, number, number]; max: readonly [number, number, number] } | undefined {
+  const direction = finiteVec3(component.direction)
+  if (!direction || !isRecord(component.speed)) return undefined
+  const speed = scalarRange(component.speed, 0)
+  return {
+    min: [direction[0] * speed.min, direction[1] * speed.min, direction[2] * speed.min],
+    max: [direction[0] * speed.max, direction[1] * speed.max, direction[2] * speed.max],
+  }
+}
+
+function scalarOverLife(value: unknown, fallback?: { start: number; end: number }): { start: number; end: number } | undefined {
+  if (!isRecord(value)) return fallback
+  const start = typeof value.start === 'number' && Number.isFinite(value.start) ? value.start : fallback?.start
+  const end = typeof value.end === 'number' && Number.isFinite(value.end) ? value.end : fallback?.end ?? start
+  if (start === undefined || end === undefined) return fallback
+  return { start, end }
+}
+
+function colorOverLife(value: unknown): { start: string; end: string } | undefined {
+  if (!isRecord(value)) return undefined
+  const start = typeof value.start === 'string' && value.start.trim() ? value.start : undefined
+  const end = typeof value.end === 'string' && value.end.trim() ? value.end : start
+  return start && end ? { start, end } : undefined
+}
+
+/** Canonical renderer-neutral emitter data consumed by renderer integrations. */
+function compileVfxComponent(component: ComponentDefinition): Readonly<Record<string, JsonValue>> {
+  const data = { ...componentData(component) } as Record<string, JsonValue>
+  const emission = isRecord(component.emission) ? component.emission : {}
+  const spawn = isRecord(component.spawnShape) ? component.spawnShape : {}
+  const authoredVelocity = vectorRange(component.velocity)
+  const velocity = authoredVelocity ?? legacyVelocity(component) ?? { min: [0, 0, 0] as const, max: [0, 0, 0] as const }
+  const acceleration = finiteVec3(component.acceleration) ?? [0, 0, 0]
+  const gravity = finiteVec3(component.gravity) ?? [0, 0, 0]
+  const opacity = scalarRange(component.opacity, 1)
+  const rotation = scalarRange(component.rotation, 0)
+  const lifetime = scalarRange(component.lifetime, 1)
+  const authoredOverLife = isRecord(component.overLife) ? component.overLife : {}
+  const legacySize = isRecord(component.size)
+    ? scalarOverLife(component.size)
+    : undefined
+  const overLifeSize = scalarOverLife(authoredOverLife.size, legacySize)
+  const overLifeOpacity = scalarOverLife(authoredOverLife.opacity)
+  const overLifeRotation = scalarOverLife(authoredOverLife.rotation)
+  const overLifeColor = colorOverLife(authoredOverLife.color)
+  const shape = spawn.type === 'sphere' || spawn.type === 'box' || spawn.type === 'surface' ? spawn.type : 'point'
+  const spawnShape: Record<string, JsonValue> = { type: shape }
+  if (shape === 'sphere' && typeof spawn.radius === 'number' && Number.isFinite(spawn.radius)) spawnShape.radius = spawn.radius
+  if (shape === 'box') {
+    const size = finiteVec3(spawn.size)
+    if (size) spawnShape.size = size as unknown as JsonValue
+  }
+
+  data.effect = 'sprite-particles'
+  data.seed = typeof component.seed === 'number' && Number.isInteger(component.seed) ? component.seed : 0
+  data.autoplay = typeof component.autoplay === 'boolean' ? component.autoplay : typeof component.playOnStart === 'boolean' ? component.playOnStart : true
+  data.playOnStart = typeof component.playOnStart === 'boolean' ? component.playOnStart : data.autoplay
+  data.loop = typeof component.loop === 'boolean' ? component.loop : true
+  data.maxParticles = typeof component.maxParticles === 'number' && Number.isInteger(component.maxParticles) ? component.maxParticles : 256
+  data.emission = {
+    rate: typeof emission.rate === 'number' && Number.isFinite(emission.rate) ? emission.rate : 0,
+    burst: typeof emission.burst === 'number' && Number.isFinite(emission.burst) ? emission.burst : 0,
+  }
+  data.lifetime = lifetime
+  data.spawnShape = spawnShape
+  data.velocity = velocity as unknown as JsonValue
+  data.acceleration = acceleration as unknown as JsonValue
+  data.gravity = gravity as unknown as JsonValue
+  data.drag = typeof component.drag === 'number' && Number.isFinite(component.drag) ? component.drag : 0
+  data.opacity = opacity
+  data.rotation = rotation
+  if (overLifeSize || overLifeOpacity || overLifeRotation || overLifeColor) {
+    data.overLife = {
+      ...(overLifeSize ? { size: overLifeSize } : {}),
+      ...(overLifeOpacity ? { opacity: overLifeOpacity } : {}),
+      ...(overLifeRotation ? { rotation: overLifeRotation } : {}),
+      ...(overLifeColor ? { color: overLifeColor } : {}),
+    }
+  }
+  data.importance = typeof component.importance === 'number' && Number.isFinite(component.importance) ? component.importance : 1
+  data.space = component.space === 'world' ? 'world' : 'local'
+  data.color = typeof component.color === 'string' ? component.color : '#ffffff'
+  if (typeof component.material === 'string') data.material = component.material
+  return Object.freeze(data)
+}
+
 function asInteraction(component: ComponentDefinition): InteractionDefinition {
   const events = component.events
   const select = events && typeof events === 'object' && !Array.isArray(events)
@@ -264,6 +373,7 @@ export function resolveEntityComponents(
       case 'anyo.visibility': if (typeof component.visible === 'boolean') visible = component.visible; dynamic = true; break
       case 'anyo.map': dynamic = true; break
       case 'anyo.mapFeature': dynamic = true; break
+      case 'anyo.vfx': dynamic = true; break
       case 'anyo.animation': dynamic = true; break
       case 'anyo.rigidBody': dynamic = true; break
       case 'anyo.characterController': dynamic = true; break
@@ -308,6 +418,7 @@ export function registerBuiltInComponents(registry: ComponentTypeRegistry): void
     { type: 'anyo.collider' },
     { type: 'anyo.map' },
     { type: 'anyo.mapFeature' },
+    { type: 'anyo.vfx', compile: compileVfxComponent },
     {
       type: 'anyo.audio',
       validate(component, context) {

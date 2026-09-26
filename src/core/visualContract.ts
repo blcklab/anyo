@@ -114,12 +114,21 @@ export const ANYO_VISUAL_DEFAULTS = Object.freeze({
 })
 
 export function normalizeMaterialDefinition(definition: MaterialDefinition = {}): NormalizedMaterialDefinition {
+  const { detail: authoredDetail, ...definitionWithoutDetail } = definition
+  const detail = authoredDetail ? {
+    ...authoredDetail,
+    scale: authoredDetail.scale ?? 1,
+    strength: authoredDetail.strength ?? 1,
+    roughnessStrength: authoredDetail.roughnessStrength ?? 1,
+    heightScale: authoredDetail.heightScale ?? 0.02,
+  } : undefined
   const opacity = definition.opacity ?? 1
   const transmission = definition.transmission ?? 0
   const alphaMode = definition.alphaMode ?? (definition.transparent || opacity < 1 || transmission > 0 ? 'blend' : 'opaque')
   const doubleSided = definition.doubleSided ?? definition.side === 'double'
   return {
-    ...definition,
+    ...definitionWithoutDetail,
+    ...(detail ? { detail } : {}),
     baseColor: definition.baseColor ?? definition.color ?? ANYO_VISUAL_DEFAULTS.material.baseColor,
     emissive: definition.emissive ?? ANYO_VISUAL_DEFAULTS.material.emissive,
     emissiveIntensity: definition.emissiveIntensity ?? (definition.emissive || definition.emissiveTexture ? 1 : 0),

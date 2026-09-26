@@ -1,0 +1,82 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.8.schema.json",
+  "version": "0.8",
+  "revision": 0,
+  "metadata": {
+    "id": "step-09-night-sky",
+    "name": "Step 09 Procedural Night Sky"
+  },
+  "materials": {
+    "platform": {
+      "shadingModel": "pbr",
+      "baseColor": "#111522",
+      "roughness": 0.78,
+      "metalness": 0.04
+    },
+    "observatory": {
+      "shadingModel": "pbr",
+      "baseColor": "#252b3a",
+      "roughness": 0.42,
+      "metalness": 0.56
+    },
+    "warm-light": {
+      "shadingModel": "pbr",
+      "baseColor": "#ffd6a0",
+      "emissiveColor": "#ffb861",
+      "emissiveIntensity": 2.2,
+      "roughness": 0.45,
+      "metalness": 0
+    }
+  },
+  "environment": {
+    "background": "#01030a",
+    "visualStyle": { "profile": "anime-cinematic" },
+    "sky": {
+      "enabled": true,
+      "width": 1024,
+      "height": 512,
+      "zenithColor": "#01030e",
+      "horizonColor": "#10162b",
+      "groundColor": "#010207",
+      "sunIntensity": 0,
+      "haze": 0.045,
+      "cloudCoverage": 0,
+      "seed": 9009,
+      "stars": {
+        "enabled": true,
+        "density": 0.62,
+        "intensity": 4.6,
+        "brightnessVariation": 0.78,
+        "sizeVariation": 0.58,
+        "colorTemperatureVariation": 0.46,
+        "seed": 99173
+      }
+    },
+    "lighting": {
+      "enabled": true,
+      "skyColor": "#172244",
+      "groundColor": "#04050a",
+      "diffuseIntensity": 0.12,
+      "specularIntensity": 0.2,
+      "environmentRotation": 0.18
+    },
+    "ambientLight": {
+      "color": "#172044",
+      "intensity": 0.09
+    },
+    "postProcessing": {
+      "enabled": true,
+      "bloom": { "enabled": true, "levels": 4, "strength": 0.1 }
+    }
+  },
+  "entities": [
+    { "id": "platform", "type": "box", "size": [24, 0.5, 18], "position": [0, -0.5, 0], "material": "platform" },
+    { "id": "observatory-base", "type": "box", "size": [5.5, 2.7, 5.5], "position": [-5.5, 1.1, -2], "material": "observatory" },
+    { "id": "observatory-roof", "type": "box", "size": [6.2, 0.45, 6.2], "position": [-5.5, 2.75, -2], "material": "observatory" },
+    { "id": "telescope-pier", "type": "box", "size": [0.75, 2.7, 0.75], "position": [4, 1.1, -1], "material": "observatory" },
+    { "id": "telescope-body", "type": "box", "size": [0.8, 0.8, 4.1], "position": [4, 2.75, -2.2], "rotation": [-0.48, 0.18, 0], "material": "observatory" },
+    { "id": "path-light-a", "type": "box", "size": [0.18, 0.5, 0.18], "position": [-2.5, 0.25, 4], "material": "warm-light" },
+    { "id": "path-light-b", "type": "box", "size": [0.18, 0.5, 0.18], "position": [0, 0.25, 4], "material": "warm-light" },
+    { "id": "path-light-c", "type": "box", "size": [0.18, 0.5, 0.18], "position": [2.5, 0.25, 4], "material": "warm-light" }
+  ]
+}

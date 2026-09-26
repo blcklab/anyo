@@ -1,0 +1,213 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.8.schema.json",
+  "version": "0.8",
+  "revision": 0,
+  "metadata": {
+    "id": "step-10-cloud-quality",
+    "name": "Step 10 Generic Cloud Quality"
+  },
+  "geometries": {
+    "cloud-large": {
+      "kind": "noise",
+      "source": {
+        "kind": "lathe",
+        "profile": [[1.55, 0], [2.2, 0.18], [2.65, 0.72], [2.35, 1.35], [1.45, 2.05], [0.45, 2.55], [0, 2.72]],
+        "segments": 40,
+        "cap": true
+      },
+      "seed": 1042,
+      "frequency": 0.62,
+      "strength": 0.17,
+      "octaves": 4,
+      "lacunarity": 2,
+      "persistence": 0.48
+    },
+    "cloud-medium": {
+      "kind": "noise",
+      "source": {
+        "kind": "lathe",
+        "profile": [[1.2, 0], [1.7, 0.14], [1.95, 0.55], [1.68, 1.08], [0.95, 1.55], [0.25, 1.9], [0, 2]],
+        "segments": 32,
+        "cap": true
+      },
+      "seed": 2081,
+      "frequency": 0.78,
+      "strength": 0.14,
+      "octaves": 4,
+      "lacunarity": 2.04,
+      "persistence": 0.46
+    },
+    "cloud-small": {
+      "kind": "noise",
+      "source": {
+        "kind": "lathe",
+        "profile": [[0.72, 0], [1.05, 0.1], [1.12, 0.34], [0.88, 0.72], [0.42, 1.02], [0, 1.14]],
+        "segments": 28,
+        "cap": true
+      },
+      "seed": 3017,
+      "frequency": 1.05,
+      "strength": 0.11,
+      "octaves": 3,
+      "lacunarity": 2.08,
+      "persistence": 0.44
+    }
+  },
+  "materials": {
+    "cloud-sunlit": {
+      "shadingModel": "pbr",
+      "role": "environment",
+      "baseColor": "#eef4ff",
+      "roughness": 0.95,
+      "metalness": 0,
+      "sheenColor": "#fff0d4",
+      "sheenIntensity": 0.34,
+      "sheenRoughness": 0.86,
+      "castShadow": true,
+      "receiveShadow": true
+    },
+    "cloud-soft": {
+      "shadingModel": "pbr",
+      "role": "environment",
+      "baseColor": "#d9e3f8",
+      "roughness": 0.98,
+      "metalness": 0,
+      "sheenColor": "#f8e6d2",
+      "sheenIntensity": 0.18,
+      "sheenRoughness": 0.92,
+      "castShadow": true,
+      "receiveShadow": true
+    },
+    "cloud-base": {
+      "shadingModel": "pbr",
+      "role": "environment",
+      "baseColor": "#9cadd0",
+      "roughness": 1,
+      "metalness": 0,
+      "castShadow": true,
+      "receiveShadow": true
+    },
+    "ground": {
+      "shadingModel": "pbr",
+      "baseColor": "#7b8c74",
+      "roughness": 0.96,
+      "metalness": 0
+    },
+    "stone": {
+      "shadingModel": "pbr",
+      "baseColor": "#8e9298",
+      "roughness": 0.82,
+      "metalness": 0
+    }
+  },
+  "compositions": {
+    "cumulus-mass": {
+      "children": [
+        { "id": "foundation", "type": "geometry", "geometry": "cloud-large", "material": "cloud-soft", "materialBindings": { "startCap": "cloud-base" }, "position": [0, 0, 0], "scale": [2.3, 0.72, 1.55] },
+        { "id": "crown", "type": "geometry", "geometry": "cloud-large", "material": "cloud-sunlit", "materialBindings": { "startCap": "cloud-soft" }, "position": [0.25, 1.35, 0], "scale": [1.2, 1.1, 1.05] },
+        { "id": "shoulder-west", "type": "geometry", "geometry": "cloud-medium", "material": "cloud-soft", "materialBindings": { "startCap": "cloud-base" }, "position": [-2.3, 0.72, 0.1], "scale": [1.25, 0.82, 1.12] },
+        { "id": "shoulder-east", "type": "geometry", "geometry": "cloud-medium", "material": "cloud-sunlit", "materialBindings": { "startCap": "cloud-soft" }, "position": [2.4, 0.86, -0.15], "scale": [1.15, 0.9, 1.05] },
+        { "id": "upper-west", "type": "geometry", "geometry": "cloud-medium", "material": "cloud-sunlit", "position": [-1.1, 2.05, -0.2], "scale": [0.88, 1.05, 0.92] },
+        { "id": "upper-east", "type": "geometry", "geometry": "cloud-small", "material": "cloud-sunlit", "position": [1.45, 2.18, 0.3], "scale": [1.06, 1.08, 1] },
+        { "id": "detail-west", "type": "geometry", "geometry": "cloud-small", "material": "cloud-soft", "position": [-3.25, 0.42, -0.35], "scale": [0.95, 0.58, 0.88] },
+        { "id": "detail-east", "type": "geometry", "geometry": "cloud-small", "material": "cloud-soft", "position": [3.28, 0.54, 0.25], "scale": [0.9, 0.64, 0.82] }
+      ]
+    }
+  },
+  "environment": {
+    "visualStyle": { "profile": "anime-cinematic" },
+    "sky": {
+      "enabled": true,
+      "width": 512,
+      "height": 256,
+      "zenithColor": "#4f8ed8",
+      "horizonColor": "#d9c9bc",
+      "sunColor": "#fff0cc",
+      "sunDirection": [0.42, 0.73, -0.54],
+      "sunIntensity": 6.5,
+      "haze": 0.24,
+      "cloudCoverage": 0.2,
+      "cloudDensity": 0.58,
+      "cloudScale": 3.1,
+      "seed": 10010
+    },
+    "sun": {
+      "color": "#fff1d6",
+      "intensity": 1.75,
+      "position": [32, 44, 18],
+      "castShadow": true
+    },
+    "atmosphere": {
+      "enabled": true,
+      "mode": "exp2",
+      "color": "#c8d8ed",
+      "density": 0.006,
+      "baseHeight": 0,
+      "heightFalloff": 0.018,
+      "maxOpacity": 0.6
+    },
+    "shadows": {
+      "enabled": true,
+      "cascades": 3,
+      "filter": "pcf5",
+      "cascadeBlend": 0.12,
+      "distanceFade": 0.2
+    },
+    "postProcessing": {
+      "enabled": true,
+      "bloom": { "enabled": true, "levels": 4, "strength": 0.08 },
+      "ssao": { "enabled": true, "mode": "gtao", "denoise": true }
+    }
+  },
+  "entities": [
+    { "id": "ground", "type": "box", "size": [120, 0.5, 90], "position": [0, -0.5, 0], "material": "ground" },
+    { "id": "lookout", "type": "cylinder", "radius": 5.5, "height": 1.2, "position": [0, 0.6, 8], "material": "stone" },
+    {
+      "id": "cloud-near",
+      "composition": "cumulus-mass",
+      "position": [-42, 18, -34],
+      "scale": [2.2, 2.2, 2.2],
+      "components": [
+        {
+          "type": "anyo.animation",
+          "autoplay": true,
+          "tracks": [
+            { "id": "drift", "target": "transform.position", "from": [-42, 18, -34], "to": [48, 18.8, -28], "duration": 190, "loop": "repeat", "easing": "linear" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-mid",
+      "composition": "cumulus-mass",
+      "position": [-55, 24, -52],
+      "rotation": [0, 0.22, 0],
+      "scale": [1.65, 1.45, 1.7],
+      "components": [
+        {
+          "type": "anyo.animation",
+          "autoplay": true,
+          "tracks": [
+            { "id": "drift", "target": "transform.position", "from": [-55, 24, -52], "to": [55, 24.6, -46], "duration": 245, "loop": "repeat", "easing": "linear" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloud-high",
+      "composition": "cumulus-mass",
+      "position": [-68, 31, -70],
+      "rotation": [0, -0.28, 0],
+      "scale": [1.25, 1.08, 1.38],
+      "components": [
+        {
+          "type": "anyo.animation",
+          "autoplay": true,
+          "tracks": [
+            { "id": "drift", "target": "transform.position", "from": [-68, 31, -70], "to": [68, 31.4, -65], "duration": 310, "loop": "repeat", "easing": "linear" }
+          ]
+        }
+      ]
+    }
+  ]
+}

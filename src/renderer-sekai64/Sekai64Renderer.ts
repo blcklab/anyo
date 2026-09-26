@@ -15,6 +15,7 @@ import {
   OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
+  ParticleEmitter,
   PointLight,
   Scene,
   SphereGeometry,
@@ -26,6 +27,7 @@ import {
   type EngineOptions,
   type Geometry,
   type Material,
+  type ParticleQuality,
   type ResourceScope,
 } from '@blcklab/sekai64'
 import { AssetLoaderRegistry, type AssetLoaderRegistration } from '@blcklab/sekai64/assets'
@@ -38,6 +40,7 @@ import { createProceduralSky } from '@blcklab/sekai64/environment-authoring'
 import type { XRFrameState } from '@blcklab/sekai64/xr'
 import type {
   CompiledPrimitive,
+  CompiledEntityNode,
   CompiledWorld,
   CompiledCamera,
   CompiledWorldChannels,
@@ -107,6 +110,8 @@ export interface Sekai64RendererOptions {
   assetLoaders?: readonly AssetLoaderRegistration<Node>[]
   /** Optional Sekai64 renderer modules installed with the engine lifecycle. */
   modules?: readonly RendererModule[]
+  /** Renderer-owned generic particle density policy; not part of Anyo JSON semantics. */
+  particleQuality?: ParticleQuality
   engineFactory?: (options: EngineOptions) => Promise<Engine>
 }
 
@@ -229,6 +234,75 @@ function materialKey(name: string | undefined, definition: MaterialDefinition): 
   })
 }
 
+
+function particleRecord(value: unknown): Readonly<Record<string, unknown>> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Readonly<Record<string, unknown>> : {}
+}
+
+function particleNumber(value: unknown, fallback: number, minimum = -Infinity, maximum = Infinity): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(minimum, Math.min(maximum, value)) : fallback
+}
+
+function particleInteger(value: unknown, fallback: number, minimum = -0xffffffff): number {
+  return typeof value === 'number' && Number.isSafeInteger(value) ? Math.max(minimum, value) : fallback
+}
+
+function particleVec3(value: unknown, fallback: readonly [number, number, number]): readonly [number, number, number] {
+  if (!Array.isArray(value) || value.length !== 3 || value.some(item => typeof item !== 'number' || !Number.isFinite(item))) return fallback
+  return [value[0] as number, value[1] as number, value[2] as number]
+}
+
+function particleScalarRange(value: unknown, defaultMin: number, defaultMax: number): { min: number; max: number } {
+  const record = particleRecord(value)
+  const min = particleNumber(record.min, defaultMin)
+  const max = particleNumber(record.max, defaultMax)
+  return max >= min ? { min, max } : { min: max, max: min }
+}
+
+function particleVectorRange(value: unknown): { min: readonly [number, number, number]; max: readonly [number, number, number] } {
+  const record = particleRecord(value)
+  const min = particleVec3(record.min, [0, 0, 0])
+  const max = particleVec3(record.max, min)
+  return { min, max }
+}
+
+function particleLegacySizeRange(value: unknown): { min: number; max: number } {
+  const record = particleRecord(value)
+  const start = particleNumber(record.start, 0.1, 0)
+  const end = particleNumber(record.end, start, 0)
+  return { min: Math.min(start, end), max: Math.max(start, end) }
+}
+
+function particleOverLifeScalar(value: unknown, minimum = -Infinity, maximum = Infinity): { start: number; end: number } | undefined {
+  const record = particleRecord(value)
+  if (record.start === undefined && record.end === undefined) return undefined
+  const start = particleNumber(record.start, particleNumber(record.end, 0), minimum, maximum)
+  const end = particleNumber(record.end, start, minimum, maximum)
+  return { start, end }
+}
+
+function particleOverLifeColor(value: unknown): { start: readonly [number, number, number]; end: readonly [number, number, number] } | undefined {
+  const record = particleRecord(value)
+  if (typeof record.start !== 'string' && typeof record.end !== 'string') return undefined
+  try {
+    const start = Color.from(typeof record.start === 'string' ? record.start : record.end as string)
+    const end = Color.from(typeof record.end === 'string' ? record.end : record.start as string)
+    return { start: [start.r, start.g, start.b], end: [end.r, end.g, end.b] }
+  } catch { return undefined }
+}
+
+function particleSpawnShape(value: unknown):
+  | { type: 'point' }
+  | { type: 'box'; size: readonly [number, number, number] }
+  | { type: 'sphere'; radius: number }
+  | { type: 'surface'; size?: readonly [number, number, number] } {
+  const record = particleRecord(value)
+  if (record.type === 'box') return { type: 'box', size: particleVec3(record.size, [1, 1, 1]) }
+  if (record.type === 'sphere') return { type: 'sphere', radius: particleNumber(record.radius, 0.5, 0.000001) }
+  if (record.type === 'surface') return { type: 'surface' }
+  return { type: 'point' }
+}
+
 function capabilitiesFromEngine(engine: Engine, assetLoaders: AssetLoaderRegistry): RendererCapabilities {
   const features = engine.capabilities.features
   const materialTextureChannels: NonNullable<RendererCapabilities['materialTextureChannels']>[number][] = []
@@ -245,7 +319,7 @@ function capabilitiesFromEngine(engine: Engine, assetLoaders: AssetLoaderRegistr
       audio: ['mp3', 'ogg', 'wav', 'm4a'],
     },
     materialTextureChannels,
-    materialFeatures: ['normalScale', 'occlusionStrength', 'emissiveIntensity', 'transmission', 'ior', 'thickness', 'attenuation', 'textureTransform', 'textureWrap', 'toonShading', 'mtoonShading'],
+    materialFeatures: ['normalScale', 'occlusionStrength', 'emissiveIntensity', 'transmission', 'ior', 'thickness', 'attenuation', 'textureTransform', 'textureWrap', 'materialDetail', 'toonShading', 'mtoonShading'],
     colorManagement: true,
     environmentLighting: true,
     atmosphere: true,
@@ -328,6 +402,8 @@ export class Sekai64Renderer implements RendererAdapter {
   private readonly externalEntityByPrimitiveId = new Map<string, string | undefined>()
   private readonly externalNodeByPrimitiveId = new Map<string, Node>()
   private readonly primitiveCache = new Map<string, CompiledPrimitive>()
+  private readonly particleEmitters = new Map<string, ParticleEmitter>()
+  private lastParticleFrameTime = 0
   private readonly diagnostics: RendererDiagnostic[] = []
   private readonly diagnosticListeners = new Set<(diagnostic: RendererDiagnostic) => void>()
   private readonly assetProgressListeners = new Set<(progress: RendererAssetProgress) => void>()
@@ -476,6 +552,7 @@ export class Sekai64Renderer implements RendererAdapter {
 
     this.installEnvironment(document)
     this.mountPrimitiveBatches(compiled.primitives, generation)
+    this.mountParticleEmitters(compiled.entities ?? [])
     if (compiled.resourceGraph) {
       const native = this.getNativeAccess()
       if (!native) throw new Error('Sekai64 native access is unavailable for Anyo ResourceGraph realization.')
@@ -741,6 +818,10 @@ export class Sekai64Renderer implements RendererAdapter {
   render(): void {
     this.assertAlive()
     if (!this.engine || !this.scene) return
+    const frameTime = now()
+    const particleDelta = this.lastParticleFrameTime > 0 ? Math.min(0.25, Math.max(0, (frameTime - this.lastParticleFrameTime) / 1000)) : 0
+    this.lastParticleFrameTime = frameTime
+    for (const emitter of this.particleEmitters.values()) emitter.update(particleDelta, this.activeCamera)
     if (this.xrFrameState && this.xr.state === 'active') this.xr.render(this.scene, this.xrFrameState)
     else this.engine.render(this.scene, this.activeCamera)
     this.metrics.drawCalls = this.engine.stats.drawCalls
@@ -989,6 +1070,97 @@ export class Sekai64Renderer implements RendererAdapter {
     return engine
   }
 
+  private mountParticleEmitters(entities: readonly CompiledEntityNode[]): void {
+    if (!this.scene || !this.unitPlane) return
+    for (const entity of entities) {
+      if (entity.enabled === false) continue
+      for (const [componentIndex, component] of (entity.components ?? []).entries()) {
+        if (!component.enabled || component.type !== 'anyo.vfx') continue
+        const data = component.data as Readonly<Record<string, unknown>>
+        if (data.effect !== 'sprite-particles') continue
+        const id = `anyo-vfx:${entity.id}:${component.id ?? componentIndex}`
+        const opacity = particleScalarRange(data.opacity, 1, 1)
+        const color = typeof data.color === 'string' ? data.color : '#ffffff'
+        const materialId = typeof data.material === 'string' ? data.material : undefined
+        const primitive: CompiledPrimitive = {
+          id,
+          kind: 'plane',
+          transform: entity.transform,
+          material: materialId,
+          roomId: entity.roomId,
+          entityId: entity.id,
+          color,
+          visible: true,
+          renderMask: entity.renderMask,
+          pickingMask: entity.pickingMask,
+          editorMask: entity.editorMask,
+          tags: ['vfx', 'effect'],
+        }
+        const averageOpacity = (opacity.min + opacity.max) * 0.5
+        const legacyTexture = typeof data.texture === 'string' && data.texture.trim() ? data.texture : undefined
+        const material = this.materialFor(primitive, {
+          baseColor: color,
+          ...(legacyTexture ? { baseColorTexture: legacyTexture } : {}),
+          opacity: averageOpacity,
+          transparent: true,
+          alphaMode: 'blend',
+          side: 'double',
+          roughness: 1,
+          metalness: 0,
+        }, legacyTexture ? { baseColorTexture: legacyTexture } : undefined)
+        const emission = particleRecord(data.emission)
+        const velocity = particleVectorRange(data.velocity)
+        const size = particleLegacySizeRange(data.size)
+        const overLife = particleRecord(data.overLife)
+        const sizeOverLife = particleOverLifeScalar(overLife.size, 0)
+        const opacityOverLife = particleOverLifeScalar(overLife.opacity, 0, 1)
+        const rotationOverLife = particleOverLifeScalar(overLife.rotation)
+        const colorOverLife = particleOverLifeColor(overLife.color)
+        const emitter = new ParticleEmitter({
+          id,
+          name: id,
+          tags: ['anyo-vfx', 'particle-emitter'],
+          geometry: this.unitPlane,
+          material,
+          ownsResources: false,
+          layerMask: (entity.renderMask ?? DEFAULT_RENDER_MASK) & RENDER_MASK_LIMIT,
+          castShadow: false,
+          receiveShadow: false,
+          seed: particleInteger(data.seed, 0),
+          maxParticles: particleInteger(data.maxParticles, 256, 1),
+          emissionRate: particleNumber(emission.rate, 0, 0),
+          burst: particleNumber(emission.burst, 0, 0),
+          lifetime: particleScalarRange(data.lifetime, 1, 1),
+          spawnShape: particleSpawnShape(data.spawnShape),
+          velocity,
+          acceleration: particleVec3(data.acceleration, [0, 0, 0]),
+          gravity: particleVec3(data.gravity, [0, 0, 0]),
+          drag: particleNumber(data.drag, 0, 0),
+          size,
+          opacity,
+          rotation: particleScalarRange(data.rotation, 0, 0),
+          ...(sizeOverLife ? { sizeOverLife } : {}),
+          ...(opacityOverLife ? { opacityOverLife } : {}),
+          ...(rotationOverLife ? { rotationOverLife } : {}),
+          ...(colorOverLife ? { colorOverLife } : {}),
+          importance: particleNumber(data.importance, 1, 0, 1),
+          space: data.space === 'world' ? 'world' : 'local',
+          quality: this.options.particleQuality ?? 'balanced',
+          autoplay: data.autoplay !== false && data.playOnStart !== false,
+          loop: data.loop !== false,
+        })
+        emitter.setTransform({
+          position: entity.transform.position,
+          rotation: entity.transform.rotation,
+          scale: entity.transform.scale,
+        })
+        const parent = entity.roomId ? this.roomGroups.get(entity.roomId) : undefined
+        ;(parent ?? this.scene).add(emitter)
+        this.particleEmitters.set(id, emitter)
+      }
+    }
+  }
+
   private mountPrimitiveBatches(primitives: readonly CompiledPrimitive[], generation: number): void {
     const batchGroups = new Map<string, CompiledPrimitive[]>()
     const singles: CompiledPrimitive[] = []
@@ -1229,8 +1401,8 @@ export class Sekai64Renderer implements RendererAdapter {
     throw new Error(`No shared Sekai64 geometry is available for primitive "${primitive.id}" (${primitive.kind}).`)
   }
 
-  private materialFor(primitive: CompiledPrimitive): Material {
-    const definition = { ...defaultMaterial(primitive), ...(primitive.material ? this.document?.materials[primitive.material] : undefined) }
+  private materialFor(primitive: CompiledPrimitive, overrides: Partial<MaterialDefinition> = {}, directTextureSources?: Readonly<{ baseColorTexture?: string }>): Material {
+    const definition = { ...defaultMaterial(primitive), ...(primitive.material ? this.document?.materials[primitive.material] : undefined), ...overrides }
     const visualStyle = normalizeEnvironmentDefinition(this.document?.environment).visualStyle
     const inferredRole = definition.role ?? (
       primitive.tags?.some(tag => tag === 'avatar' || tag === 'character' || tag === 'vrm') ? 'character' :
@@ -1252,7 +1424,7 @@ export class Sekai64Renderer implements RendererAdapter {
     const color = Color.from(effectiveDefinition.baseColor ?? effectiveDefinition.color ?? '#d4d4d4')
     color.a = effectiveDefinition.opacity ?? 1
     const emissive = Color.from(effectiveDefinition.emissive ?? '#000000')
-    const baseColorTexture = this.materialTextureSource(effectiveDefinition.baseColorTexture)
+    const baseColorTexture = directTextureSources?.baseColorTexture ?? this.materialTextureSource(effectiveDefinition.baseColorTexture)
     const metallicRoughnessTexture = this.materialTextureSource(effectiveDefinition.metallicRoughnessTexture)
     const metallicTexture = this.materialTextureSource(effectiveDefinition.metalnessTexture)
     const roughnessTexture = this.materialTextureSource(effectiveDefinition.roughnessTexture)
@@ -1260,6 +1432,9 @@ export class Sekai64Renderer implements RendererAdapter {
     const emissiveTexture = this.materialTextureSource(effectiveDefinition.emissiveTexture)
     const occlusionTexture = this.materialTextureSource(effectiveDefinition.occlusionTexture)
     const lightMapTexture = this.materialTextureSource(effectiveDefinition.lightMapTexture)
+    const detailNormalTexture = this.materialTextureSource(effectiveDefinition.detail?.normalTexture)
+    const detailRoughnessTexture = this.materialTextureSource(effectiveDefinition.detail?.roughnessTexture)
+    const detailHeightTexture = this.materialTextureSource(effectiveDefinition.detail?.heightTexture)
     const alphaMode = effectiveDefinition.alphaMode ?? (effectiveDefinition.transparent || color.a < 1 ? 'blend' : 'opaque')
     const material = this.scope.track(new StandardMaterial({
       label: primitive.material ?? key,
@@ -1285,6 +1460,7 @@ export class Sekai64Renderer implements RendererAdapter {
       roughness: effectiveDefinition.roughness ?? 0.8,
       normalScale: effectiveDefinition.normalScale ?? 1,
       occlusionStrength: effectiveDefinition.occlusionStrength ?? 1,
+      detail: effectiveDefinition.detail ? { ...effectiveDefinition.detail, normalTexture: detailNormalTexture, roughnessTexture: detailRoughnessTexture, heightTexture: detailHeightTexture } : undefined,
       textureTransform: effectiveDefinition.textureTransform,
       textureWrap: effectiveDefinition.textureWrap,
       transmission: effectiveDefinition.transmission ?? (primitive.tags?.includes('window') ? 0.72 : 0),
@@ -1300,7 +1476,7 @@ export class Sekai64Renderer implements RendererAdapter {
       transparent: alphaMode === 'blend',
       side: effectiveDefinition.doubleSided ? 'double' : effectiveDefinition.side ?? 'front',
       wireframe: effectiveDefinition.wireframe ?? false,
-      ownsTextures: Boolean(baseColorTexture || metallicRoughnessTexture || metallicTexture || roughnessTexture || normalTexture || emissiveTexture || occlusionTexture || lightMapTexture),
+      ownsTextures: Boolean(baseColorTexture || metallicRoughnessTexture || metallicTexture || roughnessTexture || normalTexture || emissiveTexture || occlusionTexture || lightMapTexture || detailNormalTexture || detailRoughnessTexture || detailHeightTexture),
       autoloadTextures: false,
       shadingModel,
       mtoon: shadingModel === 'mtoon' ? {
@@ -1344,7 +1520,7 @@ export class Sekai64Renderer implements RendererAdapter {
       water: shadingModel === 'water' ? effectiveDefinition.water : undefined,
     }))
     this.materials.set(key, material)
-    if (baseColorTexture || metallicRoughnessTexture || metallicTexture || roughnessTexture || normalTexture || emissiveTexture || occlusionTexture || lightMapTexture) {
+    if (baseColorTexture || metallicRoughnessTexture || metallicTexture || roughnessTexture || normalTexture || emissiveTexture || occlusionTexture || lightMapTexture || detailNormalTexture || detailRoughnessTexture || detailHeightTexture) {
       const assetKey = `material:${key}`
       const controller = this.createAssetController(assetKey)
       this.trackAsset(assetKey, () => material.loadTextures({ signal: controller.signal }).then(() => undefined), this.mountGeneration)
@@ -1503,6 +1679,8 @@ export class Sekai64Renderer implements RendererAdapter {
         this.queueEnvironmentMap(renderer, environment.lighting.environmentMap, environment.lighting.diffuseIntensity, environment.lighting.environmentRotation)
       }
     } else if (environment.sky?.enabled && renderer.setEnvironmentMap) {
+      const stars = environment.sky.stars
+      const starDensity = stars && stars.enabled !== false ? stars.density ?? 0.35 : 0
       const sky = createProceduralSky({
         id: 'anyo-procedural-sky', width: environment.sky.width, height: environment.sky.height,
         zenithColor: environment.sky.zenithColor ? colorToLinearTriplet(environment.sky.zenithColor) : undefined,
@@ -1516,9 +1694,15 @@ export class Sekai64Renderer implements RendererAdapter {
         cloudCoverage: environment.sky.cloudCoverage,
         cloudDensity: environment.sky.cloudDensity,
         cloudSeed: environment.sky.seed,
+        starDensity,
+        starIntensity: stars?.intensity,
+        starBrightnessVariation: stars?.brightnessVariation,
+        starSizeVariation: stars?.sizeVariation,
+        starColorTemperatureVariation: stars?.colorTemperatureVariation,
+        starSeed: stars?.seed ?? environment.sky.seed,
         intensity: environment.lighting.diffuseIntensity,
       })
-      renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, label: sky.label })
+      renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: starDensity > 0, backgroundIntensity: 1, label: sky.label })
       sky.dispose()
     } else renderer.setEnvironmentMap?.(undefined)
     if (colorLutAsset && !this.options.colorGrading?.lut) this.queueColorLut(renderer as { setColorGrading?: (grading: Record<string, unknown>) => void }, colorLutAsset, lutIntensity)
@@ -1661,6 +1845,8 @@ export class Sekai64Renderer implements RendererAdapter {
     this.externalEntityByPrimitiveId.clear()
     this.externalNodeByPrimitiveId.clear()
     this.primitiveCache.clear()
+    this.particleEmitters.clear()
+    this.lastParticleFrameTime = 0
     this.document = null
     this.compiled = null
     this.metrics.instancedBatchCount = 0

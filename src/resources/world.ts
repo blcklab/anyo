@@ -23,6 +23,15 @@ function composeResourceTransform(parent: TransformDefinition, child: { readonly
   ))
 }
 
+function particleMaterialReferences(entity: NormalizedWorldDocument['entities'][number]): readonly string[] {
+  const materials: string[] = []
+  for (const component of entity.components ?? []) {
+    if (component.type !== 'anyo.vfx' || component.enabled === false) continue
+    if (typeof component.material === 'string' && component.material.trim()) materials.push(component.material)
+  }
+  return materials
+}
+
 function namedGeometry(document: NormalizedWorldDocument, value: string | GeometryDefinition | undefined, entityId: string): GeometryDefinition {
   if (!value) throw new Error(`ANYO_PROCEDURAL_GEOMETRY_REQUIRED\nEntity: ${entityId}`)
   if (typeof value !== 'string') return value
@@ -39,7 +48,12 @@ export function compileWorldResourceGraph(document: NormalizedWorldDocument, com
     const current = entities[index]
     if (current) entities.push(...(current.children ?? []))
   }
-  const resourceBacked = entities.some((entity) => entity.type === 'geometry' || entity.type === 'construction' || Boolean(resourceGraphModelAsset(entity, document)))
+  const resourceBacked = entities.some((entity) =>
+    entity.type === 'geometry'
+    || entity.type === 'construction'
+    || Boolean(resourceGraphModelAsset(entity, document))
+    || particleMaterialReferences(entity).length > 0
+  )
   if (!resourceBacked) return undefined
 
   const builder = createResourceGraphBuilder()
@@ -72,10 +86,25 @@ export function compileWorldResourceGraph(document: NormalizedWorldDocument, com
       // multi-texture materials unambiguous after content-addressing.
       ;(resourceDefinition as Record<string, unknown>)[field] = resourceAssetId
     }
+    if (definition.detail) {
+      const detail = { ...definition.detail }
+      for (const field of ['normalTexture', 'roughnessTexture', 'heightTexture'] as const) {
+        const reference = definition.detail[field]
+        if (typeof reference !== 'string' || !document.assets[reference]) continue
+        const resourceAssetId = asset(reference)
+        dependencies.push(resourceAssetId)
+        detail[field] = resourceAssetId
+      }
+      resourceDefinition.detail = detail
+    }
     const resource = builder.addMaterial(resourceDefinition, { assets: dependencies })
     materialIds.set(id, resource)
     return resource
   }
+
+  // Particle emitters reuse ordinary Anyo material resources. Emitter simulation state is
+  // intentionally not a ResourceGraph resource; only reusable appearance dependencies belong here.
+  for (const entity of entities) for (const materialId of particleMaterialReferences(entity)) material(materialId)
 
   for (const entity of entities) {
     const modelAsset = resourceGraphModelAsset(entity, document)
