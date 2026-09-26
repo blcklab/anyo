@@ -10,6 +10,7 @@ import {
   Mesh,
   Node,
   PointLight,
+  ParticleEmitter,
   OrthographicCamera,
   PerspectiveCamera,
   StandardMaterial,
@@ -83,7 +84,7 @@ class FakeGpuRenderer {
     let visible = 0
     scene.traverse((node) => {
       if (!node.worldVisible) return
-      if (node instanceof Mesh) { draws += 1; visible += node instanceof InstancedMesh ? node.count : 1 }
+      if (node instanceof Mesh) { draws += 1; visible += node instanceof InstancedMesh ? node.drawCount : 1 }
     })
     this.stats.drawCalls = draws
     this.stats.visibleObjects = visible
@@ -618,6 +619,86 @@ test('environment sun uses a finite downward fallback for zero or overflowing ve
     const sun = renderer.getNativeAccess().scene.children.find(node => node.id === 'anyo-environment-sun')
     assert.ok(sun instanceof DirectionalLight)
     assert.deepEqual([sun.direction.x, sun.direction.y, sun.direction.z], [0, -1, 0])
+    renderer.dispose()
+  }
+})
+
+
+test('Step 4 realizes the same generic anyo.vfx component as one batched ParticleEmitter in WebGL2 and WebGPU', async () => {
+  for (const backend of ['webgl2', 'webgpu']) {
+    const renderer = new Sekai64Renderer({
+      canvas: canvas(),
+      particleQuality: 'ultra',
+      engineFactory: engineFactory(backend),
+    })
+    const world = compiled([])
+    const entity = {
+      id: 'weather-layer',
+      authoringId: 'weather-layer',
+      type: 'group',
+      childIds: [],
+      transform: { position: [1, 2, -4], rotation: [0, 0, 0], scale: [1, 1, 1] },
+      localTransform: { position: [1, 2, -4], rotation: [0, 0, 0], scale: [1, 1, 1] },
+      components: [{
+        type: 'anyo.vfx',
+        enabled: true,
+        sourcePath: '/entities/0/components/0',
+        data: {
+          effect: 'sprite-particles',
+          seed: 8127,
+          maxParticles: 64,
+          emission: { rate: 20, burst: 6 },
+          lifetime: { min: 2, max: 4 },
+          spawnShape: { type: 'box', size: [5, 1, 5] },
+          velocity: { min: [-0.2, 0.3, -0.2], max: [0.2, 1, 0.2] },
+          acceleration: [0, 0, 0],
+          gravity: [0, -0.1, 0],
+          drag: 0.05,
+          size: { start: 0.02, end: 0.08 },
+          color: '#efe4cf',
+          opacity: { min: 0.25, max: 0.8 },
+          rotation: { min: -0.4, max: 0.4 },
+          overLife: { size: { start: 0.02, end: 0.08 }, opacity: { start: 0.8, end: 0 }, color: { start: '#ffffff', end: '#ff8844' }, rotation: { start: 0, end: 1.2 } },
+          importance: 0.7,
+          space: 'world',
+          texture: imageSource,
+          autoplay: true,
+          playOnStart: true,
+          loop: true,
+        },
+      }],
+      roomId: 'room',
+      sourcePath: '/entities/0',
+      authoring: { id: 'weather-layer', sourcePath: '/entities/0', editable: true },
+      primitiveIds: [],
+      resourceInstanceIds: [],
+      resourceInstanceTransforms: {},
+      enabled: true,
+      renderMask: 1,
+      pickingMask: 1,
+      editorMask: 1,
+    }
+    world.entities = [entity]
+    world.entityById = new Map([[entity.id, entity]])
+    world.entityByAuthoringId = new Map([[entity.authoringId, entity]])
+
+    await renderer.mount(world, document())
+    renderer.render()
+    const native = renderer.getNativeAccess()
+    let emitter
+    native.scene.traverse((node) => { if (node instanceof ParticleEmitter) emitter = node })
+    assert.ok(emitter instanceof ParticleEmitter)
+    assert.equal(emitter.seed, 8127)
+    assert.equal(emitter.count, 64)
+    assert.equal(emitter.activeParticles, 6)
+    assert.equal(emitter.drawCount, 6)
+    assert.equal(emitter.space, 'world')
+    assert.deepEqual(emitter.sizeOverLife, { start: 0.02, end: 0.08 })
+    assert.deepEqual(emitter.opacityOverLife, { start: 0.8, end: 0 })
+    assert.deepEqual(emitter.rotationOverLife, { start: 0, end: 1.2 })
+    assert.deepEqual(emitter.colorOverLife, { start: [1, 1, 1], end: [1, 0.5333333333333333, 0.26666666666666666] })
+    assert.equal(emitter.material.baseColorTexture?.source, imageSource, 'legacy texture URL should remain usable as the particle sprite')
+    assert.equal(emitter.children.length, 0, 'particles must not create one scene Node per particle')
     renderer.dispose()
   }
 })

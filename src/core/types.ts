@@ -114,6 +114,16 @@ export interface EnvironmentLightingDefinition {
   environmentRotation?: number
 }
 
+export interface ProceduralStarsDefinition {
+  enabled?: boolean
+  density?: number
+  intensity?: number
+  brightnessVariation?: number
+  sizeVariation?: number
+  colorTemperatureVariation?: number
+  seed?: number
+}
+
 export interface ProceduralSkyDefinition {
   enabled?: boolean
   width?: number
@@ -129,6 +139,7 @@ export interface ProceduralSkyDefinition {
   cloudCoverage?: number
   cloudDensity?: number
   seed?: number
+  stars?: ProceduralStarsDefinition
 }
 
 export interface ImageQualityDefinition {
@@ -303,6 +314,16 @@ export interface WaterStyleDefinition {
   fresnelPower?: number
   reflectionStrength?: number
   absorptionStrength?: number
+  /** World-space frequency for lightweight renderer-owned surface motion. */
+  waveScale?: number
+  /** Surface-normal perturbation strength. Zero preserves legacy static-water behavior. */
+  waveStrength?: number
+  /** Renderer-time motion speed multiplier. */
+  waveSpeed?: number
+  /** X/Z flow direction for surface motion. The renderer normalizes non-zero vectors. */
+  flowDirection?: Vec2
+  /** Amount of slope-driven foam mixed into the water surface. */
+  foamStrength?: number
 }
 
 export interface NormalizedVisualStyleDefinition {
@@ -319,6 +340,30 @@ export interface NormalizedVisualStyleDefinition {
   outlineStrength: number
   outlinePower: number
   defaultMaterialRole: MaterialRole
+}
+
+export interface MaterialDetailDefinition {
+  /** Optional high-frequency tangent-space normal texture. */
+  normalTexture?: string
+  /** Optional high-frequency roughness texture sampled from the red channel. */
+  roughnessTexture?: string
+  /** Optional generic height texture sampled from the red channel for lightweight parallax. */
+  heightTexture?: string
+  /** Multiplier applied to the material UVs before detail sampling. */
+  scale?: number
+  /** Tangent-space normal contribution. */
+  strength?: number
+  /** Blend amount from base roughness toward the detail roughness sample. */
+  roughnessStrength?: number
+  /** Non-negative parallax displacement scale in normalized surface units. */
+  heightScale?: number
+}
+
+export interface NormalizedMaterialDetailDefinition extends MaterialDetailDefinition {
+  scale: number
+  strength: number
+  roughnessStrength: number
+  heightScale: number
 }
 
 export interface MaterialDefinition {
@@ -339,6 +384,8 @@ export interface MaterialDefinition {
   emissiveTexture?: string
   occlusionTexture?: string
   occlusionStrength?: number
+  /** Optional high-frequency material detail layered over the base PBR channels. */
+  detail?: MaterialDetailDefinition
   /** Shared UV transform for standard authored material texture channels. */
   textureTransform?: TextureTransformDefinition
   /** Shared sampler addressing for authored standard texture channels. */
@@ -378,6 +425,7 @@ export interface MaterialDefinition {
 }
 
 export interface NormalizedMaterialDefinition extends MaterialDefinition {
+  detail?: NormalizedMaterialDetailDefinition
   baseColor: string
   emissive: string
   emissiveIntensity: number
@@ -791,12 +839,19 @@ export interface AudioDefinition {
 }
 
 export type VfxEffectType = 'sprite-particles'
+/** Legacy authoring presets retained for compatibility. New emitters should use generic fields instead. */
 export type VfxPreset = 'smoke' | 'sparks' | 'dust' | 'custom'
 export type VfxSimulationSpace = 'local' | 'world'
+export type VfxSpawnShapeType = 'point' | 'sphere' | 'box' | 'surface'
 
 export interface VfxRangeDefinition {
   min?: number
   max?: number
+}
+
+export interface VfxVectorRangeDefinition {
+  min?: Vec3
+  max?: Vec3
 }
 
 export interface VfxEmissionDefinition {
@@ -804,35 +859,83 @@ export interface VfxEmissionDefinition {
   burst?: number
 }
 
+/** Legacy linear size-over-life alias retained for compatibility until the generic curve pass. */
 export interface VfxSizeDefinition {
   start?: number
   end?: number
 }
 
+export interface VfxOverLifeScalarDefinition {
+  start?: number
+  end?: number
+}
+
+export interface VfxOverLifeColorDefinition {
+  start?: string
+  end?: string
+}
+
+export interface VfxOverLifeDefinition {
+  size?: VfxOverLifeScalarDefinition
+  opacity?: VfxOverLifeScalarDefinition
+  rotation?: VfxOverLifeScalarDefinition
+  color?: VfxOverLifeColorDefinition
+}
+
 export interface VfxSpawnShapeDefinition {
-  type?: 'point' | 'sphere' | 'box'
+  type?: VfxSpawnShapeType
   radius?: number
   size?: Size3
 }
 
-/** Renderer-neutral declarative data consumed by the optional @blcklab/anyo-vfx runtime. */
+/**
+ * Renderer-neutral particle-emitter intent.
+ *
+ * The flat shape intentionally extends the existing `anyo.vfx` contract instead of
+ * introducing a second particle API. Renderer/backend policy remains outside Anyo.
+ */
 export interface VfxDefinition {
   effect?: VfxEffectType
+  /** Legacy semantic preset. Preserved for old worlds; new milestone content should omit it. */
   preset?: VfxPreset
+  /** Deterministic emitter seed. */
+  seed?: number
   autoplay?: boolean
   playOnStart?: boolean
   loop?: boolean
+  /** Author budget intent; renderer quality policy may realize fewer particles. */
   maxParticles?: number
   emission?: VfxEmissionDefinition
   lifetime?: VfxRangeDefinition
+  /** Legacy scalar speed range paired with `direction`. */
   speed?: VfxRangeDefinition
+  /** Generic initial velocity range in world units per second. */
+  velocity?: VfxVectorRangeDefinition
+  /** Constant acceleration independent of gravity. */
+  acceleration?: Vec3
+  /** Constant gravity/force contribution. */
+  gravity?: Vec3
+  /** Non-negative velocity damping coefficient. */
+  drag?: number
+  /** Legacy linear size-over-life range. */
   size?: VfxSizeDefinition
   spawnShape?: VfxSpawnShapeDefinition
   space?: VfxSimulationSpace
+  /** Existing texture URL escape hatch retained for compatibility. Prefer material for new authored emitters. */
   texture?: string
+  /** Optional reusable Anyo material id for the particle appearance. */
+  material?: string
   color?: string
+  /** Initial opacity range. */
+  opacity?: VfxRangeDefinition
+  /** Initial billboard rotation range in radians. */
+  rotation?: VfxRangeDefinition
+  /** Normalized-lifetime appearance ramps. Renderer backends choose the execution strategy. */
+  overLife?: VfxOverLifeDefinition
+  /** Generic 0..1 quality/LOD importance intent. */
+  importance?: number
+  /** Legacy unit direction paired with `speed`. */
   direction?: Vec3
-  gravity?: Vec3
 }
 
 export interface GeoCoordinateDefinition {
@@ -1552,7 +1655,7 @@ export interface CameraAdapter {
 export interface RendererCapabilities {
   assetFormats?: Readonly<Record<string, readonly string[]>>
   materialTextureChannels?: readonly ('baseColor' | 'normal' | 'roughness' | 'metalness' | 'metallicRoughness' | 'emissive' | 'occlusion')[]
-  materialFeatures?: readonly ('normalScale' | 'occlusionStrength' | 'emissiveIntensity' | 'transmission' | 'ior' | 'thickness' | 'attenuation' | 'textureTransform' | 'textureWrap' | 'toonShading' | 'mtoonShading')[]
+  materialFeatures?: readonly ('normalScale' | 'occlusionStrength' | 'emissiveIntensity' | 'transmission' | 'ior' | 'thickness' | 'attenuation' | 'textureTransform' | 'textureWrap' | 'materialDetail' | 'toonShading' | 'mtoonShading')[]
   colorManagement?: boolean
   environmentLighting?: boolean
   environmentMaps?: boolean

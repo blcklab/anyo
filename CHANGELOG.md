@@ -1,3 +1,82 @@
+# 0.10.0-rc.14 — final package hardening
+
+- Disabled generated JavaScript and declaration source maps in published build outputs so `npm pack` no longer includes generated `dist/**/*.map` artifacts.
+- Added an explicit package-verification guard that fails if any generated source map enters the npm tarball.
+- No runtime, schema, renderer, ResourceGraph, world-authoring, or visual behavior changed; Sekai64 remains `0.8.0-rc.43`.
+
+# 0.10.0-rc.13 — integrated world-quality showcase
+
+- Added the Step 12 Asterfall Research Garden showcase: one coherent twilight world combining the accepted material-detail, water, procedural stars, authored/distant clouds, atmosphere, particles, alpha-masked vegetation, deterministic repeat variation, procedural rocks, PBR architecture, glass/metal/wood/concrete, wet surfaces, shadows, SSAO, and bloom.
+- Added an integrated WebGL2/WebGPU Sekai64 adapter regression smoke for the exact same authored world.
+- No new engine subsystem, schema feature, decal implementation, or generic volume implementation was introduced.
+- `@blcklab/sekai64` remains `0.8.0-rc.43`; this checkpoint changes Anyo example/integration source only.
+
+# 0.10.0-rc.12 — generic cloud quality showcase
+
+- Added `examples/step-10-cloud-quality`, an authored anime-cinematic cumulus overlook built entirely from the existing generic `lathe`, `noise`, material, composition, ResourceGraph, and runtime-transform boundaries.
+- The showcase uses shared large/medium/small lobe resources, intentionally broad low profiles plus `startCap` material bindings for cooler flatter bases, and ordinary PBR/sheen response for sunlight and atmosphere integration.
+- Natural drift is authored with the existing `anyo.animation` property-track contract and the frozen `@blcklab/anyo-animation@0.1.3` runtime; no second cloud animation system is introduced.
+- ResourceGraph validation confirms three reusable cloud meshes feed 24 cloud-lobe instances across the three showcased formations instead of baking unique geometry per cloud.
+- No `CloudRenderer`, `CloudEntity`, `CloudSystem`, cloud-specific primitive, or new Anyo schema vocabulary was added.
+- Pairs with `@blcklab/sekai64@0.8.0-rc.43`, which improves the existing distant procedural-sky cloud resource with multi-scale structure and warm/cool directional shading.
+
+# 0.10.0-rc.11 — procedural night-sky star intent
+
+- Extended the existing renderer-neutral procedural sky contract with optional deterministic `stars` intent: density, intensity, brightness variation, size variation, color-temperature variation, and seed.
+- Star authoring remains inside `environment.sky`; no `StarSystem`, star entity type, particle-emitter branch, or backend-specific point-count/shader controls were introduced.
+- Existing procedural skies without `stars` remain unchanged. A present stars block is enabled by default unless `enabled: false`; zero density keeps the background path inactive.
+- The Sekai64 adapter reuses the existing procedural environment resource and requests its generic background presentation only for an active star field.
+- Added `examples/step-09-night-sky`, an ordinary `0.8` world focused on moving-camera star stability and night exposure.
+- Pairs with `@blcklab/sekai64@0.8.0-rc.42`, which owns deterministic HDR star generation and one camera-direction environment-background draw for both WebGL2 and WebGPU.
+
+# 0.10.0-rc.10 — generic water quality intent
+
+- Extended the existing renderer-neutral `water` material style with optional `waveScale`, `waveStrength`, `waveSpeed`, `flowDirection`, and `foamStrength` author intent; no `WaterSystem` or new package was introduced.
+- `waveStrength` remains optional. Omitted/zero values preserve the pre-Step-08 static-water path for backward compatibility.
+- Water motion participates in ordinary material normalization, schema validation, ResourceGraph identity, and Sekai64 material realization.
+- Added a focused Step 8 JSON showcase for pool, lake, river, and calm-ocean surfaces using PBR transmission/IOR plus the same generic water shading contract.
+- Pairs with `@blcklab/sekai64@0.8.0-rc.41`, where animation time, multi-scale surface-normal motion, Fresnel/specular response, environment reflection, and backend execution remain renderer-owned.
+- Scene-color refraction, ocean FFT simulation, a dedicated water pass, and depth-buffer reconstruction are deliberately outside this lightweight milestone step.
+
+# 0.10.0-rc.9 — generic particle quality intent
+
+- Added optional renderer-neutral `anyo.vfx.overLife` controls for size, opacity, color, and rotation using normalized particle lifetime; no second animation system was introduced.
+- Legacy `size: { start, end }` authoring remains accepted and is canonically interpreted as size-over-life, preserving the existing JSON surface while fixing the Step 4 static-range approximation.
+- The Sekai64 adapter forwards the generic over-life curves to the renderer for both WebGL2 and WebGPU; distance density/fade policy remains renderer-owned and no backend distances/counts were added to world JSON.
+- Added a Step 5 particle-quality showcase using the same generic `anyo.vfx` contract.
+- Pairs with `@blcklab/sekai64@0.8.0-rc.39`. True depth-aware soft intersection was investigated and deliberately deferred because the current single main pass would require an opaque-depth resolve / separate transparent particle pass.
+
+# 0.10.0-rc.8 — generic particle rendering integration
+
+- Realizes compiled generic `anyo.vfx` emitters through Sekai64 `ParticleEmitter` without adding a second particle API, effect-specific system, or per-particle scene nodes.
+- The renderer adapter maps deterministic emission/spawn/motion/size/opacity/rotation/importance/local-world intent into the shared Sekai64 WebGL2/WebGPU instancing path and exposes renderer-owned `particleQuality` policy outside world JSON.
+- Preserves the legacy direct VFX `texture` URL escape hatch while new emitters can reuse ordinary Anyo materials and ResourceGraph assets.
+- Added one generic showcase authoring dust, rain, snow, embers, and fireflies with the same `anyo.vfx` contract and no semantic VFX presets.
+- Pairs with `@blcklab/sekai64@0.8.0-rc.38`. Soft particles and over-life appearance curves remain intentionally deferred to Step 5.
+
+# 0.10.0-rc.7 — generic particle-emitter data model
+
+- Promoted the existing `anyo.vfx` sprite-particle contract into a first-class compiled component instead of introducing a second particle API or package.
+- Added deterministic emitter seed, vector initial velocity, acceleration, gravity, drag, `point`/`box`/`sphere`/`surface` spawn intent, opacity, rotation, material reuse, and generic 0..1 importance intent.
+- Canonical compiled emitter data receives deterministic defaults while legacy `preset`, scalar `speed` + `direction`, `texture`, and linear `size` fields remain supported for older worlds.
+- Particle appearance material references reuse the existing ResourceGraph material/asset path; simulation values intentionally stay outside ResourceGraph identity.
+- No Sekai64 particle rendering, GPU simulation, soft particles, effect-specific branches, or new particle package is included in this step.
+
+# 0.10.0-rc.6 — generic height detail intent
+
+- Extended the existing renderer-neutral `material.detail` contract with optional `heightTexture` and bounded `heightScale` intent.
+- Height maps participate in schema validation, asset validation, ResourceGraph dependencies/content identity, and Sekai64 resource realization.
+- Existing materials remain unchanged when `detail` is absent; no renderer algorithm or quality-loop control was added to Anyo JSON.
+- Pairs with `@blcklab/sekai64@0.8.0-rc.37` for lightweight parallax and renderer-owned specular stabilization.
+
+## 0.10.0-rc.5 — pixel-level material detail
+
+- Added optional generic `material.detail` semantics for high-frequency normal and roughness detail.
+- Added deterministic normalization and validation for detail scale, tangent-space normal strength, and roughness blend strength.
+- Added nested detail texture asset validation and ResourceGraph dependency/content-identity integration.
+- Sekai64 realization forwards detail textures through both direct and ResourceGraph-backed material paths.
+- Existing worlds and materials remain unchanged when `detail` is omitted.
+
 ## 0.10.0-rc.4 — generic realism authoring foundation
 
 - Added deterministic `repeat.variation` for author-time position, rotation, and scale variation without per-frame runtime cost.

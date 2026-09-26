@@ -6,7 +6,7 @@
     "rootDir": "src",
     "outDir": "dist/esm",
     "declaration": false,
-    "sourceMap": true
+    "sourceMap": false
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

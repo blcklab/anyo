@@ -90,6 +90,7 @@ function inspectAction(
 function inspectComponents(
   entity: EntityDefinition,
   path: string,
+  materialIds: ReadonlySet<string>,
   options: WorldValidationOptions,
   mode: ValidationMode,
   issues: ValidationIssue[],
@@ -109,6 +110,12 @@ function inspectComponents(
         `${componentPath}/type`,
         `Component "${type}" is declarative marker data and has no registered handling system.`,
       )
+    }
+    if (type === 'anyo.vfx') {
+      const material = component.material
+      if (typeof material === 'string' && material && !materialIds.has(material)) {
+        add(issues, severity(mode, true), 'ANYO_MATERIAL_NOT_FOUND', `${componentPath}/material`, `Particle material "${material}" does not exist.`)
+      }
     }
     if (type === 'anyo.interactable') {
       inspectAction(component as unknown as ActionDefinition, componentPath, options, mode, issues)
@@ -175,7 +182,7 @@ function inspectEntity(
       add(issues, severity(mode, true), 'ANYO_WEB_SURFACE_APP_NOT_REGISTERED', `${path}/webSurface/source/app`, `Web-surface app "${app}" is not registered.`)
     }
   }
-  inspectComponents(entity, path, options, mode, issues)
+  inspectComponents(entity, path, materialIds, options, mode, issues)
   entity.children?.forEach((child, index) => inspectEntity(child, `${path}/children/${index}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues))
 }
 
@@ -226,7 +233,7 @@ function inspectRenderer(document: WorldDocument, info: RendererInfo | undefined
     }
     const features: Array<[keyof MaterialDefinition, NonNullable<RendererInfo['capabilities']['materialFeatures']>[number]]> = [
       ['normalScale', 'normalScale'], ['occlusionStrength', 'occlusionStrength'], ['emissiveIntensity', 'emissiveIntensity'],
-      ['transmission', 'transmission'], ['ior', 'ior'], ['thickness', 'thickness'], ['attenuationDistance', 'attenuation'], ['textureTransform', 'textureTransform'], ['textureWrap', 'textureWrap'], ['toon', 'toonShading'],
+      ['transmission', 'transmission'], ['ior', 'ior'], ['thickness', 'thickness'], ['attenuationDistance', 'attenuation'], ['textureTransform', 'textureTransform'], ['textureWrap', 'textureWrap'], ['detail', 'materialDetail'], ['toon', 'toonShading'],
     ]
     for (const [field, feature] of features) {
       if (material[field] !== undefined && !caps.materialFeatures?.includes(feature)) {

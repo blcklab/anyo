@@ -228,6 +228,12 @@ export class Sekai64ResourceAdapter {
       emissive: definition.emissive,
       emissiveIntensity: definition.emissiveIntensity,
       occlusionStrength: definition.occlusionStrength,
+      detail: definition.detail ? {
+        ...definition.detail,
+        normalTexture: texture(definition.detail.normalTexture),
+        roughnessTexture: texture(definition.detail.roughnessTexture),
+        heightTexture: texture(definition.detail.heightTexture),
+      } : undefined,
       textureTransform: definition.textureTransform,
       textureWrap: definition.textureWrap,
       lightMapTexCoord: definition.lightMapTexCoord,

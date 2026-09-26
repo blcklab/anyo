@@ -1,0 +1,141 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.8.schema.json",
+  "version": "0.8",
+  "revision": 0,
+  "metadata": {
+    "id": "step-08-water-quality",
+    "name": "Step 08 Generic Water Quality"
+  },
+  "materials": {
+    "ground": {
+      "shadingModel": "pbr",
+      "baseColor": "#9b927e",
+      "roughness": 0.82,
+      "metalness": 0
+    },
+    "pool-water": {
+      "shadingModel": "water",
+      "baseColor": "#b6e8ef",
+      "roughness": 0.055,
+      "transmission": 0.82,
+      "ior": 1.333,
+      "transparent": true,
+      "opacity": 0.92,
+      "castShadow": false,
+      "water": {
+        "shallowColor": "#83e1e8",
+        "deepColor": "#1e7898",
+        "foamColor": "#f4ffff",
+        "fresnelPower": 5,
+        "reflectionStrength": 0.82,
+        "absorptionStrength": 0.32,
+        "waveScale": 0.92,
+        "waveStrength": 0.035,
+        "waveSpeed": 0.26,
+        "flowDirection": [1, 0.15],
+        "foamStrength": 0.015
+      }
+    },
+    "lake-water": {
+      "shadingModel": "water",
+      "baseColor": "#4aa7b9",
+      "roughness": 0.075,
+      "transmission": 0.7,
+      "ior": 1.333,
+      "transparent": true,
+      "opacity": 0.9,
+      "castShadow": false,
+      "water": {
+        "shallowColor": "#69c9c5",
+        "deepColor": "#164f6d",
+        "foamColor": "#e8fbff",
+        "fresnelPower": 5.2,
+        "reflectionStrength": 0.78,
+        "absorptionStrength": 0.55,
+        "waveScale": 0.54,
+        "waveStrength": 0.072,
+        "waveSpeed": 0.42,
+        "flowDirection": [0.7, 0.3],
+        "foamStrength": 0.035
+      }
+    },
+    "river-water": {
+      "shadingModel": "water",
+      "baseColor": "#438fa3",
+      "roughness": 0.095,
+      "transmission": 0.64,
+      "ior": 1.333,
+      "transparent": true,
+      "opacity": 0.92,
+      "castShadow": false,
+      "water": {
+        "shallowColor": "#72c9c9",
+        "deepColor": "#17485f",
+        "foamColor": "#ecffff",
+        "fresnelPower": 4.8,
+        "reflectionStrength": 0.72,
+        "absorptionStrength": 0.62,
+        "waveScale": 0.78,
+        "waveStrength": 0.1,
+        "waveSpeed": 0.92,
+        "flowDirection": [1, 0],
+        "foamStrength": 0.075
+      }
+    },
+    "calm-ocean-water": {
+      "shadingModel": "water",
+      "baseColor": "#28627a",
+      "roughness": 0.065,
+      "transmission": 0.6,
+      "ior": 1.333,
+      "transparent": true,
+      "opacity": 0.94,
+      "castShadow": false,
+      "water": {
+        "shallowColor": "#4ca7b5",
+        "deepColor": "#092d4d",
+        "foamColor": "#efffff",
+        "fresnelPower": 5.5,
+        "reflectionStrength": 0.88,
+        "absorptionStrength": 0.72,
+        "waveScale": 0.34,
+        "waveStrength": 0.13,
+        "waveSpeed": 0.54,
+        "flowDirection": [0.9, 0.32],
+        "foamStrength": 0.06
+      }
+    }
+  },
+  "environment": {
+    "visualStyle": { "profile": "anime-cinematic" },
+    "sky": {
+      "enabled": true,
+      "width": 512,
+      "height": 256,
+      "sunDirection": [0.3, 0.82, -0.42],
+      "haze": 0.16,
+      "cloudCoverage": 0.18,
+      "cloudDensity": 0.55,
+      "seed": 808
+    },
+    "shadows": {
+      "enabled": true,
+      "cascades": 3,
+      "filter": "pcf5",
+      "cascadeBlend": 0.12,
+      "distanceFade": 0.18
+    },
+    "postProcessing": {
+      "enabled": true,
+      "bloom": { "enabled": true, "levels": 4, "strength": 0.08 },
+      "ssao": { "enabled": true, "mode": "gtao", "denoise": true }
+    }
+  },
+  "entities": [
+    { "id": "ground", "type": "box", "size": [46, 0.25, 32], "position": [0, -0.25, 0], "material": "ground" },
+    { "id": "pool", "type": "box", "size": [7, 0.08, 6], "position": [-13, 0.02, 5], "material": "pool-water" },
+    { "id": "lake", "type": "box", "size": [11, 0.08, 8], "position": [-3, 0.015, -5], "material": "lake-water" },
+    { "id": "river", "type": "box", "size": [4.5, 0.08, 20], "position": [8, 0.025, 0], "material": "river-water" },
+    { "id": "calm-ocean", "type": "box", "size": [13, 0.08, 13], "position": [16, 0.01, -4], "material": "calm-ocean-water" }
+  ]
+}

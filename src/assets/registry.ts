@@ -99,6 +99,15 @@ function validateMaterialAssets(id: string, material: MaterialDefinition, docume
       throw new Error(`ANYO_MATERIAL_ASSET_TYPE_INVALID\nMaterial: ${id}\nField: ${String(field)}\nAsset: ${assetId}\nType: ${asset.type ?? '(missing)'}`)
     }
   }
+  for (const field of ['normalTexture', 'roughnessTexture', 'heightTexture'] as const) {
+    const assetId = material.detail?.[field]
+    if (typeof assetId !== 'string') continue
+    const asset = document.assets[assetId]
+    if (!asset) throw new Error(`ANYO_MATERIAL_ASSET_NOT_FOUND\nMaterial: ${id}\nField: detail.${field}\nAsset: ${assetId}`)
+    if (asset.type !== 'texture' && asset.type !== 'image') {
+      throw new Error(`ANYO_MATERIAL_ASSET_TYPE_INVALID\nMaterial: ${id}\nField: detail.${field}\nAsset: ${assetId}\nType: ${asset.type ?? '(missing)'}`)
+    }
+  }
 }
 
 function escapePointer(value: string): string { return value.replace(/~/g, '~0').replace(/\//g, '~1') }
