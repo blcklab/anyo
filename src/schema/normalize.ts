@@ -247,6 +247,73 @@ function hashIdentity(value: string): string {
   return (hash >>> 0).toString(36)
 }
 
+function hashUint32(value: string): number {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return hash >>> 0
+}
+
+/** Stable one-shot PRNG used only during document normalization. */
+function repeatRandom(entityId: string, seed: number, index: number, channel: string): number {
+  let state = hashUint32(`${entityId}:${seed}:${index}:${channel}`) + 0x6d2b79f5
+  state = Math.imul(state ^ (state >>> 15), state | 1)
+  state ^= state + Math.imul(state ^ (state >>> 7), state | 61)
+  return ((state ^ (state >>> 14)) >>> 0) / 4294967296
+}
+
+function sampleVariationRange(
+  range: readonly [number, number] | undefined,
+  entityId: string,
+  seed: number,
+  index: number,
+  channel: string,
+  fallback: number,
+): number {
+  if (!range) return fallback
+  return range[0] + (range[1] - range[0]) * repeatRandom(entityId, seed, index, channel)
+}
+
+function applyRepeatVariation(entity: WorkingEntity, sourceId: string, index: number, repeat: NonNullable<EntityDefinition['repeat']>): WorkingEntity {
+  const variation = repeat.variation
+  if (!variation) return entity
+  const seed = variation.seed ?? 0
+
+  if (variation.position) {
+    const basePosition = entity.position ?? [0, 0, 0]
+    const position = [...basePosition] as [number, number, number]
+    position[0] += sampleVariationRange(variation.position.x, sourceId, seed, index, 'position.x', 0)
+    position[1] += sampleVariationRange(variation.position.y, sourceId, seed, index, 'position.y', 0)
+    position[2] += sampleVariationRange(variation.position.z, sourceId, seed, index, 'position.z', 0)
+    entity.position = position
+  }
+
+  if (variation.rotation) {
+    const baseRotation = entity.rotation ?? [0, 0, 0]
+    entity.rotation = [
+      baseRotation[0] + sampleVariationRange(variation.rotation.x, sourceId, seed, index, 'rotation.x', 0),
+      baseRotation[1] + sampleVariationRange(variation.rotation.y, sourceId, seed, index, 'rotation.y', 0),
+      baseRotation[2] + sampleVariationRange(variation.rotation.z, sourceId, seed, index, 'rotation.z', 0),
+    ]
+  }
+
+  if (variation.scale) {
+    const baseScale = typeof entity.scale === 'number'
+      ? [entity.scale, entity.scale, entity.scale] as [number, number, number]
+      : [...(entity.scale ?? [1, 1, 1])] as [number, number, number]
+    const uniform = sampleVariationRange(variation.scale.uniform, sourceId, seed, index, 'scale.uniform', 1)
+    entity.scale = [
+      baseScale[0] * uniform * sampleVariationRange(variation.scale.x, sourceId, seed, index, 'scale.x', 1),
+      baseScale[1] * uniform * sampleVariationRange(variation.scale.y, sourceId, seed, index, 'scale.y', 1),
+      baseScale[2] * uniform * sampleVariationRange(variation.scale.z, sourceId, seed, index, 'scale.z', 1),
+    ]
+  }
+
+  return entity
+}
+
 function createAuthoringReference(entity: EntityDefinition, sourcePath: string): AuthoringReference {
   return {
     id: entity.authoringId?.trim() || (entity.instanceId?.trim() ? `anyo:instance:${hashIdentity(entity.instanceId)}` : `anyo:${hashIdentity(`${sourcePath}:${entity.id}`)}`),
@@ -347,6 +414,7 @@ function expandRepeat(entity: WorkingEntity): WorkingEntity[] {
       next[axis] += displacement
       copy.position = next
     }
+    copy = applyRepeatVariation(copy, source.id, index, repeat)
     copy = markRepeated(copy, source, index)
     entities.push(copy)
   }

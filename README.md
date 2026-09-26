@@ -7,7 +7,7 @@
 
 `@blcklab/anyo` defines, validates, compiles, updates, and runs spatial worlds from declarative JSON. Rendering stays behind explicit adapters, so authored world data remains portable across supported renderers and headless environments.
 
-> `0.10.0-rc.3-dev.21` is a development release candidate on the JSON-native world-authoring track. Install it explicitly or through the `next` npm dist-tag.
+> `0.10.0-rc.4` is a release candidate on the JSON-native world-authoring track. Install it explicitly or through the `next` npm dist-tag.
 
 ## Installation
 
@@ -336,3 +336,44 @@ resources.addInstance({
 ```
 
 `materials[]` remains the ordered numeric slot table. `materialBindings` overrides slots by semantic geometry-group name per instance, so the same cached geometry can be reused with different region materials. Unknown region names or unavailable numeric material slots fail closed instead of silently rendering with the wrong material. Region/material assignment remains outside geometry identity.
+
+### S25 realism foundation — deterministic variation and UV transforms
+
+S25 adds two small, generic authoring tools instead of object-specific realism systems. Repeated entities can receive deterministic transform variation during normalization, and authored materials can request a shared UV scale/offset/rotation that capable renderers apply consistently.
+
+```json
+{
+  "id": "rock",
+  "type": "geometry",
+  "geometry": "rock-shape",
+  "repeat": {
+    "count": 16,
+    "axis": "x",
+    "spacing": 2.5,
+    "variation": {
+      "seed": 8128,
+      "position": { "z": [-1.2, 1.2] },
+      "rotation": { "y": [-3.14159, 3.14159] },
+      "scale": { "uniform": [0.78, 1.24] }
+    }
+  }
+}
+```
+
+Variation is expanded once at authoring normalization time. It does not add a runtime random system or a per-frame cost.
+
+```json
+{
+  "baseColorTexture": "./stone.webp",
+  "normalTexture": "./stone-normal.webp",
+  "roughness": 0.82,
+  "textureTransform": {
+    "scale": [4, 4],
+    "offset": [0.125, 0],
+    "rotation": 0.08
+  },
+  "textureWrap": "repeat"
+}
+```
+
+`textureTransform` is renderer-neutral. Pair it with `textureWrap: "repeat"` (or per-axis `{ "s", "t" }`) when UVs should tile beyond the 0–1 range. The Sekai64 adapter reports both capabilities and Sekai64 0.8.0-rc.35 implements them in WebGL2 and WebGPU. Anyo still has no `TreeSystem`, `CloudRenderer`, `RockEntity`, or other object-specific realism subsystem.

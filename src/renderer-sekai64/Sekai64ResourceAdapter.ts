@@ -228,6 +228,8 @@ export class Sekai64ResourceAdapter {
       emissive: definition.emissive,
       emissiveIntensity: definition.emissiveIntensity,
       occlusionStrength: definition.occlusionStrength,
+      textureTransform: definition.textureTransform,
+      textureWrap: definition.textureWrap,
       lightMapTexCoord: definition.lightMapTexCoord,
       lightMapIntensity: definition.lightMapIntensity,
       specularFactor: definition.specularFactor,

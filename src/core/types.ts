@@ -58,6 +58,20 @@ export interface CompiledComponent {
 }
 
 export type TextureColorSpace = 'srgb' | 'linear'
+
+/** Generic material-space transform applied consistently to authored texture channels. */
+export interface TextureTransformDefinition {
+  /** UV translation after scale/rotation. */
+  offset?: Vec2
+  /** UV scale before rotation. Values above 1 tile when the texture sampler repeats. */
+  scale?: Vec2
+  /** Counter-clockwise rotation in radians around UV origin. */
+  rotation?: number
+}
+
+export type TextureWrapMode = 'clamp-to-edge' | 'repeat' | 'mirror-repeat'
+export type TextureWrapDefinition = TextureWrapMode | { s?: TextureWrapMode; t?: TextureWrapMode }
+
 export type ToneMappingMode = 'none' | 'reinhard' | 'aces'
 export type OutputColorSpace = 'srgb' | 'linear'
 
@@ -325,6 +339,10 @@ export interface MaterialDefinition {
   emissiveTexture?: string
   occlusionTexture?: string
   occlusionStrength?: number
+  /** Shared UV transform for standard authored material texture channels. */
+  textureTransform?: TextureTransformDefinition
+  /** Shared sampler addressing for authored standard texture channels. */
+  textureWrap?: TextureWrapDefinition
   lightMapTexture?: string
   lightMapTexCoord?: 0 | 1
   lightMapIntensity?: number
@@ -885,11 +903,41 @@ export interface EntityLodDefinition {
   type?: 'model' | 'box' | 'hidden'
 }
 
+export type VariationRange = readonly [number, number]
+
+export interface AxisVariationDefinition {
+  x?: VariationRange
+  y?: VariationRange
+  z?: VariationRange
+}
+
+export interface ScaleVariationDefinition extends AxisVariationDefinition {
+  /** Multiplicative scale applied to all axes before per-axis variation. */
+  uniform?: VariationRange
+}
+
+/**
+ * Deterministic transform jitter for repeated authored entities.
+ * This is intentionally generic: vegetation, rocks, props, clouds, debris, and architecture
+ * all use the same repeat-time transform vocabulary.
+ */
+export interface EntityRepeatVariationDefinition {
+  /** Stable author seed. Omitted seeds default to zero and still mix entity identity + repeat index. */
+  seed?: number
+  /** Additive local-position jitter in world units. */
+  position?: AxisVariationDefinition
+  /** Additive Euler-angle jitter in radians. */
+  rotation?: AxisVariationDefinition
+  /** Multiplicative local-scale jitter. */
+  scale?: ScaleVariationDefinition
+}
+
 export interface EntityRepeatDefinition {
   count: number
   axis: 'x' | 'y' | 'z'
   spacing: number
   start?: number
+  variation?: EntityRepeatVariationDefinition
 }
 
 
@@ -1504,7 +1552,7 @@ export interface CameraAdapter {
 export interface RendererCapabilities {
   assetFormats?: Readonly<Record<string, readonly string[]>>
   materialTextureChannels?: readonly ('baseColor' | 'normal' | 'roughness' | 'metalness' | 'metallicRoughness' | 'emissive' | 'occlusion')[]
-  materialFeatures?: readonly ('normalScale' | 'occlusionStrength' | 'emissiveIntensity' | 'transmission' | 'ior' | 'thickness' | 'attenuation' | 'toonShading' | 'mtoonShading')[]
+  materialFeatures?: readonly ('normalScale' | 'occlusionStrength' | 'emissiveIntensity' | 'transmission' | 'ior' | 'thickness' | 'attenuation' | 'textureTransform' | 'textureWrap' | 'toonShading' | 'mtoonShading')[]
   colorManagement?: boolean
   environmentLighting?: boolean
   environmentMaps?: boolean
