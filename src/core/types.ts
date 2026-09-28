@@ -1240,7 +1240,7 @@ export interface EntityDefinition {
   composition?: string
   /** Stable prefab/composition instance identity; defaults to id. */
   instanceId?: string
-  /** JSON-Pointer keyed overrides applied to the referenced prefab before instance fields. */
+  /** JSON-Pointer keyed overrides applied to the referenced prefab/composition before instance fields. */
   overrides?: Record<string, JsonValue>
   repeat?: EntityRepeatDefinition
   type?:
@@ -1311,6 +1311,8 @@ export interface EntityDefinition {
   /** Required when type is web-surface. JSON remains data; executable code is registered by the host. */
   webSurface?: WebSurfaceDefinition
   data?: Record<string, unknown>
+  /** Namespaced entity-local extension data preserved by normalization and tooling. */
+  extensions?: Record<string, unknown>
   style?: {
     fontSize?: number
     fontFamily?: string
@@ -1334,6 +1336,8 @@ export interface ExplorationDefinition {
   spawn?: {
     room?: string
     position?: Vec3
+    /** Initial Euler facing in radians [x, y, z], matching authored transform rotation conventions. */
+    rotation?: Vec3
   }
   height?: number
   radius?: number
@@ -1375,6 +1379,25 @@ export interface VisibilityDefinition {
   enabled?: boolean
   maxPortalDepth?: number
   hideUnreachableRooms?: boolean
+}
+
+export type AnyoObjectDocumentVersion = '0.1' | `0.1.${string}`
+
+/**
+ * Standalone reusable declarative Anyo object document.
+ * Object documents reuse World 0.9 assets, materials, geometries, compositions, and composition-root vocabulary.
+ * Import resolution is intentionally not part of the Object 0.1 validation contract.
+ */
+export interface AnyoObjectDocument {
+  $schema?: string
+  kind: 'anyo-object'
+  version: AnyoObjectDocumentVersion
+  metadata?: Record<string, unknown>
+  assets?: Record<string, AssetDefinition>
+  materials?: Record<string, MaterialDefinition>
+  geometries?: Record<string, GeometryDefinition>
+  compositions?: Record<string, CompositionDefinition>
+  root: CompositionDefinition
 }
 
 export interface WorldDocument {

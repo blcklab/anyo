@@ -72,7 +72,10 @@ export class FirstPersonController implements ExplorationRuntimeController {
       lookSensitivity: options.lookSensitivity ?? 0.0022,
       touchLookSensitivity: options.touchLookSensitivity ?? 0.006,
     }
-    const rotation = context.renderer.camera.getRotation()
+    const spawnRotation = context.compiled.activeCameraId ? undefined : exploration.spawn?.rotation
+    const rotation = spawnRotation
+      ? [spawnRotation[1], spawnRotation[0]] as const
+      : context.renderer.camera.getRotation()
     this.yaw = rotation[0]
     this.pitch = rotation[1]
     this.xrCleanups.push(

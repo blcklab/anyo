@@ -1,0 +1,11 @@
+{
+  "kind": "anyo-model",
+  "version": "0.2",
+  "imports": {
+    "base": { "src": "./base.anyo.json" }
+  },
+  "materials": [],
+  "root": {
+    "type": "box"
+  }
+}

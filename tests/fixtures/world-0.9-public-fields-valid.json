@@ -1,0 +1,29 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.9.schema.json",
+  "version": "0.9",
+  "materials": {
+    "bark": { "baseColor": "#5d3b26", "roughness": 0.9 },
+    "autumn": { "baseColor": "#b96032", "roughness": 0.82 }
+  },
+  "compositions": {
+    "heroTree": {
+      "children": [
+        { "id": "crown", "type": "box", "material": "bark" }
+      ]
+    }
+  },
+  "entities": [
+    {
+      "id": "hero-tree-a",
+      "composition": "heroTree",
+      "instanceId": "hero-tree-instance-a",
+      "overrides": { "/children/0/material": "autumn" },
+      "loading": "lazy",
+      "extensions": { "blcklab.authoring": { "selected": true } }
+    }
+  ],
+  "exploration": {
+    "mode": "third-person",
+    "character": "hero-tree-a"
+  }
+}

@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.11.0-rc.4
+
+- Add the native declarative Anyo Object 0.1 schema and public TypeScript contract.
+- Add standalone object validation that reuses the existing World 0.9 resource/entity semantics without import resolution.
+- Export the Object 0.1 schema at `@blcklab/anyo/schema/object/0.1`.
+
+## 0.11.0-rc.3
+
+### World 0.9 pre-freeze — Step 3
+
+- Added optional `exploration.spawn.rotation` as Euler radians `[x, y, z]` in the World 0.9 schema and public TypeScript contract.
+- Added detailed validation for malformed spawn rotation vectors while preserving position-only spawn behavior.
+- Applied authored spawn orientation through the renderer-neutral camera adapter using the established Anyo Euler mapping (`yaw = y`, `pitch = x`).
+- Synchronized the built-in first-person controller with authored spawn orientation so the first look input does not jump back to a stale pre-spawn yaw/pitch.
+- Kept World 0.8 schema byte-for-byte unchanged and preserved authored active-camera precedence.
+
+## 0.11.0-rc.2
+
+### World 0.9 pre-freeze — Step 2
+
+- Aligned existing public World 0.9 entity fields across JSON Schema, TypeScript, detailed validation, semantic validation, and normalization coverage.
+- Added explicit schema/validation contracts for `instanceId`, JSON-Pointer `overrides`, entity `loading`, `exploration.mode`, and `exploration.character`.
+- Fixed the World 0.9 entity root contract so pure `composition` instances are valid alongside `type` and legacy `use`.
+- Added the missing public `EntityDefinition.extensions` TypeScript field to match the existing schema/semantic contract.
+- Added dedicated contract-drift fixtures/tests while preserving World 0.8 unchanged.
+
 ## 0.11.0-rc.1
 
 ### World 0.9 pre-freeze — Step 1

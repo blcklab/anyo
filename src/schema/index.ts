@@ -1,4 +1,5 @@
 export { validateWorldDocument, inspectWorldDocument } from './validate.js'
+export { validateAnyoObjectDocument, inspectAnyoObjectDocument } from './object.js'
 export { inspectWorldSemantics } from './semantic.js'
 export type { ValidationResult } from './validate.js'
 export { normalizeWorldDocument } from './normalize.js'

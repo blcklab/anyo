@@ -1,0 +1,17 @@
+{
+  "version": "0.9",
+  "entities": [
+    {
+      "id": "bad",
+      "type": "box",
+      "instanceId": "",
+      "overrides": { "not-a-pointer": 1 },
+      "loading": "eventually",
+      "extensions": []
+    }
+  ],
+  "exploration": {
+    "mode": "orbit",
+    "character": ""
+  }
+}

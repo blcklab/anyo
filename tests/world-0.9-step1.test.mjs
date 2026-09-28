@@ -49,21 +49,30 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 schema is a 0.8-equivalent baseline with its own identity and version pattern', async () => {
+test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-3 fields', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
   assert.equal(schema09.title, 'Anyo World 0.9')
   assert.equal(schema09.properties.version.pattern, '^0\\.9(?:\\.|$)')
-  const normalize = (schema) => {
+  const normalize = (schema, world09 = false) => {
     const copy = structuredClone(schema)
     delete copy.$id
     delete copy.title
     delete copy.description
     copy.properties.version.pattern = '<version>'
+    if (world09) {
+      delete copy.$defs.entity.properties.instanceId
+      delete copy.$defs.entity.properties.overrides
+      delete copy.$defs.entity.properties.loading
+      copy.$defs.entity.anyOf = copy.$defs.entity.anyOf.filter((variant) => variant.required?.[0] !== 'composition')
+      delete copy.$defs.exploration.properties.mode
+      delete copy.$defs.exploration.properties.character
+      delete copy.$defs.exploration.properties.spawn.properties.rotation
+    }
     return copy
   }
-  assert.deepEqual(normalize(schema09), normalize(schema08))
+  assert.deepEqual(normalize(schema09, true), normalize(schema08))
 })
 
 test('World 0.9 passes semantic validation and normalization with the existing 0.8 authoring surface', () => {
