@@ -5,7 +5,7 @@ export interface MigrationChange { path: string; description: string }
 export interface MigrationResult {
   document: WorldDocument
   from: string
-  to: '0.7' | '0.8'
+  to: '0.7' | '0.8' | '0.9'
   changed: boolean
   changes: MigrationChange[]
   warnings: string[]
@@ -46,6 +46,10 @@ export function migrateWorldDocument(input: WorldDocument): MigrationResult {
   const changes: MigrationChange[] = []
   const warnings: string[] = []
 
+  if (from === '0.9' || from.startsWith('0.9.')) {
+    document.revision ??= 0
+    return { document, from, to: '0.9', changed: input.revision === undefined, changes: input.revision === undefined ? [{ path: '/revision', description: 'Added the default authored-document revision.' }] : [], warnings }
+  }
   if (from === '0.8' || from.startsWith('0.8.')) {
     document.revision ??= 0
     return { document, from, to: '0.8', changed: input.revision === undefined, changes: input.revision === undefined ? [{ path: '/revision', description: 'Added the default authored-document revision.' }] : [], warnings }
@@ -55,7 +59,7 @@ export function migrateWorldDocument(input: WorldDocument): MigrationResult {
     return { document, from, to: '0.7', changed: input.revision === undefined, changes: input.revision === undefined ? [{ path: '/revision', description: 'Added the default authored-document revision.' }] : [], warnings }
   }
   if (!['0.2', '0.3', '0.4', '0.5', '0.6'].some((version) => from.startsWith(version))) {
-    throw new Error(`Unsupported Anyo document version "${from}". Supported documents are 0.7/0.8; migrations are 0.2 through 0.6 to 0.7.`)
+    throw new Error(`Unsupported Anyo document version "${from}". Supported documents are 0.7/0.8/0.9; migrations are 0.2 through 0.6 to 0.7.`)
   }
 
   document.version = '0.7'

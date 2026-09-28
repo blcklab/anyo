@@ -26,6 +26,8 @@ try {
     'dist/types/index.d.ts',
     'schemas/world-0.4.schema.json',
     'schemas/world-0.7.schema.json',
+    'schemas/world-0.8.schema.json',
+    'schemas/world-0.9.schema.json',
     'dist/esm/snapshots/index.js',
     'dist/esm/geometry/index.js',
     'dist/cjs/geometry/index.js',

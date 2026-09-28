@@ -9,14 +9,14 @@ export interface ExtensionSchemaContribution {
 }
 export interface CreateWorldSchemaOptions {
   baseSchema?: Record<string, JsonValue>
-  version?: '0.7' | '0.8'
+  version?: '0.7' | '0.8' | '0.9'
   extensions?: readonly ExtensionSchemaContribution[]
 }
 
 function clone<T>(value: T): T { return structuredClone(value) }
 
-function defaultBaseSchema(version: '0.7' | '0.8' = '0.7'): Record<string, JsonValue> {
-  const procedural = version === '0.8'
+function defaultBaseSchema(version: '0.7' | '0.8' | '0.9' = '0.7'): Record<string, JsonValue> {
+  const procedural = version === '0.8' || version === '0.9'
   return {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     $id: `https://anyo.blcklab.dev/schemas/world-${version}.schema.json`,

@@ -578,19 +578,19 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
   }
 
   const version = String(document.version ?? '')
-  if (!version.startsWith('0.2') && !version.startsWith('0.3') && !version.startsWith('0.4') && !version.startsWith('0.5') && !version.startsWith('0.6') && !version.startsWith('0.7') && !version.startsWith('0.8')) {
+  if (!version.startsWith('0.2') && !version.startsWith('0.3') && !version.startsWith('0.4') && !version.startsWith('0.5') && !version.startsWith('0.6') && !version.startsWith('0.7') && !version.startsWith('0.8') && !version.startsWith('0.9')) {
     issue(
       issues,
       'VERSION_UNSUPPORTED',
       '/version',
       `Unsupported document version "${version}".`,
-      'Use version "0.8" for procedural worlds, or version "0.7" for the stable legacy contract.',
+      'Use version "0.9" for the latest authoring contract, version "0.8" for the previous procedural contract, or version "0.7" for the stable legacy contract.',
     )
-  } else if (!version.startsWith('0.7') && !version.startsWith('0.8')) {
+  } else if (!version.startsWith('0.7') && !version.startsWith('0.8') && !version.startsWith('0.9')) {
     issue(issues, 'VERSION_LEGACY', '/version', `Version ${version} is supported through automatic migration.`, 'Save the document again to upgrade it to 0.7.', 'warning')
   }
 
-  const allowProcedural = version.startsWith('0.8')
+  const allowProcedural = version.startsWith('0.8') || version.startsWith('0.9')
   document.entities?.forEach((entity, index) => validateProceduralEntityVersion(entity, `/entities/${index}`, allowProcedural, issues))
   for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {
     for (const [roomIndex, room] of floor.rooms.entries()) {
@@ -607,7 +607,7 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     issue(issues, 'FLOORS_REQUIRED', '/building/floors', 'building.floors must be an array when a building is provided.')
   }
 
-  if (!version.startsWith('0.8') && document.geometries !== undefined) {
+  if (!version.startsWith('0.8') && !version.startsWith('0.9') && document.geometries !== undefined) {
     issue(issues, 'GEOMETRIES_REQUIRE_0_8', '/geometries', 'Top-level procedural geometries require Anyo world schema 0.8 or newer.')
   }
   for (const [geometryId, geometry] of Object.entries(document.geometries ?? {})) {
@@ -626,7 +626,7 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     if (typeof asset.src !== 'string' && !(asset.src && typeof asset.src === 'object' && '$bind' in asset.src)) {
       issue(issues, 'ASSET_SOURCE_REQUIRED', `${path}/src`, 'Asset src must be a string or binding.')
     }
-    if ((version.startsWith('0.4') || version.startsWith('0.5') || version.startsWith('0.6') || version.startsWith('0.7') || version.startsWith('0.8')) && (typeof asset.type !== 'string' || !asset.type.trim())) {
+    if ((version.startsWith('0.4') || version.startsWith('0.5') || version.startsWith('0.6') || version.startsWith('0.7') || version.startsWith('0.8') || version.startsWith('0.9')) && (typeof asset.type !== 'string' || !asset.type.trim())) {
       issue(issues, 'ASSET_TYPE_REQUIRED', `${path}/type`, 'Anyo 0.4, 0.5, and 0.6 assets must provide a non-empty type.')
     } else if (asset.type !== undefined && (typeof asset.type !== 'string' || !asset.type.trim())) {
       issue(issues, 'ASSET_TYPE_INVALID', `${path}/type`, 'Asset type must be a non-empty string when provided.')
