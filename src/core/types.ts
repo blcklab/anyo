@@ -450,7 +450,7 @@ export interface LodSourceDefinition {
 }
 
 
-export type WorldDocumentVersion = '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '0.7' | '0.8' | string
+export type WorldDocumentVersion = '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '0.7' | '0.8' | '0.9' | string
 
 export type CameraLookAtDefinition = Vec3 | { entity: string; offset?: Vec3 }
 export interface CameraFollowDefinition {

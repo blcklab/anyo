@@ -256,7 +256,7 @@ function addConstructionPartColliders(
  * reserved for S7 construction where the lowerer can preserve openings and stair parts.
  */
 export function compileProceduralColliders(document: NormalizedWorldDocument, output: CompileAccumulator): void {
-  if (!String(document.version).startsWith('0.8')) return
+  if (!String(document.version).startsWith('0.8') && !String(document.version).startsWith('0.9')) return
   const nodeById = new Map(output.entities.map((node) => [node.id, node]))
 
   for (const entity of flattenEntities(document.entities)) {

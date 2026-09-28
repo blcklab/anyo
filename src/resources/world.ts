@@ -40,9 +40,9 @@ function namedGeometry(document: NormalizedWorldDocument, value: string | Geomet
   return definition
 }
 
-/** S14: compile schema-0.8 procedural authoring into the existing S9-S13 ResourceGraph. */
+/** S14: compile schema-0.8/0.9 procedural authoring into the existing S9-S13 ResourceGraph. */
 export function compileWorldResourceGraph(document: NormalizedWorldDocument, compiled: CompiledWorld): ResourceGraph | undefined {
-  if (!String(document.version).startsWith('0.8')) return undefined
+  if (!String(document.version).startsWith('0.8') && !String(document.version).startsWith('0.9')) return undefined
   const entities = [...document.entities]
   for (let index = 0; index < entities.length; index += 1) {
     const current = entities[index]

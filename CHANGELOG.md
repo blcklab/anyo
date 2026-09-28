@@ -1,3 +1,14 @@
+# Changelog
+
+## 0.11.0-rc.1
+
+### World 0.9 pre-freeze — Step 1
+
+- Added `schemas/world-0.9.schema.json` as a 0.8-equivalent World 0.9 baseline without changing the 0.8 schema.
+- Added public `@blcklab/anyo/schema/0.9` export and World 0.9 recognition across validation, migration pass-through, schema composition, procedural resources, and procedural collision compilation.
+- Kept World 0.9 field-alignment, imports, native object documents, strict authoring, and other new authoring features deferred to their dedicated milestone steps.
+- Aligned the development Sekai64 baseline to `0.8.0-rc.43` for compatibility verification.
+
 # 0.10.0-rc.14 — final package hardening
 
 - Disabled generated JavaScript and declaration source maps in published build outputs so `npm pack` no longer includes generated `dist/**/*.map` artifacts.

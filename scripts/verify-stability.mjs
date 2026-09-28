@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url'
 
 const root = new URL('../', import.meta.url)
 const pkg = JSON.parse(await readFile(new URL('package.json', root), 'utf8'))
-assert.equal(pkg.version, '0.10.0-rc.14')
+assert.equal(pkg.version, '0.11.0-rc.1')
 assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'Anyo core must keep zero runtime dependencies.')
 
 const expectedSubpaths = [
-  '.', './assets', './building', './components', './core', './document', './editor', './entities', './explore', './explore-xr', './history', './geometry', './interactions', './migrations', './package.json', './presets', './renderer', './resources', './renderer-sekai64', './renderer-three', './schema', './schema/0.2', './schema/0.3', './schema/0.3.1', './schema/0.4', './schema/0.5', './schema/0.6', './schema/0.7', './schema/0.8', './snapshots', './systems', './validation', './visibility', './web-surface', './zones',
+  '.', './assets', './building', './components', './core', './document', './editor', './entities', './explore', './explore-xr', './history', './geometry', './interactions', './migrations', './package.json', './presets', './renderer', './resources', './renderer-sekai64', './renderer-three', './schema', './schema/0.2', './schema/0.3', './schema/0.3.1', './schema/0.4', './schema/0.5', './schema/0.6', './schema/0.7', './schema/0.8', './schema/0.9', './snapshots', './systems', './validation', './visibility', './web-surface', './zones',
 ].sort()
 assert.deepEqual(Object.keys(pkg.exports).sort(), expectedSubpaths)
 
@@ -36,4 +36,4 @@ assert.ok(!rendererTypes.includes('createDynamicTexture'), 'Dynamic texture crea
 const surfaceTypes = rendererTypes + (await readFile(new URL('dist/types/web-surface/index.d.ts', root), 'utf8')) + (await readFile(new URL('dist/types/web-surface/target.d.ts', root), 'utf8')) + (await readFile(new URL('dist/types/web-surface/registry.d.ts', root), 'utf8'))
 for (const name of ['WebSurfaceTarget', 'WebSurfacePresentation', 'RegisteredWebSurfaceApp']) assert.ok(surfaceTypes.includes(name), `${name} must remain declared.`)
 
-console.log('Verified Anyo 0.10 JSON-first, geometry, schema, validation, renderer, and Web Surface contracts.')
+console.log('Verified Anyo 0.11 World 0.9 baseline, JSON-first, geometry, schema, validation, renderer, and Web Surface contracts.')
