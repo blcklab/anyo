@@ -843,6 +843,14 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
       if (exploration.character !== undefined && (typeof exploration.character !== 'string' || !exploration.character.trim())) {
         issue(issues, 'EXPLORATION_CHARACTER_INVALID', '/exploration/character', 'exploration.character must be a non-empty entity id when provided.')
       }
+      const spawn = exploration.spawn
+      if (spawn !== undefined) {
+        if (!isRecord(spawn)) {
+          issue(issues, 'EXPLORATION_SPAWN_INVALID', '/exploration/spawn', 'exploration.spawn must be an object.')
+        } else if (spawn.rotation !== undefined && !isFiniteVector(spawn.rotation, 3)) {
+          issue(issues, 'EXPLORATION_SPAWN_ROTATION_INVALID', '/exploration/spawn/rotation', 'exploration.spawn.rotation must contain exactly three finite Euler radians [x, y, z].')
+        }
+      }
     }
   }
 

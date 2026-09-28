@@ -1715,6 +1715,7 @@ Detach the surface attachment before committing a runtime world transform.`)
         ] as const
       : local
     this.renderer.camera.setPosition(position)
+    if (spawn.rotation) this.renderer.camera.setRotation(spawn.rotation[1], spawn.rotation[0])
     this.setCurrentRoom(roomId ?? null)
   }
 

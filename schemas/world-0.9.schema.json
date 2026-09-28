@@ -2564,6 +2564,10 @@
             },
             "position": {
               "$ref": "#/$defs/vec3"
+            },
+            "rotation": {
+              "$ref": "#/$defs/vec3",
+              "description": "Initial Euler facing in radians [x, y, z]."
             }
           }
         },

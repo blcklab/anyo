@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0-rc.3
+
+### World 0.9 pre-freeze — Step 3
+
+- Added optional `exploration.spawn.rotation` as Euler radians `[x, y, z]` in the World 0.9 schema and public TypeScript contract.
+- Added detailed validation for malformed spawn rotation vectors while preserving position-only spawn behavior.
+- Applied authored spawn orientation through the renderer-neutral camera adapter using the established Anyo Euler mapping (`yaw = y`, `pitch = x`).
+- Synchronized the built-in first-person controller with authored spawn orientation so the first look input does not jump back to a stale pre-spawn yaw/pitch.
+- Kept World 0.8 schema byte-for-byte unchanged and preserved authored active-camera precedence.
+
 ## 0.11.0-rc.2
 
 ### World 0.9 pre-freeze — Step 2

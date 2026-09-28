@@ -1336,6 +1336,8 @@ export interface ExplorationDefinition {
   spawn?: {
     room?: string
     position?: Vec3
+    /** Initial Euler facing in radians [x, y, z], matching authored transform rotation conventions. */
+    rotation?: Vec3
   }
   height?: number
   radius?: number
