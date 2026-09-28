@@ -177,3 +177,6 @@ export function pointerForObjectKey(base: string, key: string): string {
 
 export { canonicalizeJson, canonicalizeWorldDocument, canonicalWorldString, hashWorldDocument } from './canonical.js'
 export type { CanonicalizeWorldOptions } from './canonical.js'
+
+export { AnyoImportError, createFetchAnyoDocumentLoader, resolveAnyoObjectDocumentUrls, resolveWorldDocumentImports } from './imports.js'
+export type { AnyoImportErrorCode } from './imports.js'

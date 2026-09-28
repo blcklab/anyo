@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0-rc.5
+
+- Add World/Object import declarations and a platform-neutral recursive document resolver for World 0.9.
+- Preserve imported-document source ownership for relative URL resolution, deterministic alias namespaces, cycle detection, duplicate-alias diagnostics, and optional sha256 integrity verification.
+- Integrate the resolver into World URL loading without exposing import concerns to renderer packages.
+
 ## 0.11.0-rc.4
 
 - Add the native declarative Anyo Object 0.1 schema and public TypeScript contract.

@@ -25,6 +25,16 @@
       "description": "JSON-safe arbitrary object metadata.",
       "additionalProperties": true
     },
+    "imports": {
+      "type": "object",
+      "description": "Optional nested native Anyo object imports keyed by stable aliases.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9@][A-Za-z0-9@._-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/importDefinition"
+      }
+    },
     "assets": {
       "type": "object",
       "additionalProperties": {

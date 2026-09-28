@@ -23,6 +23,16 @@
       "description": "JSON-safe arbitrary author metadata.",
       "additionalProperties": true
     },
+    "imports": {
+      "type": "object",
+      "description": "Optional native Anyo object imports keyed by stable aliases.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9@][A-Za-z0-9@._-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/importDefinition"
+      }
+    },
     "environment": {
       "$ref": "#/$defs/environment"
     },
@@ -4355,6 +4365,23 @@
         }
       },
       "additionalProperties": true
+    },
+    "importDefinition": {
+      "type": "object",
+      "required": [
+        "src"
+      ],
+      "properties": {
+        "src": {
+          "type": "string",
+          "minLength": 1
+        },
+        "integrity": {
+          "type": "string",
+          "pattern": "^sha256-[A-Za-z0-9+/]+={0,2}$"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

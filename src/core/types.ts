@@ -1381,6 +1381,15 @@ export interface VisibilityDefinition {
   hideUnreachableRooms?: boolean
 }
 
+export interface AnyoImportDefinition {
+  /** URL/path to another declarative Anyo object document. */
+  src: string
+  /** Optional Subresource-Integrity style sha256 digest (base64). */
+  integrity?: string
+}
+
+export type AnyoImportMap = Record<string, AnyoImportDefinition>
+
 export type AnyoObjectDocumentVersion = '0.1' | `0.1.${string}`
 
 /**
@@ -1393,6 +1402,7 @@ export interface AnyoObjectDocument {
   kind: 'anyo-object'
   version: AnyoObjectDocumentVersion
   metadata?: Record<string, unknown>
+  imports?: AnyoImportMap
   assets?: Record<string, AssetDefinition>
   materials?: Record<string, MaterialDefinition>
   geometries?: Record<string, GeometryDefinition>
@@ -1407,6 +1417,8 @@ export interface WorldDocument {
   revision?: number
   units?: 'meters'
   metadata?: Record<string, unknown>
+  /** Optional modular authoring imports available in World 0.9+. */
+  imports?: AnyoImportMap
   data?: Record<string, unknown>
   environment?: EnvironmentDefinition
   rendering?: RenderingIntentDefinition
@@ -1454,6 +1466,50 @@ export interface WorldSourceContext {
   documentUrl?: string
   baseUrl?: string
 }
+
+export interface AnyoDocumentLoadRequest {
+  url: string
+  /** URL of the document that declared the import, when applicable. */
+  parentUrl?: string
+  /** Import alias that requested this document, when applicable. */
+  alias?: string
+  integrity?: string
+}
+
+export interface AnyoLoadedDocument {
+  document: unknown
+  /** Canonical URL of the loaded document; defaults to the requested URL. */
+  documentUrl?: string
+  /** Exact source text when available, used for duplicate-key and integrity checks. */
+  sourceText?: string
+}
+
+export type AnyoDocumentLoader = (request: AnyoDocumentLoadRequest) => Promise<AnyoLoadedDocument>
+
+export interface ResolvedAnyoImport {
+  alias: string
+  /** Deterministic alias-path namespace used by later instantiation/bundling steps. */
+  namespace: string
+  sourceUrl: string
+  sourceContext: WorldSourceContext
+  document: AnyoObjectDocument
+  imports: Readonly<Record<string, ResolvedAnyoImport>>
+}
+
+export interface ResolvedWorldDocumentGraph {
+  document: WorldDocument
+  sourceContext?: WorldSourceContext
+  imports: Readonly<Record<string, ResolvedAnyoImport>>
+}
+
+export interface ResolveWorldImportsOptions {
+  sourceContext?: WorldSourceContext
+  documentLoader?: AnyoDocumentLoader
+  validation?: WorldValidationOptions
+  /** Maximum recursive import depth. Defaults to 32. */
+  maxDepth?: number
+}
+
 
 export interface NormalizedEntityDefinition extends EntityDefinition {
   children?: NormalizedEntityDefinition[]
@@ -2299,6 +2355,8 @@ export interface CreateWorldOptions {
   onWarning?: (message: string) => void
   historyLimit?: number
   validation?: WorldValidationOptions
+  /** Platform-neutral loader used for root URL input and World 0.9 object imports. */
+  documentLoader?: AnyoDocumentLoader
 }
 
 export type WorldInput = WorldDocument | string | URL

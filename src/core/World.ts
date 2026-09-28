@@ -1,4 +1,4 @@
-import { cloneWorldDocument, findEntityInDocument, getValueAtPointer, hashWorldDocument, serializeWorldDocument, type SerializeWorldOptions } from '../document/index.js'
+import { cloneWorldDocument, createFetchAnyoDocumentLoader, findEntityInDocument, getValueAtPointer, hashWorldDocument, resolveWorldDocumentImports, serializeWorldDocument, type SerializeWorldOptions } from '../document/index.js'
 import { DocumentHistory } from '../history/index.js'
 import { migrateWorldDocument, type MigrationResult } from '../migrations/index.js'
 import { getDataPath, setDataPath } from '../schema/bindings.js'
@@ -49,6 +49,8 @@ import type {
   Matrix4Tuple,
   WorldValidationOptions,
   ActionDefinition,
+  AnyoDocumentLoader,
+  ResolvedWorldDocumentGraph,
   CameraTransitionDefinition,
   CompilerDependencyGraph,
   CompilerPerformanceReport,
@@ -99,19 +101,17 @@ interface LoadedWorldInput {
   sourceContext?: WorldSourceContext
 }
 
-async function loadInput(input: WorldInput): Promise<LoadedWorldInput> {
+async function loadInput(input: WorldInput, documentLoader: AnyoDocumentLoader): Promise<LoadedWorldInput> {
   if (!isUrlInput(input)) return { document: cloneWorldDocument(input) }
-  if (typeof fetch === 'undefined') throw new Error('Loading a world URL requires a runtime with fetch support.')
   const documentUrl = new URL(String(input), typeof location === 'undefined' ? undefined : location.href)
-  const response = await fetch(documentUrl)
-  if (!response.ok) throw new Error(`Failed to load Anyo world: ${response.status} ${response.statusText}`)
-  const value = await response.json() as unknown
-  if (!value || typeof value !== 'object') throw new Error('The loaded Anyo world is not a JSON object.')
+  const loaded = await documentLoader({ url: documentUrl.href })
+  if (!loaded.document || typeof loaded.document !== 'object' || Array.isArray(loaded.document)) throw new Error('The loaded Anyo world is not a JSON object.')
+  const canonicalUrl = new URL(loaded.documentUrl ?? documentUrl.href, documentUrl.href)
   return {
-    document: value as WorldDocument,
+    document: loaded.document as WorldDocument,
     sourceContext: {
-      documentUrl: documentUrl.href,
-      baseUrl: new URL('.', documentUrl).href,
+      documentUrl: canonicalUrl.href,
+      baseUrl: new URL('.', canonicalUrl).href,
     },
   }
 }
@@ -218,6 +218,8 @@ export class World {
 
   private sourceDocument: WorldDocument | null = null
   private sourceContext?: WorldSourceContext
+  private resolvedDocumentGraph: ResolvedWorldDocumentGraph | null = null
+  private readonly documentLoader: AnyoDocumentLoader
   private runtimeData: Record<string, unknown> = {}
   private readonly events = new EventBus()
   private readonly actions = new ActionRegistry(this)
@@ -252,6 +254,7 @@ export class World {
     this.configuredPixelRatio = options.pixelRatio
     this.history = new DocumentHistory(options.historyLimit ?? 100)
     this.validationOptions = options.validation ?? {}
+    this.documentLoader = options.documentLoader ?? createFetchAnyoDocumentLoader()
     this.query = new WorldQuery()
     this.transforms = new RuntimeTransformStore()
     this.systemScheduler = new SystemScheduler(this.systems, options.systemOptions, this.transforms, this.warningHandler)
@@ -269,7 +272,7 @@ export class World {
     await this.enqueue(async () => {
       this.assertNotDisposed()
       this.assertNoActivePreview('load a world')
-      const loaded = await loadInput(input)
+      const loaded = await loadInput(input, this.documentLoader)
       const migration = migrateWorldDocument(loaded.document)
       if (this.validationOptions.extensionRegistry?.migrate) {
         const beforeExtensionMigration = hashWorldDocument(migration.document)
@@ -283,16 +286,20 @@ export class World {
       validateWorldDocument(migration.document, this.worldValidationOptions())
       const previousSource = this.sourceDocument ? cloneWorldDocument(this.sourceDocument) : null
       const previousSourceContext = this.sourceContext
+      const previousResolvedDocumentGraph = this.resolvedDocumentGraph
       const previousRuntimeData = structuredClone(this.runtimeData)
       const previousRuntimeTransforms = this.transforms.snapshotLayers()
+      const resolvedGraph = await resolveWorldDocumentImports(migration.document, { sourceContext: loaded.sourceContext, documentLoader: this.documentLoader, validation: this.validationOptions })
       this.sourceDocument = migration.document
       this.sourceContext = loaded.sourceContext
+      this.resolvedDocumentGraph = resolvedGraph
       this.runtimeData = structuredClone(migration.document.data ?? {})
       try {
         await this.rebuild({ preserveRuntime: false, resetRuntimeTransforms: true })
       } catch (error) {
         this.sourceDocument = previousSource
         this.sourceContext = previousSourceContext
+        this.resolvedDocumentGraph = previousResolvedDocumentGraph
         this.runtimeData = previousRuntimeData
         this.transforms.restoreLayers(previousRuntimeTransforms)
         if (previousSource) {
@@ -1267,6 +1274,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.history.clear()
     this.sourceDocument = null
     this.sourceContext = undefined
+    this.resolvedDocumentGraph = null
     this.runtimeData = {}
     this.transforms.clearAll()
     this.transforms.updateWorld(null)
