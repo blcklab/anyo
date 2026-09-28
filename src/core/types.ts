@@ -1240,7 +1240,7 @@ export interface EntityDefinition {
   composition?: string
   /** Stable prefab/composition instance identity; defaults to id. */
   instanceId?: string
-  /** JSON-Pointer keyed overrides applied to the referenced prefab before instance fields. */
+  /** JSON-Pointer keyed overrides applied to the referenced prefab/composition before instance fields. */
   overrides?: Record<string, JsonValue>
   repeat?: EntityRepeatDefinition
   type?:
@@ -1311,6 +1311,8 @@ export interface EntityDefinition {
   /** Required when type is web-surface. JSON remains data; executable code is registered by the host. */
   webSurface?: WebSurfaceDefinition
   data?: Record<string, unknown>
+  /** Namespaced entity-local extension data preserved by normalization and tooling. */
+  extensions?: Record<string, unknown>
   style?: {
     fontSize?: number
     fontFamily?: string

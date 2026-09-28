@@ -2,6 +2,7 @@ import type { EntityDefinition, Vec3, WorldDocument, WorldValidationOptions } fr
 import { AnyoValidationError, type ValidationIssue } from './errors.js'
 import { inspectWorldSemantics } from './semantic.js'
 import { inspectArchitectureDocument } from './architecture.js'
+import { parseJsonPointer } from './safePath.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -395,6 +396,25 @@ function validateEntity(
     issue(issues, 'ENTITY_TYPE_REQUIRED', path, 'Entity must provide type, use, or composition.')
   }
   if (entity.use && entity.composition) issue(issues, 'ENTITY_TEMPLATE_REFERENCE_CONFLICT', path, 'Entity cannot reference both use and composition.')
+  if (entity.instanceId !== undefined && (typeof entity.instanceId !== 'string' || !entity.instanceId.trim())) {
+    issue(issues, 'ENTITY_INSTANCE_ID_INVALID', `${path}/instanceId`, 'instanceId must be a non-empty string when provided.')
+  }
+  if (entity.overrides !== undefined) {
+    if (!isRecord(entity.overrides)) {
+      issue(issues, 'ENTITY_OVERRIDES_INVALID', `${path}/overrides`, 'overrides must be an object keyed by JSON Pointer paths.')
+    } else {
+      for (const pointer of Object.keys(entity.overrides)) {
+        try { parseJsonPointer(pointer) }
+        catch (error) { issue(issues, 'ENTITY_OVERRIDE_PATH_INVALID', `${path}/overrides/${pointer}`, String(error)) }
+      }
+    }
+  }
+  if (entity.loading !== undefined && entity.loading !== 'eager' && entity.loading !== 'lazy') {
+    issue(issues, 'ENTITY_LOADING_INVALID', `${path}/loading`, 'loading must be either eager or lazy when provided.')
+  }
+  if (entity.extensions !== undefined && !isRecord(entity.extensions)) {
+    issue(issues, 'ENTITY_EXTENSIONS_INVALID', `${path}/extensions`, 'extensions must be an object when provided.')
+  }
   if (entity.use && !prefabs?.[entity.use]) {
     issue(issues, 'PREFAB_NOT_FOUND', `${path}/use`, `Prefab "${entity.use}" does not exist.`)
   }
@@ -810,6 +830,20 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     if (optimization.streamingConcurrency !== undefined && (!Number.isInteger(optimization.streamingConcurrency) || optimization.streamingConcurrency < 1 || optimization.streamingConcurrency > 32)) issue(issues, 'STREAMING_CONCURRENCY_INVALID', '/environment/optimization/streamingConcurrency', 'streamingConcurrency must be an integer between 1 and 32.')
     if (optimization.worldOriginThreshold !== undefined && (!Number.isFinite(optimization.worldOriginThreshold) || optimization.worldOriginThreshold <= 0)) issue(issues, 'WORLD_ORIGIN_THRESHOLD_INVALID', '/environment/optimization/worldOriginThreshold', 'worldOriginThreshold must be a positive finite number.')
     if (optimization.worldOriginGridSize !== undefined && (!Number.isFinite(optimization.worldOriginGridSize) || optimization.worldOriginGridSize <= 0)) issue(issues, 'WORLD_ORIGIN_GRID_INVALID', '/environment/optimization/worldOriginGridSize', 'worldOriginGridSize must be a positive finite number.')
+  }
+
+  const exploration = document.exploration
+  if (exploration !== undefined) {
+    if (!exploration || typeof exploration !== 'object' || Array.isArray(exploration)) {
+      issue(issues, 'EXPLORATION_CONFIGURATION_INVALID', '/exploration', 'exploration must be an object.')
+    } else {
+      if (exploration.mode !== undefined && !['first-person', 'third-person'].includes(exploration.mode)) {
+        issue(issues, 'EXPLORATION_MODE_INVALID', '/exploration/mode', 'exploration.mode must be first-person or third-person.')
+      }
+      if (exploration.character !== undefined && (typeof exploration.character !== 'string' || !exploration.character.trim())) {
+        issue(issues, 'EXPLORATION_CHARACTER_INVALID', '/exploration/character', 'exploration.character must be a non-empty entity id when provided.')
+      }
+    }
   }
 
   const xr = document.exploration?.xr

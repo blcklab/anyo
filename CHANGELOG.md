@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0-rc.2
+
+### World 0.9 pre-freeze — Step 2
+
+- Aligned existing public World 0.9 entity fields across JSON Schema, TypeScript, detailed validation, semantic validation, and normalization coverage.
+- Added explicit schema/validation contracts for `instanceId`, JSON-Pointer `overrides`, entity `loading`, `exploration.mode`, and `exploration.character`.
+- Fixed the World 0.9 entity root contract so pure `composition` instances are valid alongside `type` and legacy `use`.
+- Added the missing public `EntityDefinition.extensions` TypeScript field to match the existing schema/semantic contract.
+- Added dedicated contract-drift fixtures/tests while preserving World 0.8 unchanged.
+
 ## 0.11.0-rc.1
 
 ### World 0.9 pre-freeze — Step 1
