@@ -1381,6 +1381,25 @@ export interface VisibilityDefinition {
   hideUnreachableRooms?: boolean
 }
 
+export type AnyoObjectDocumentVersion = '0.1' | `0.1.${string}`
+
+/**
+ * Standalone reusable declarative Anyo object document.
+ * Object documents reuse World 0.9 assets, materials, geometries, compositions, and composition-root vocabulary.
+ * Import resolution is intentionally not part of the Object 0.1 validation contract.
+ */
+export interface AnyoObjectDocument {
+  $schema?: string
+  kind: 'anyo-object'
+  version: AnyoObjectDocumentVersion
+  metadata?: Record<string, unknown>
+  assets?: Record<string, AssetDefinition>
+  materials?: Record<string, MaterialDefinition>
+  geometries?: Record<string, GeometryDefinition>
+  compositions?: Record<string, CompositionDefinition>
+  root: CompositionDefinition
+}
+
 export interface WorldDocument {
   $schema?: string
   version: WorldDocumentVersion

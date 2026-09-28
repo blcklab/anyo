@@ -1,0 +1,74 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/object-0.1.schema.json",
+  "kind": "anyo-object",
+  "version": "0.1",
+  "metadata": {
+    "id": "hero-tree",
+    "title": "Hero Broad Tree"
+  },
+  "assets": {
+    "leaf-texture": {
+      "type": "image",
+      "src": "./textures/leaves.webp"
+    }
+  },
+  "materials": {
+    "bark": {
+      "baseColor": "#70452f",
+      "roughness": 0.88
+    },
+    "foliage": {
+      "baseColor": "#4f7d45",
+      "baseColorTexture": "leaf-texture",
+      "roughness": 0.72
+    }
+  },
+  "geometries": {
+    "trunk-shape": {
+      "kind": "cylinder",
+      "radius": 0.35,
+      "height": 3.2
+    }
+  },
+  "compositions": {
+    "crown": {
+      "children": [
+        {
+          "id": "crown-main",
+          "type": "sphere",
+          "radius": 1.6,
+          "material": "foliage"
+        },
+        {
+          "id": "crown-child",
+          "type": "sphere",
+          "position": [0.8, -0.15, 0.2],
+          "radius": 0.9,
+          "material": "foliage"
+        }
+      ]
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "id": "trunk",
+        "type": "geometry",
+        "geometry": "trunk-shape",
+        "material": "bark",
+        "collision": true
+      },
+      {
+        "id": "crown-instance",
+        "composition": "crown",
+        "position": [0, 3, 0]
+      },
+      {
+        "id": "leaf-card",
+        "type": "image",
+        "asset": "leaf-texture",
+        "position": [0, 3.5, 0]
+      }
+    ]
+  }
+}

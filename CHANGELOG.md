@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0-rc.4
+
+- Add the native declarative Anyo Object 0.1 schema and public TypeScript contract.
+- Add standalone object validation that reuses the existing World 0.9 resource/entity semantics without import resolution.
+- Export the Object 0.1 schema at `@blcklab/anyo/schema/object/0.1`.
+
 ## 0.11.0-rc.3
 
 ### World 0.9 pre-freeze — Step 3

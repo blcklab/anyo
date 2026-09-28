@@ -28,6 +28,7 @@ try {
     'schemas/world-0.7.schema.json',
     'schemas/world-0.8.schema.json',
     'schemas/world-0.9.schema.json',
+    'schemas/object-0.1.schema.json',
     'dist/esm/snapshots/index.js',
     'dist/esm/geometry/index.js',
     'dist/cjs/geometry/index.js',
@@ -62,7 +63,7 @@ try {
   }
 
   const esm = await import(pathToFileURL(path.join(root, 'dist/esm/index.js')).href)
-  if (typeof esm.createWorld !== 'function' || typeof esm.migrateWorldDocument !== 'function' || typeof esm.applyStableTransaction !== 'function' || typeof esm.createPortableWorldPackageDescriptor !== 'function') {
+  if (typeof esm.createWorld !== 'function' || typeof esm.validateAnyoObjectDocument !== 'function' || typeof esm.migrateWorldDocument !== 'function' || typeof esm.applyStableTransaction !== 'function' || typeof esm.createPortableWorldPackageDescriptor !== 'function') {
     throw new Error('ESM root export smoke test failed.')
   }
 

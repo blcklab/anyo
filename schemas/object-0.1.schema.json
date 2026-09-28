@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anyo.blcklab.dev/schemas/object-0.1.schema.json",
+  "title": "Anyo Object 0.1",
+  "description": "Reusable declarative Anyo object document composed from the World 0.9 authoring vocabulary.",
+  "type": "object",
+  "required": [
+    "kind",
+    "version",
+    "root"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "kind": {
+      "const": "anyo-object"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^0\\.1(?:\\.|$)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "JSON-safe arbitrary object metadata.",
+      "additionalProperties": true
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/asset"
+      }
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/material"
+      }
+    },
+    "geometries": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/geometryDefinition"
+      }
+    },
+    "compositions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/composition"
+      }
+    },
+    "root": {
+      "allOf": [
+        {
+          "$ref": "./world-0.9.schema.json#/$defs/composition"
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "use"
+                ]
+              },
+              {
+                "required": [
+                  "composition"
+                ]
+              },
+              {
+                "required": [
+                  "repeat"
+                ]
+              },
+              {
+                "required": [
+                  "instanceId"
+                ]
+              },
+              {
+                "required": [
+                  "overrides"
+                ]
+              },
+              {
+                "required": [
+                  "loading"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Reusable object root using the existing Anyo composition vocabulary; instance-only template fields are not valid at the object root."
+    }
+  },
+  "additionalProperties": false
+}

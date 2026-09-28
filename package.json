@@ -1,6 +1,6 @@
 {
   "name": "@blcklab/anyo",
-  "version": "0.11.0-rc.3",
+  "version": "0.11.0-rc.4",
   "description": "A secure, renderer-independent spatial web engine with replacement-safe plugin and system lifecycles, player-ready lifecycle, WebXR, renderer-neutral web-surface targets, and runtime systems.",
   "keywords": [
     "3d",
@@ -186,7 +186,8 @@
       "require": "./dist/cjs/resources/index.js"
     },
     "./schema/0.8": "./schemas/world-0.8.schema.json",
-    "./schema/0.9": "./schemas/world-0.9.schema.json"
+    "./schema/0.9": "./schemas/world-0.9.schema.json",
+    "./schema/object/0.1": "./schemas/object-0.1.schema.json"
   },
   "scripts": {
     "clean": "node scripts/clean.mjs",
