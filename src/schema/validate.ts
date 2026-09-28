@@ -3,6 +3,7 @@ import { AnyoValidationError, type ValidationIssue } from './errors.js'
 import { inspectWorldSemantics } from './semantic.js'
 import { inspectArchitectureDocument } from './architecture.js'
 import { parseJsonPointer } from './safePath.js'
+import { inspectAnyoImportMap } from './imports.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -611,6 +612,8 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
   }
 
   const allowProcedural = version.startsWith('0.8') || version.startsWith('0.9')
+  if (!version.startsWith('0.9') && document.imports !== undefined) issue(issues, 'ANYO_IMPORTS_REQUIRE_0_9', '/imports', 'Top-level imports require Anyo world schema 0.9 or newer.')
+  if (version.startsWith('0.9')) inspectAnyoImportMap(document.imports, '/imports', issues)
   document.entities?.forEach((entity, index) => validateProceduralEntityVersion(entity, `/entities/${index}`, allowProcedural, issues))
   for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {
     for (const [roomIndex, room] of floor.rooms.entries()) {

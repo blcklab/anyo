@@ -49,7 +49,7 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-3 fields', async () => {
+test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-5 fields', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
@@ -69,6 +69,8 @@ test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-3 
       delete copy.$defs.exploration.properties.mode
       delete copy.$defs.exploration.properties.character
       delete copy.$defs.exploration.properties.spawn.properties.rotation
+      delete copy.properties.imports
+      delete copy.$defs.importDefinition
     }
     return copy
   }

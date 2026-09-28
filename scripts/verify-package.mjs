@@ -63,7 +63,7 @@ try {
   }
 
   const esm = await import(pathToFileURL(path.join(root, 'dist/esm/index.js')).href)
-  if (typeof esm.createWorld !== 'function' || typeof esm.validateAnyoObjectDocument !== 'function' || typeof esm.migrateWorldDocument !== 'function' || typeof esm.applyStableTransaction !== 'function' || typeof esm.createPortableWorldPackageDescriptor !== 'function') {
+  if (typeof esm.createWorld !== 'function' || typeof esm.resolveWorldDocumentImports !== 'function' || typeof esm.validateAnyoObjectDocument !== 'function' || typeof esm.migrateWorldDocument !== 'function' || typeof esm.applyStableTransaction !== 'function' || typeof esm.createPortableWorldPackageDescriptor !== 'function') {
     throw new Error('ESM root export smoke test failed.')
   }
 

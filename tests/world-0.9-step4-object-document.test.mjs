@@ -15,7 +15,7 @@ function codes(result) {
   return new Set(result.errors.map((entry) => entry.code))
 }
 
-test('Object 0.1 schema reuses World 0.9 resource and composition definitions without imports', async () => {
+test('Object 0.1 schema reuses World 0.9 resource and composition definitions while Step 5 adds shared imports', async () => {
   const objectSchema = JSON.parse(await read(objectSchemaUrl, 'utf8'))
   const worldSchema = JSON.parse(await read(worldSchemaUrl, 'utf8'))
   assert.equal(objectSchema.$id, 'https://anyo.blcklab.dev/schemas/object-0.1.schema.json')
@@ -28,7 +28,7 @@ test('Object 0.1 schema reuses World 0.9 resource and composition definitions wi
   assert.equal(objectSchema.properties.compositions.additionalProperties.$ref, './world-0.9.schema.json#/$defs/composition')
   assert.equal(objectSchema.properties.root.allOf[0].$ref, './world-0.9.schema.json#/$defs/composition')
   assert.deepEqual(objectSchema.properties.root.allOf[1].not.anyOf.map((entry) => entry.required[0]), ['use', 'composition', 'repeat', 'instanceId', 'overrides', 'loading'])
-  assert.equal(objectSchema.properties.imports, undefined)
+  assert.equal(objectSchema.properties.imports.additionalProperties.$ref, './world-0.9.schema.json#/$defs/importDefinition')
   assert.equal(objectSchema.additionalProperties, false)
   assert.ok(worldSchema.$defs.composition, 'World 0.9 composition definition remains the shared root vocabulary')
 })
@@ -39,14 +39,13 @@ test('valid standalone Object 0.1 documents accept local assets, materials, geom
   assert.doesNotThrow(() => validateAnyoObjectDocument(structuredClone(validFixture)))
 })
 
-test('Object 0.1 rejects unsupported versions, wrong kind, resource-map shape errors, and premature imports', () => {
+test('Object 0.1 rejects unsupported versions, wrong kind, and resource-map shape errors while valid Step 5 imports remain allowed', () => {
   const result = inspectAnyoObjectDocument(structuredClone(invalidFixture))
   assert.equal(result.valid, false)
   const actual = codes(result)
   for (const code of [
     'ANYO_OBJECT_KIND_INVALID',
     'ANYO_OBJECT_VERSION_UNSUPPORTED',
-    'ANYO_OBJECT_FIELD_UNKNOWN',
     'ANYO_OBJECT_RESOURCE_MAP_INVALID',
     'ANYO_OBJECT_ROOT_TYPE_INVALID',
   ]) assert.equal(actual.has(code), true, `expected ${code}`)
