@@ -182,3 +182,4 @@ export { AnyoImportError, createFetchAnyoDocumentLoader, resolveAnyoObjectDocume
 export type { AnyoImportErrorCode } from './imports.js'
 
 export { instantiateResolvedWorldDocument } from './instantiate.js'
+export { bundleResolvedWorldDocument, bundleWorldDocument } from './bundle.js'

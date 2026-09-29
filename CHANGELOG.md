@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0-rc.7
+
+- World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
+- Bundled output removes external Anyo JSON `imports`, preserves namespace-qualified reusable resources/compositions and provenance, and canonicalizes object-key ordering for reproducible serialization.
+- Add round-trip tests proving modular and bundled worlds normalize/compile equivalently and that bundled worlds load without any external Anyo JSON document dependency.
+
 ## 0.11.0-rc.6
 
 - Instantiate resolved native Anyo Object imports through ordinary namespaced assets, materials, geometries, compositions, entities, components, and collision paths.
@@ -180,6 +186,12 @@ Generic semantic compositions S23 for world schema 0.8.
 - No Sekai64, Player, VRM, animation, camera, collision, or renderer behavior changes.
 
 # Changelog
+
+## 0.11.0-rc.7
+
+- World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
+- Bundled output removes external Anyo JSON `imports`, preserves namespace-qualified reusable resources/compositions and provenance, and canonicalizes object-key ordering for reproducible serialization.
+- Add round-trip tests proving modular and bundled worlds normalize/compile equivalently and that bundled worlds load without any external Anyo JSON document dependency.
 
 ## 0.10.0-rc.3-dev.20
 
@@ -403,6 +415,12 @@ Add S2 precision procedural primitives to `@blcklab/anyo/geometry`: box, rounded
 Start the precision procedural-geometry milestone with a renderer-neutral S1 foundation. Add stable coordinate conventions, JSON-safe definition normalization, deterministic hashing, safety limits, mesh validation, bounds, reusable caching, a pluggable compiler registry, and the `@blcklab/anyo/geometry` subpath. No renderer, Player, world-schema, or existing primitive semantics change in this revision.
 
 # Changelog
+
+## 0.11.0-rc.7
+
+- World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
+- Bundled output removes external Anyo JSON `imports`, preserves namespace-qualified reusable resources/compositions and provenance, and canonicalizes object-key ordering for reproducible serialization.
+- Add round-trip tests proving modular and bundled worlds normalize/compile equivalently and that bundled worlds load without any external Anyo JSON document dependency.
 
 ## 0.10.0-rc.2-dev.2
 

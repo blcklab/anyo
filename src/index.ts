@@ -6,7 +6,7 @@ export { ANYO_TEXTURE_COLOR_SPACES, ANYO_VISUAL_DEFAULTS, normalizeEnvironmentDe
 export type { ChangeClassification, DocumentChangeEvent } from './core/World.js'
 export { validateWorldDocument, inspectWorldDocument, validateAnyoObjectDocument, inspectAnyoObjectDocument, inspectWorldSemantics, inspectArchitectureDocument, normalizeWorldDocument, createWorldSchema, AnyoValidationError } from './schema/index.js'
 export type { ValidationResult, ValidationIssue, ValidationSeverity, ExtensionSchemaContribution, CreateWorldSchemaOptions } from './schema/index.js'
-export { cloneWorldDocument, findEntityInDocument, findEntityInList, serializeWorldDocument, canonicalizeJson, canonicalizeWorldDocument, canonicalWorldString, hashWorldDocument, AnyoImportError, createFetchAnyoDocumentLoader, resolveAnyoObjectDocumentUrls, resolveWorldDocumentImports, instantiateResolvedWorldDocument } from './document/index.js'
+export { cloneWorldDocument, findEntityInDocument, findEntityInList, serializeWorldDocument, canonicalizeJson, canonicalizeWorldDocument, canonicalWorldString, hashWorldDocument, AnyoImportError, createFetchAnyoDocumentLoader, resolveAnyoObjectDocumentUrls, resolveWorldDocumentImports, instantiateResolvedWorldDocument, bundleResolvedWorldDocument, bundleWorldDocument } from './document/index.js'
 export type { SerializeWorldOptions, CanonicalizeWorldOptions, AnyoImportErrorCode } from './document/index.js'
 export { DocumentHistory } from './history/index.js'
 export { EditorSession, createEditorSession } from './editor/index.js'
