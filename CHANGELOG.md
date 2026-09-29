@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0-rc.12
+
+- Final Quality Pass Q1: add renderer-neutral World 0.9 spotlight authoring through the existing generic `type: "light"` contract.
+- Add `lightType: "spot"`, required local-space `direction`, bounded `innerCone`/`outerCone`, compiled primitive propagation, renderer capability gating, and incremental-content tracking.
+- Map authored spot lights to the existing Sekai64 rc.43 `SpotLight` implementation without modifying Sekai64.
+- Report explicit Sekai64 diagnostics when spot shadows or configurable spot decay are requested because those behaviors are not rendered by the accepted rc.43 baseline.
+- Add focused spotlight schema/runtime/adapter/regression tests and lighting documentation while keeping World 0.8 and existing ambient/directional/point lights unchanged.
+
 ## 0.11.0-rc.11
 
 - World 0.9 Step 11: make `compositions` + `composition` the canonical new-authoring primitive while preserving legacy `prefabs` + `use` compatibility.

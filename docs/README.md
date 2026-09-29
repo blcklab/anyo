@@ -8,6 +8,7 @@ Public documentation for package consumers.
 - [Data and updates](data-and-updates.md)
 - [Entities](entities.md)
 - [Exploration](exploration.md)
+- [Lights](lights.md)
 - [Player integration](player-foundation.md)
 - [Plugins](plugins.md)
 - [Runtime systems](runtime-systems.md)

@@ -1302,9 +1302,15 @@ export interface EntityDefinition {
   content?: Bindable<string>
   color?: Bindable<string>
   intensity?: Bindable<number>
-  lightType?: 'ambient' | 'directional' | 'point'
+  lightType?: 'ambient' | 'directional' | 'point' | 'spot'
+  /** Local-space light direction. For spot lights this vector is transformed by the entity transform. */
+  direction?: Vec3
   range?: Bindable<number>
   decay?: Bindable<number>
+  /** Spotlight inner cone angle in radians. */
+  innerCone?: number
+  /** Spotlight outer cone angle in radians. */
+  outerCone?: number
   castShadow?: Bindable<boolean>
   receiveShadow?: Bindable<boolean>
   shadow?: ShadowDefinition
@@ -1634,11 +1640,14 @@ export interface CompiledPrimitive {
   assetType?: string
   assetFormat?: string
   text?: string
-  lightType?: 'ambient' | 'directional' | 'point'
+  lightType?: 'ambient' | 'directional' | 'point' | 'spot'
+  direction?: Vec3
   color?: string
   intensity?: number
   range?: number
   decay?: number
+  innerCone?: number
+  outerCone?: number
   castShadow?: boolean
   receiveShadow?: boolean
   shadow?: ShadowDefinition
@@ -1788,6 +1797,8 @@ export interface RendererCapabilities {
   ambientLights?: boolean
   directionalLights?: boolean
   pointLights?: boolean
+  /** Supports authored spot lights as a distinct light type. */
+  spotLights?: boolean
   picking: boolean
   trianglePicking?: boolean
   instancedPicking?: boolean

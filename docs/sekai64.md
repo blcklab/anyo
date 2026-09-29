@@ -36,6 +36,7 @@ Anyo model            → Sekai64 glTF node
 Anyo ambient light    → Sekai64 AmbientLight
 Anyo directional light→ Sekai64 DirectionalLight
 Anyo point light      → Sekai64 PointLight
+Anyo spot light       → Sekai64 SpotLight
 Anyo room             → Sekai64 Node group
 ```
 
