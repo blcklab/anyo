@@ -4411,17 +4411,621 @@
       ]
     },
     "constructionDefinition": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/constructionWall"
+        },
+        {
+          "$ref": "#/$defs/constructionFloor"
+        },
+        {
+          "$ref": "#/$defs/constructionCeiling"
+        },
+        {
+          "$ref": "#/$defs/constructionPanel"
+        },
+        {
+          "$ref": "#/$defs/constructionColumn"
+        },
+        {
+          "$ref": "#/$defs/constructionBeam"
+        },
+        {
+          "$ref": "#/$defs/constructionStairs"
+        },
+        {
+          "$ref": "#/$defs/constructionRailing"
+        },
+        {
+          "$ref": "#/$defs/constructionTrim"
+        },
+        {
+          "$ref": "#/$defs/constructionRoof"
+        },
+        {
+          "$ref": "#/$defs/constructionDoorOpening"
+        },
+        {
+          "$ref": "#/$defs/constructionWindowOpening"
+        }
+      ]
+    },
+    "constructionWallOpening": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "offset",
+            "width",
+            "height"
+          ],
+          "properties": {
+            "kind": {
+              "const": "door"
+            },
+            "id": {
+              "type": "string"
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "offset",
+            "width",
+            "height",
+            "sillHeight"
+          ],
+          "properties": {
+            "kind": {
+              "const": "window"
+            },
+            "id": {
+              "type": "string"
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "sillHeight": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "constructionWall": {
       "type": "object",
       "required": [
-        "type"
+        "type",
+        "from",
+        "to",
+        "height",
+        "thickness"
       ],
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "type": {
-          "type": "string",
-          "minLength": 1
+          "const": "wall"
+        },
+        "from": {
+          "$ref": "#/$defs/vec3"
+        },
+        "to": {
+          "$ref": "#/$defs/vec3"
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "thickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "openings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constructionWallOpening"
+          }
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
+    },
+    "constructionFloor": {
+      "type": "object",
+      "required": [
+        "type",
+        "size",
+        "thickness"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "floor"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec2"
+        },
+        "thickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3"
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionCeiling": {
+      "type": "object",
+      "required": [
+        "type",
+        "size",
+        "thickness"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "ceiling"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec2"
+        },
+        "thickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3"
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionPanel": {
+      "type": "object",
+      "required": [
+        "type",
+        "size",
+        "thickness"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "panel"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec2"
+        },
+        "thickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3"
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionColumn": {
+      "type": "object",
+      "required": [
+        "type",
+        "height"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "column"
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "shape": {
+          "enum": [
+            "rect",
+            "round"
+          ]
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec2"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionBeam": {
+      "type": "object",
+      "required": [
+        "type",
+        "from",
+        "to",
+        "height",
+        "depth"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "beam"
+        },
+        "from": {
+          "$ref": "#/$defs/vec3"
+        },
+        "to": {
+          "$ref": "#/$defs/vec3"
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "depth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionStairs": {
+      "type": "object",
+      "required": [
+        "type",
+        "width",
+        "height",
+        "steps",
+        "depth"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "stairs"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "depth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationY": {
+          "type": "number"
+        },
+        "treadThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "riserThickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "closedRisers": {
+          "type": "boolean"
+        },
+        "landingDepth": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionRailing": {
+      "type": "object",
+      "required": [
+        "type",
+        "path",
+        "height"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "railing"
+        },
+        "path": {
+          "$ref": "#/$defs/geometryCurve"
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "postSpacing": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "postWidth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "railRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "railSegments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "includePosts": {
+          "type": "boolean"
+        },
+        "midRailHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionTrim": {
+      "type": "object",
+      "required": [
+        "type",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "trim"
+        },
+        "path": {
+          "$ref": "#/$defs/geometryCurve"
+        },
+        "profile": {
+          "$ref": "#/$defs/geometryProfile"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "depth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "up": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionRoof": {
+      "type": "object",
+      "required": [
+        "type",
+        "size",
+        "thickness",
+        "pitch"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "roof"
+        },
+        "kind": {
+          "enum": [
+            "gable",
+            "shed"
+          ]
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec2"
+        },
+        "thickness": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "pitch": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1.5706963267948966
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationY": {
+          "type": "number"
+        },
+        "bevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bevelSegments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionDoorOpening": {
+      "type": "object",
+      "required": [
+        "type",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "doorOpening"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "constructionWindowOpening": {
+      "type": "object",
+      "required": [
+        "type",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "const": "windowOpening"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "sillHeight": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
     },
     "importDefinition": {
       "type": "object",

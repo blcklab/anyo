@@ -1,0 +1,250 @@
+{
+  "wall": {
+    "type": "wall",
+    "id": "south-wall",
+    "from": [
+      0,
+      0,
+      0
+    ],
+    "to": [
+      6,
+      0,
+      0
+    ],
+    "height": 3,
+    "thickness": 0.2,
+    "bevel": 0.02,
+    "bevelSegments": 2,
+    "openings": [
+      {
+        "kind": "door",
+        "id": "entry",
+        "offset": 1,
+        "width": 1.1,
+        "height": 2.2
+      },
+      {
+        "kind": "window",
+        "id": "window-a",
+        "offset": 3,
+        "width": 1.2,
+        "height": 1,
+        "sillHeight": 1.1
+      }
+    ]
+  },
+  "floor": {
+    "type": "floor",
+    "id": "floor-a",
+    "size": [
+      8,
+      6
+    ],
+    "thickness": 0.2,
+    "position": [
+      0,
+      -0.1,
+      0
+    ],
+    "rotation": [
+      0,
+      0.1,
+      0
+    ],
+    "bevel": 0.01,
+    "bevelSegments": 2
+  },
+  "ceiling": {
+    "type": "ceiling",
+    "id": "ceiling-a",
+    "size": [
+      8,
+      6
+    ],
+    "thickness": 0.18,
+    "position": [
+      0,
+      3,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "bevel": 0.01,
+    "bevelSegments": 2
+  },
+  "panel": {
+    "type": "panel",
+    "id": "panel-a",
+    "size": [
+      2,
+      1.2
+    ],
+    "thickness": 0.08,
+    "position": [
+      0,
+      1.2,
+      0
+    ],
+    "rotation": [
+      0,
+      0.2,
+      0
+    ],
+    "bevel": 0.01,
+    "bevelSegments": 2
+  },
+  "column": {
+    "type": "column",
+    "id": "column-a",
+    "position": [
+      1,
+      0,
+      1
+    ],
+    "height": 3,
+    "shape": "round",
+    "size": [
+      0.4,
+      0.4
+    ],
+    "radius": 0.2,
+    "bevel": 0.01,
+    "bevelSegments": 2,
+    "segments": 16
+  },
+  "beam": {
+    "type": "beam",
+    "id": "beam-a",
+    "from": [
+      0,
+      2.6,
+      0
+    ],
+    "to": [
+      4,
+      2.6,
+      0
+    ],
+    "height": 0.3,
+    "depth": 0.25,
+    "bevel": 0.01,
+    "bevelSegments": 2
+  },
+  "stairs": {
+    "type": "stairs",
+    "id": "stairs-a",
+    "width": 1.4,
+    "height": 1.8,
+    "steps": 9,
+    "depth": 2.7,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotationY": 0.25,
+    "treadThickness": 0.05,
+    "riserThickness": 0.03,
+    "closedRisers": true,
+    "landingDepth": 0.6,
+    "bevel": 0.01,
+    "bevelSegments": 2
+  },
+  "railing": {
+    "type": "railing",
+    "id": "railing-a",
+    "path": {
+      "kind": "polyline",
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          2
+        ]
+      ],
+      "segments": 8,
+      "closed": false
+    },
+    "height": 1.05,
+    "postSpacing": 0.75,
+    "postWidth": 0.05,
+    "railRadius": 0.03,
+    "railSegments": 12,
+    "includePosts": true,
+    "midRailHeight": 0.5
+  },
+  "trim": {
+    "type": "trim",
+    "id": "trim-a",
+    "path": {
+      "kind": "line",
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ]
+      ],
+      "segments": 8,
+      "closed": false
+    },
+    "width": 0.08,
+    "depth": 0.02,
+    "up": [
+      0,
+      1,
+      0
+    ]
+  },
+  "roof": {
+    "type": "roof",
+    "id": "roof-a",
+    "kind": "gable",
+    "size": [
+      8,
+      6
+    ],
+    "thickness": 0.18,
+    "pitch": 0.6,
+    "position": [
+      0,
+      3,
+      0
+    ],
+    "rotationY": 0.15,
+    "bevel": 0.01,
+    "bevelSegments": 2
+  },
+  "doorOpening": {
+    "type": "doorOpening",
+    "id": "door-opening-a",
+    "width": 1.1,
+    "height": 2.2
+  },
+  "windowOpening": {
+    "type": "windowOpening",
+    "id": "window-opening-a",
+    "width": 1.4,
+    "height": 1.0,
+    "sillHeight": 1.1
+  }
+}

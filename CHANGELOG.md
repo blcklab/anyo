@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0-rc.9
+
+- World 0.9 Step 9: replace the generic construction object schema with strict discriminated variants for all 12 public construction types derived from the rc.8 architecture runtime.
+- Strongly schema wall openings, slabs/panels, columns/beams, stairs, railing/trim paths, roofs, and standalone door/window openings while leaving relationship and dynamic safety rules to the existing architecture validator/lowerer.
+- Add paired valid/invalid authoring fixtures for every construction type and contract tests proving strict unknown-field rejection, exact public-field coverage, wall-opening discrimination, unchanged runtime lowering, and semantic-only constraint enforcement.
+- Keep construction runtime behavior and World 0.8 unchanged.
+
 ## 0.11.0-rc.8
 
 - World 0.9 Step 8: replace the generic geometry object schema with strict discriminated variants for all 22 public built-in geometry kinds derived from the rc.7 runtime/compiler.
