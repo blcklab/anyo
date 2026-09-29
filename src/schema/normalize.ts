@@ -2,6 +2,7 @@ import type {
   AssetDefinition,
   AuthoringReference,
   ComponentDefinition,
+  CompositionDefinition,
   EntityDefinition,
   OpeningDefinition,
   NormalizedEntityDefinition,
@@ -20,6 +21,7 @@ import { validateWorldDocument } from './validate.js'
 import { resolveDocumentBindings } from './bindings.js'
 import { normalizeEnvironmentDefinition, normalizeMaterialDefinition } from '../core/visualContract.js'
 import { hasOwn, parseJsonPointer } from './safePath.js'
+import { mergeCompositionParameters } from './compositionParameters.js'
 
 const DEFAULTS = {
   roomHeight: 3.2,
@@ -484,12 +486,12 @@ function resolveCompositionDefinition(
   id: string,
   compositions: NonNullable<WorldDocument['compositions']>,
   stack: string[] = [],
-): Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition'> & { id?: string } {
+): CompositionDefinition {
   if (stack.includes(id)) throw new Error(`Composition inheritance cycle detected: ${[...stack, id].join(' -> ')}`)
   const composition = compositions[id]
   if (!composition) throw new Error(`Unknown composition "${id}".`)
-  const { extends: baseId, version: _version, provenance: _provenance, type: _type, ...own } = composition
-  const normalizedOwn = { ...own, type: 'group' as const }
+  const { extends: baseId, version: _version, provenance: _provenance, type: _type, parameters, ...own } = composition
+  const normalizedOwn: CompositionDefinition = { ...own, type: 'group', parameters: structuredClone(parameters) }
   if (!baseId) return normalizedOwn
   const base = resolveCompositionDefinition(baseId, compositions, [...stack, id])
   return {
@@ -500,7 +502,21 @@ function resolveCompositionDefinition(
     data: { ...(base.data ?? {}), ...(normalizedOwn.data ?? {}) },
     components: mergeComponents(base.components, normalizedOwn.components),
     children: normalizedOwn.children ?? base.children,
+    parameters: mergeCompositionParameters(base.parameters, normalizedOwn.parameters),
   }
+}
+
+function compositionParameterOverrides(
+  composition: CompositionDefinition,
+  args: EntityDefinition['arguments'],
+): Record<string, unknown> {
+  const overrides: Record<string, unknown> = {}
+  for (const [name, parameter] of Object.entries(composition.parameters ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
+    const hasArgument = Boolean(args && Object.prototype.hasOwnProperty.call(args, name))
+    const value = hasArgument ? args?.[name] : parameter.default
+    if (value !== undefined) overrides[parameter.path] = structuredClone(value)
+  }
+  return overrides
 }
 
 function expandEntity(
@@ -546,8 +562,10 @@ function expandEntity(
     const template = resolveCompositionDefinition(entity.composition, compositions)
     const templatePath = `/compositions/${escapePointer(entity.composition)}`
     const compositionSource = compositions[entity.composition]?.provenance?.source
-    const templateEntity = annotateEntity({ ...template, id: entity.id, type: 'group' } as EntityDefinition, templatePath, compositionSource)
-    const expandedTemplate = expandEntity(templateEntity, prefabs, compositions, [...stack, stackKey])[0]
+    const { parameters: _parameters, ...templateBody } = template
+    const templateEntity = annotateEntity({ ...templateBody, id: entity.id, type: 'group' } as EntityDefinition, templatePath, compositionSource)
+    const parameterizedTemplate = applyTemplateOverrides(templateEntity, compositionParameterOverrides(template, entity.arguments))
+    const expandedTemplate = expandEntity(parameterizedTemplate, prefabs, compositions, [...stack, stackKey])[0]
     if (!expandedTemplate) throw new Error(`Composition "${entity.composition}" produced no entity.`)
     const instanceAuthoring = entity.__authoring ?? createAuthoringReference(entity, `/entities/${escapePointer(entity.id)}`)
     const overriddenTemplate = applyTemplateOverrides(expandedTemplate, entity.overrides)
@@ -557,7 +575,7 @@ function expandEntity(
           ...overriddenTemplate,
           children: overriddenTemplate.children?.map((child) => markTemplateInstance(child, instanceAuthoring)),
         }
-    resolved = mergeEntityTemplate(templateWithProvenance, { ...entity, composition: undefined, overrides: undefined, type: entity.type ?? 'group' })
+    resolved = mergeEntityTemplate(templateWithProvenance, { ...entity, composition: undefined, arguments: undefined, overrides: undefined, type: entity.type ?? 'group' })
     resolved.__authoring = {
       ...instanceAuthoring,
       templatePath,

@@ -2,6 +2,7 @@ import type {
   AnyoObjectDocument,
   AssetDefinition,
   ComponentDefinition,
+  CompositionParameterDefinition,
   CompositionDefinition,
   EntityDefinition,
   MaterialDefinition,
@@ -12,6 +13,7 @@ import type {
 } from '../core/types.js'
 import { AnyoImportError } from './imports.js'
 import { validateWorldDocument } from '../schema/validate.js'
+import { mergeCompositionParameters } from '../schema/compositionParameters.js'
 
 const MATERIAL_TEXTURE_FIELDS = [
   'baseColorTexture',
@@ -47,6 +49,54 @@ function compositionReference(node: ResolvedAnyoImport, id: string | undefined):
   return id
 }
 
+function parameterDefinitionsForDefinition(
+  definition: CompositionDefinition,
+  node: ResolvedAnyoImport,
+  stack: string[] = [],
+): Record<string, CompositionParameterDefinition> | undefined {
+  let base: Record<string, CompositionParameterDefinition> | undefined
+  if (definition.extends && !stack.includes(definition.extends)) {
+    const local = node.document.compositions?.[definition.extends]
+    if (local) base = parameterDefinitionsForDefinition(local, node, [...stack, definition.extends])
+    else {
+      const imported = node.imports[definition.extends]
+      if (imported) base = parameterDefinitionsForDefinition(imported.document.root, imported, [...stack, definition.extends])
+    }
+  }
+  return mergeCompositionParameters(base, definition.parameters)
+}
+
+function parameterDefinitionsForReference(
+  node: ResolvedAnyoImport,
+  id: string | undefined,
+): Record<string, CompositionParameterDefinition> | undefined {
+  if (!id) return undefined
+  const local = node.document.compositions?.[id]
+  if (local) return parameterDefinitionsForDefinition(local, node, [id])
+  const imported = node.imports[id]
+  if (imported) return parameterDefinitionsForDefinition(imported.document.root, imported, [id])
+  return undefined
+}
+
+function rewriteCompositionArguments(
+  args: EntityDefinition['arguments'],
+  parameters: Record<string, CompositionParameterDefinition> | undefined,
+  node: ResolvedAnyoImport,
+): EntityDefinition['arguments'] {
+  if (!args) return args
+  const output = structuredClone(args)
+  for (const [name, value] of Object.entries(output)) {
+    const parameter = parameters?.[name]
+    if (!parameter || typeof value !== 'string') continue
+    if (parameter.type === 'material') {
+      output[name] = localReference(node.document.materials, value, (id) => resourceId(node.namespace, 'material', id)) ?? value
+    } else if (parameter.type === 'asset') {
+      output[name] = localReference(node.document.assets, value, (id) => resourceId(node.namespace, 'asset', id)) ?? value
+    }
+  }
+  return output
+}
+
 function rewriteComponent(component: ComponentDefinition, node: ResolvedAnyoImport): ComponentDefinition {
   const output = structuredClone(component)
   if (output.type === 'anyo.vfx' && typeof output.material === 'string') {
@@ -57,6 +107,10 @@ function rewriteComponent(component: ComponentDefinition, node: ResolvedAnyoImpo
 
 function rewriteEntity<T extends EntityDefinition | CompositionDefinition>(entity: T, node: ResolvedAnyoImport): T {
   const output = structuredClone(entity) as T
+  const originalComposition = 'composition' in output && typeof output.composition === 'string' ? output.composition : undefined
+  if ('arguments' in output && output.arguments) {
+    output.arguments = rewriteCompositionArguments(output.arguments, parameterDefinitionsForReference(node, originalComposition), node)
+  }
   if ('composition' in output && typeof output.composition === 'string') output.composition = compositionReference(node, output.composition)
   if ('material' in output && typeof output.material === 'string') {
     output.material = localReference(node.document.materials, output.material, (id) => resourceId(node.namespace, 'material', id))
@@ -115,6 +169,17 @@ function rewriteMaterial(material: MaterialDefinition, node: ResolvedAnyoImport)
 function rewriteComposition(composition: CompositionDefinition, node: ResolvedAnyoImport): CompositionDefinition {
   const output = rewriteEntity(composition, node)
   if (output.extends) output.extends = compositionReference(node, output.extends)
+  if (output.parameters) {
+    output.parameters = Object.fromEntries(Object.entries(output.parameters).map(([name, parameter]) => {
+      const next = structuredClone(parameter)
+      if (typeof next.default === 'string' && next.type === 'material') {
+        next.default = localReference(node.document.materials, next.default, (id) => resourceId(node.namespace, 'material', id)) ?? next.default
+      } else if (typeof next.default === 'string' && next.type === 'asset') {
+        next.default = localReference(node.document.assets, next.default, (id) => resourceId(node.namespace, 'asset', id)) ?? next.default
+      }
+      return [name, next]
+    }))
+  }
   return output
 }
 

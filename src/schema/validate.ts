@@ -1,8 +1,9 @@
-import type { EntityDefinition, Vec3, WorldDocument, WorldValidationOptions } from '../core/types.js'
+import type { CompositionDefinition, CompositionParameterDefinition, EntityDefinition, Vec3, WorldDocument, WorldValidationOptions } from '../core/types.js'
 import { AnyoValidationError, type ValidationIssue } from './errors.js'
 import { inspectWorldSemantics } from './semantic.js'
 import { inspectArchitectureDocument } from './architecture.js'
-import { parseJsonPointer } from './safePath.js'
+import { hasOwn, parseJsonPointer } from './safePath.js'
+import { COMPOSITION_PARAMETER_NAME_PATTERN, COMPOSITION_PARAMETER_TYPES, isCompositionParameterValue, mergeCompositionParameters } from './compositionParameters.js'
 import { compositionCatalogWithImports, inspectAnyoImportMap, inspectImportCompositionConflicts } from './imports.js'
 
 export interface ValidationResult {
@@ -33,6 +34,122 @@ function isFiniteVector(value: unknown, length: number): value is number[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function resolvedCompositionForParameters(
+  id: string,
+  compositions: NonNullable<WorldDocument['compositions']>,
+  stack: string[] = [],
+): CompositionDefinition | undefined {
+  if (stack.includes(id)) return undefined
+  const composition = compositions[id]
+  if (!composition) return undefined
+  if (!composition.extends) return structuredClone(composition)
+  const base = resolvedCompositionForParameters(composition.extends, compositions, [...stack, id])
+  if (!base) return structuredClone(composition)
+  return {
+    ...structuredClone(base),
+    ...structuredClone(composition),
+    style: { ...(base.style ?? {}), ...(composition.style ?? {}) },
+    data: { ...(base.data ?? {}), ...(composition.data ?? {}) },
+    components: composition.components ?? base.components,
+    children: composition.children ?? base.children,
+    parameters: mergeCompositionParameters(base.parameters, composition.parameters),
+  }
+}
+
+function valueAtPointer(root: unknown, pointer: string): unknown {
+  let current = root
+  for (const part of parseJsonPointer(pointer)) {
+    if (Array.isArray(current)) {
+      if (!/^\d+$/.test(part)) return undefined
+      const index = Number(part)
+      if (!Number.isSafeInteger(index) || index < 0 || index >= current.length) return undefined
+      current = current[index]
+    } else if (current && typeof current === 'object' && hasOwn(current, part)) {
+      current = (current as Record<string, unknown>)[part]
+    } else return undefined
+  }
+  return current
+}
+
+function validateCompositionParameters(
+  name: string,
+  compositions: NonNullable<WorldDocument['compositions']>,
+  materials: WorldDocument['materials'],
+  assets: WorldDocument['assets'],
+  issues: ValidationIssue[],
+): void {
+  const composition = compositions[name]
+  if (!composition?.parameters) return
+  const resolved = resolvedCompositionForParameters(name, compositions) ?? composition
+  const reservedRoots = new Set(['id', 'type', 'version', 'extends', 'provenance', 'parameters'])
+  for (const [parameterName, parameter] of Object.entries(composition.parameters)) {
+    const path = `/compositions/${name}/parameters/${parameterName}`
+    if (!COMPOSITION_PARAMETER_NAME_PATTERN.test(parameterName)) {
+      issue(issues, 'COMPOSITION_PARAMETER_NAME_INVALID', path, `Composition parameter name "${parameterName}" is invalid.`)
+    }
+    if (!parameter || typeof parameter !== 'object' || !COMPOSITION_PARAMETER_TYPES.has(parameter.type)) {
+      issue(issues, 'COMPOSITION_PARAMETER_TYPE_INVALID', `${path}/type`, 'Composition parameter type is not supported.')
+      continue
+    }
+    try {
+      const parts = parseJsonPointer(parameter.path)
+      if (parts.length === 0 || reservedRoots.has(parts[0] as string)) {
+        issue(issues, 'COMPOSITION_PARAMETER_PATH_RESERVED', `${path}/path`, `Composition parameter path "${parameter.path}" must target authored composition content, not contract metadata.`)
+      } else {
+        const { parameters: _parameters, ...body } = resolved
+        if (valueAtPointer(body, parameter.path) === undefined) {
+          issue(issues, 'COMPOSITION_PARAMETER_PATH_NOT_FOUND', `${path}/path`, `Composition parameter path "${parameter.path}" does not exist in the resolved composition template.`)
+        }
+      }
+    } catch (error) {
+      issue(issues, 'COMPOSITION_PARAMETER_PATH_INVALID', `${path}/path`, String(error))
+    }
+    if (parameter.default !== undefined && !isCompositionParameterValue(parameter.type, parameter.default)) {
+      issue(issues, 'COMPOSITION_PARAMETER_DEFAULT_INVALID', `${path}/default`, `Default value does not match composition parameter type "${parameter.type}".`)
+    }
+    if (parameter.type === 'material' && typeof parameter.default === 'string' && !materials?.[parameter.default]) {
+      issue(issues, 'COMPOSITION_PARAMETER_MATERIAL_NOT_FOUND', `${path}/default`, `Default material "${parameter.default}" does not exist.`)
+    }
+    if (parameter.type === 'asset' && typeof parameter.default === 'string' && !assets?.[parameter.default]) {
+      issue(issues, 'COMPOSITION_PARAMETER_ASSET_NOT_FOUND', `${path}/default`, `Default asset "${parameter.default}" does not exist.`)
+    }
+  }
+}
+
+function validateCompositionArguments(
+  entity: EntityDefinition,
+  path: string,
+  compositions: WorldDocument['compositions'],
+  importAliases: ReadonlySet<string>,
+  issues: ValidationIssue[],
+): void {
+  if (entity.arguments === undefined) return
+  if (!entity.composition) {
+    issue(issues, 'COMPOSITION_ARGUMENTS_REQUIRE_COMPOSITION', `${path}/arguments`, 'arguments may only be used with a composition instance.')
+    return
+  }
+  if (!isRecord(entity.arguments)) {
+    issue(issues, 'COMPOSITION_ARGUMENTS_INVALID', `${path}/arguments`, 'arguments must be an object map keyed by composition parameter name.')
+    return
+  }
+  if (importAliases.has(entity.composition)) return
+  const resolved = compositions?.[entity.composition]
+    ? resolvedCompositionForParameters(entity.composition, compositions as NonNullable<WorldDocument['compositions']>)
+    : undefined
+  const parameters = resolved?.parameters ?? {}
+  for (const [name, value] of Object.entries(entity.arguments)) {
+    const parameter = parameters[name] as CompositionParameterDefinition | undefined
+    const argumentPath = `${path}/arguments/${name}`
+    if (!parameter) {
+      issue(issues, 'COMPOSITION_ARGUMENT_UNKNOWN', argumentPath, `Composition "${entity.composition}" does not expose parameter "${name}".`)
+      continue
+    }
+    if (!isCompositionParameterValue(parameter.type, value)) {
+      issue(issues, 'COMPOSITION_ARGUMENT_TYPE_INVALID', argumentPath, `Argument "${name}" does not match composition parameter type "${parameter.type}".`)
+    }
+  }
 }
 
 function validateVariationRange(value: unknown, path: string, issues: ValidationIssue[], positive = false): void {
@@ -73,6 +190,32 @@ function validateShadowDefinition(value: unknown, path: string, issues: Validati
   for (const field of ['cascadeBlend', 'distanceFade'] as const) {
     const raw = value[field]
     if (raw !== undefined && (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0 || raw > 1)) issue(issues, 'SHADOW_BLEND_INVALID', `${path}/${field}`, `${field} must be between 0 and 1.`)
+  }
+}
+
+
+function validateMetadata(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    issue(issues, 'METADATA_INVALID', path, 'metadata must be an object when provided.')
+    return
+  }
+  const nonEmpty = ['id', 'title', 'author', 'license', 'thumbnail', 'repository', 'homepage'] as const
+  for (const field of nonEmpty) {
+    const raw = value[field]
+    if (raw !== undefined && (typeof raw !== 'string' || !raw.trim())) {
+      issue(issues, 'METADATA_FIELD_INVALID', `${path}/${field}`, `${field} must be a non-empty string when provided.`)
+    }
+  }
+  if (value.description !== undefined && typeof value.description !== 'string') {
+    issue(issues, 'METADATA_FIELD_INVALID', `${path}/description`, 'description must be a string when provided.')
+  }
+  if (value.tags !== undefined) {
+    if (!Array.isArray(value.tags) || value.tags.some((tag) => typeof tag !== 'string' || !tag.trim())) {
+      issue(issues, 'METADATA_TAGS_INVALID', `${path}/tags`, 'tags must be an array of non-empty strings.')
+    } else if (new Set(value.tags).size !== value.tags.length) {
+      issue(issues, 'METADATA_TAGS_DUPLICATED', `${path}/tags`, 'tags must not contain duplicates.')
+    }
   }
 }
 
@@ -371,6 +514,7 @@ function validateEntity(
   entityIds: Set<string>,
   namespace = '',
   allowMissingType = false,
+  importAliases: ReadonlySet<string> = new Set<string>(),
 ): void {
   const effectiveId = namespace && entity.id ? `${namespace}/${entity.id}` : entity.id
   if (!entity.id?.trim()) issue(issues, 'ENTITY_ID_REQUIRED', `${path}/id`, 'Entity id must be a non-empty string.')
@@ -410,6 +554,7 @@ function validateEntity(
       }
     }
   }
+  validateCompositionArguments(entity, path, compositions, importAliases, issues)
   if (entity.loading !== undefined && entity.loading !== 'eager' && entity.loading !== 'lazy') {
     issue(issues, 'ENTITY_LOADING_INVALID', `${path}/loading`, 'loading must be either eager or lazy when provided.')
   }
@@ -573,7 +718,7 @@ function validateEntity(
   }
 
   entity.children?.forEach((child, index) => {
-    validateEntity(child, `${path}/children/${index}`, issues, prefabs, compositions, entityIds, effectiveId)
+    validateEntity(child, `${path}/children/${index}`, issues, prefabs, compositions, entityIds, effectiveId, false, importAliases)
   })
 }
 
@@ -611,6 +756,8 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     issue(issues, 'VERSION_LEGACY', '/version', `Version ${version} is supported through automatic migration.`, 'Save the document again to upgrade it to 0.7.', 'warning')
   }
 
+  if (version.startsWith('0.9')) validateMetadata(document.metadata, '/metadata', issues)
+
   const allowProcedural = version.startsWith('0.8') || version.startsWith('0.9')
   if (!version.startsWith('0.9') && document.imports !== undefined) issue(issues, 'ANYO_IMPORTS_REQUIRE_0_9', '/imports', 'Top-level imports require Anyo world schema 0.9 or newer.')
   if (version.startsWith('0.9')) {
@@ -620,6 +767,7 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
   const visibleCompositions = version.startsWith('0.9')
     ? compositionCatalogWithImports(document.compositions, document.imports)
     : (document.compositions ?? {})
+  const importAliases = new Set(Object.keys(version.startsWith('0.9') ? (document.imports ?? {}) : {}))
   const validationDocument = visibleCompositions === document.compositions
     ? document
     : { ...document, compositions: visibleCompositions }
@@ -947,23 +1095,24 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
       }
 
       for (const [entityIndex, entity] of (room.entities ?? []).entries()) {
-        validateEntity(entity, `${roomPath}/entities/${entityIndex}`, issues, document.prefabs, visibleCompositions, entityIds)
+        validateEntity(entity, `${roomPath}/entities/${entityIndex}`, issues, document.prefabs, visibleCompositions, entityIds, '', false, importAliases)
       }
     }
   }
 
   for (const [entityIndex, entity] of (document.entities ?? []).entries()) {
-    validateEntity(entity, `/entities/${entityIndex}`, issues, document.prefabs, visibleCompositions, entityIds)
+    validateEntity(entity, `/entities/${entityIndex}`, issues, document.prefabs, visibleCompositions, entityIds, '', false, importAliases)
   }
 
   const prefabIds = new Set<string>()
   for (const [name, prefab] of Object.entries(document.prefabs ?? {})) {
-    validateEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, issues, document.prefabs, visibleCompositions, prefabIds, '', Boolean(prefab.extends))
+    validateEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, issues, document.prefabs, visibleCompositions, prefabIds, '', Boolean(prefab.extends), importAliases)
   }
   const compositionIds = new Set<string>()
   for (const [name, composition] of Object.entries(document.compositions ?? {})) {
-    validateEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, issues, document.prefabs, visibleCompositions, compositionIds, '', Boolean(composition.extends))
+    validateEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, issues, document.prefabs, visibleCompositions, compositionIds, '', Boolean(composition.extends), importAliases)
     if (composition.extends && !visibleCompositions[composition.extends]) issue(issues, 'COMPOSITION_EXTENDS_UNKNOWN', `/compositions/${name}/extends`, `Unknown base composition "${composition.extends}".`)
+    validateCompositionParameters(name, document.compositions as NonNullable<WorldDocument['compositions']>, document.materials, document.assets, issues)
   }
 
   for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {

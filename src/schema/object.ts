@@ -28,6 +28,7 @@ function rootAsEntity(root: CompositionDefinition): EntityDefinition {
     extends: _extends,
     version: _version,
     provenance: _provenance,
+    parameters: _parameters,
     ...entity
   } = root
   return {
@@ -73,7 +74,7 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
   } else {
     const root = raw.root as unknown as CompositionDefinition
     if (root.type !== undefined && root.type !== 'group') addIssue(issues, 'ANYO_OBJECT_ROOT_TYPE_INVALID', '/root/type', 'Object root type may only be "group" when provided.')
-    for (const field of ['use', 'composition', 'repeat', 'instanceId', 'overrides', 'loading'] as const) {
+    for (const field of ['use', 'composition', 'arguments', 'repeat', 'instanceId', 'overrides', 'loading'] as const) {
       if (Object.prototype.hasOwnProperty.call(raw.root, field)) addIssue(issues, 'ANYO_OBJECT_ROOT_FIELD_INVALID', `/root/${field}`, `Object roots use composition-definition vocabulary; "${field}" is only valid on entity instances.`)
     }
     if (root.extends !== undefined && (typeof root.extends !== 'string' || !root.extends.trim())) addIssue(issues, 'ANYO_OBJECT_ROOT_EXTENDS_INVALID', '/root/extends', 'root.extends must be a non-empty local composition id when provided.')
@@ -88,17 +89,27 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
 
   const structuralErrors = issues.filter((entry) => entry.severity === 'error')
   if (structuralErrors.length === 0 && isRecord(raw.root)) {
+    const objectCompositions = { ...(raw.compositions as AnyoObjectDocument['compositions'] ?? {}) }
+    let rootContractId = '@object:root-contract'
+    while (Object.prototype.hasOwnProperty.call(objectCompositions, rootContractId)) rootContractId += '-'
+    objectCompositions[rootContractId] = raw.root as unknown as CompositionDefinition
     const synthetic: WorldDocument = {
       version: '0.9',
+      metadata: raw.metadata as AnyoObjectDocument['metadata'],
       assets: raw.assets as AnyoObjectDocument['assets'],
       materials: raw.materials as AnyoObjectDocument['materials'],
       geometries: raw.geometries as AnyoObjectDocument['geometries'],
       imports: raw.imports as AnyoObjectDocument['imports'],
-      compositions: raw.compositions as AnyoObjectDocument['compositions'],
+      compositions: objectCompositions,
       entities: [rootAsEntity(raw.root as unknown as CompositionDefinition)],
     }
     const worldResult = inspectWorldDocument(synthetic, options)
-    issues.push(...worldResult.issues.map(remapRootIssue))
+    const rootContractPath = `/compositions/${rootContractId.replace(/~/g, '~0').replace(/\//g, '~1')}`
+    issues.push(...worldResult.issues.map((entry) => {
+      if (entry.path === rootContractPath) return { ...entry, path: '/root' }
+      if (entry.path.startsWith(`${rootContractPath}/`)) return { ...entry, path: `/root/${entry.path.slice(rootContractPath.length + 1)}` }
+      return remapRootIssue(entry)
+    }))
   }
 
   const errors = issues.filter((entry) => entry.severity === 'error')

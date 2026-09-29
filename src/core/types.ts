@@ -601,19 +601,35 @@ export interface ExtensionResolutionDiagnostic {
   message: string
 }
 
-export interface PrefabDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition'> {
+/** @deprecated Prefer CompositionDefinition for new reusable authoring. Prefabs remain supported for backward compatibility. */
+export interface PrefabDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition' | 'arguments'> {
   id?: string
   version?: string
   extends?: string
   provenance?: { package?: string; source?: string; license?: string }
 }
 
+export type CompositionParameterType = 'string' | 'number' | 'boolean' | 'vec2' | 'vec3' | 'material' | 'asset'
+export type CompositionParameterValue = string | number | boolean | Vec2 | Vec3
 
-export interface CompositionDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition' | 'type'> {
+/**
+ * Stable public parameter alias for a composition field.
+ * `path` is an RFC 6901 JSON Pointer into the authored composition template.
+ * Parameters are deterministic aliases over the existing template-override engine; they are not expressions or scripts.
+ */
+export interface CompositionParameterDefinition {
+  type: CompositionParameterType
+  path: string
+  default?: CompositionParameterValue
+}
+
+export interface CompositionDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition' | 'arguments' | 'type'> {
   id?: string
   version?: string
   extends?: string
   provenance?: { package?: string; source?: string; license?: string }
+  /** Small named public interface over deterministic JSON-Pointer template overrides. */
+  parameters?: Record<string, CompositionParameterDefinition>
   /** Compositions normalize to renderer-neutral group roots. */
   type?: 'group'
 }
@@ -1238,8 +1254,10 @@ export interface EntityDefinition {
   /** Optional globally stable authoring identity. Editors may add this without changing runtime meaning. */
   authoringId?: string
   use?: string
-  /** Schema-0.8 reusable composition id. Compositions normalize through the existing template engine. */
+  /** Schema-0.8 reusable composition id. Compositions are the canonical reusable authoring primitive for new worlds. */
   composition?: string
+  /** Named values supplied to the referenced composition's public parameter interface. */
+  arguments?: Record<string, CompositionParameterValue>
   /** Stable prefab/composition instance identity; defaults to id. */
   instanceId?: string
   /** JSON-Pointer keyed overrides applied to the referenced prefab/composition before instance fields. */
@@ -1394,6 +1412,21 @@ export type AnyoImportMap = Record<string, AnyoImportDefinition>
 
 export type AnyoObjectDocumentVersion = '0.1' | `0.1.${string}`
 
+/** Standard authoring metadata shared by World 0.9 and native Object 0.1 documents. */
+export interface WorldMetadataDefinition {
+  id?: string
+  title?: string
+  description?: string
+  author?: string
+  license?: string
+  tags?: string[]
+  thumbnail?: string
+  repository?: string
+  homepage?: string
+  /** Project/tooling-specific JSON metadata remains intentionally extensible. */
+  [key: string]: unknown
+}
+
 /**
  * Standalone reusable declarative Anyo object document.
  * Object documents reuse World 0.9 assets, materials, geometries, compositions, and composition-root vocabulary.
@@ -1403,7 +1436,7 @@ export interface AnyoObjectDocument {
   $schema?: string
   kind: 'anyo-object'
   version: AnyoObjectDocumentVersion
-  metadata?: Record<string, unknown>
+  metadata?: WorldMetadataDefinition
   imports?: AnyoImportMap
   assets?: Record<string, AssetDefinition>
   materials?: Record<string, MaterialDefinition>
@@ -1418,7 +1451,7 @@ export interface WorldDocument {
   /** Monotonic authored-document revision used by stable transactions. */
   revision?: number
   units?: 'meters'
-  metadata?: Record<string, unknown>
+  metadata?: WorldMetadataDefinition
   /** Optional modular authoring imports available in World 0.9+. */
   imports?: AnyoImportMap
   data?: Record<string, unknown>
@@ -1433,8 +1466,9 @@ export interface WorldDocument {
   /** Reusable renderer-neutral procedural geometry definitions (world schema 0.8+). */
   geometries?: Record<string, GeometryDefinition>
   assets?: Record<string, AssetDefinition>
+  /** @deprecated Prefer `compositions` for new authoring. Preserved for backward compatibility. */
   prefabs?: Record<string, PrefabDefinition>
-  /** Reusable renderer-neutral semantic subtrees (world schema 0.8+). */
+  /** Canonical reusable renderer-neutral semantic subtrees (world schema 0.8+). */
   compositions?: Record<string, CompositionDefinition>
   building?: BuildingDefinition
   entities?: EntityDefinition[]

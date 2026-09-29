@@ -21,9 +21,7 @@
       "pattern": "^0\\.1(?:\\.|$)"
     },
     "metadata": {
-      "type": "object",
-      "description": "JSON-safe arbitrary object metadata.",
-      "additionalProperties": true
+      "$ref": "./world-0.9.schema.json#/$defs/metadata"
     },
     "imports": {
       "type": "object",
@@ -75,6 +73,11 @@
               {
                 "required": [
                   "composition"
+                ]
+              },
+              {
+                "required": [
+                  "arguments"
                 ]
               },
               {

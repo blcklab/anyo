@@ -1,0 +1,23 @@
+{
+  "version": "0.9",
+  "materials": {
+    "graphite": { "baseColor": "#20242b" }
+  },
+  "compositions": {
+    "bad": {
+      "children": [
+        { "id": "body", "type": "box", "size": [1, 1, 1], "material": "graphite" }
+      ],
+      "parameters": {
+        "bad name": { "type": "number", "path": "/children/0/size/0", "default": 1 },
+        "missing": { "type": "number", "path": "/children/9/size/0", "default": 1 },
+        "wrongDefault": { "type": "number", "path": "/children/0/size/1", "default": "large" },
+        "missingMaterial": { "type": "material", "path": "/children/0/material", "default": "missing" }
+      }
+    }
+  },
+  "entities": [
+    { "id": "bad-args", "composition": "bad", "arguments": { "unknown": 1, "wrongDefault": "still-large", "missingMaterial": "also-missing" } },
+    { "id": "args-without-composition", "type": "box", "arguments": { "x": 1 } }
+  ]
+}

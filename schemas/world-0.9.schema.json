@@ -19,9 +19,7 @@
       "const": "meters"
     },
     "metadata": {
-      "type": "object",
-      "description": "JSON-safe arbitrary author metadata.",
-      "additionalProperties": true
+      "$ref": "#/$defs/metadata"
     },
     "imports": {
       "type": "object",
@@ -64,7 +62,9 @@
       "$ref": "#/$defs/visibility"
     },
     "data": {
-      "type": "object"
+      "type": "object",
+      "description": "Application-owned JSON data used by bindings and runtime systems.",
+      "additionalProperties": true
     },
     "extensions": {
       "type": "object",
@@ -78,11 +78,13 @@
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/prefab"
-      }
+      },
+      "description": "Legacy reusable templates retained for backward compatibility. Prefer compositions for new authoring.",
+      "deprecated": true
     },
     "compositions": {
       "type": "object",
-      "description": "Reusable renderer-neutral semantic subtrees. Composition roots normalize to groups.",
+      "description": "Canonical reusable renderer-neutral semantic subtrees. Composition roots normalize to groups and may expose a small named parameter interface.",
       "additionalProperties": {
         "$ref": "#/$defs/composition"
       }
@@ -740,7 +742,7 @@
           "additionalProperties": false
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "lod": {
       "type": "object",
@@ -766,7 +768,7 @@
           ]
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "asset": {
       "type": "object",
@@ -820,7 +822,8 @@
           "minLength": 1
         },
         "options": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": true
         },
         "sizeBytes": {
           "type": "integer",
@@ -886,7 +889,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "environment": {
       "type": "object",
@@ -1690,7 +1693,7 @@
           "additionalProperties": false
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "opening": {
       "type": "object",
@@ -1752,7 +1755,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "attachment": {
       "type": "object",
@@ -1846,10 +1849,11 @@
           "type": "boolean"
         },
         "data": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": true
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "stair": {
       "type": "object",
@@ -1895,7 +1899,7 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "floor": {
       "type": "object",
@@ -1932,7 +1936,7 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "building": {
       "type": "object",
@@ -1974,7 +1978,7 @@
           }
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "surface": {
       "type": "object",
@@ -2033,7 +2037,7 @@
           "exclusiveMinimum": 0
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "action": {
       "oneOf": [
@@ -2070,7 +2074,7 @@
           }
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "audio": {
       "type": "object",
@@ -2193,7 +2197,7 @@
           "additionalProperties": false
         }
       },
-      "additionalProperties": true,
+      "additionalProperties": false,
       "anyOf": [
         {
           "required": [
@@ -2328,18 +2332,22 @@
           ]
         },
         "data": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": true
         },
         "style": {
           "type": "object"
         },
         "use": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Legacy prefab reference retained for backward compatibility. Prefer composition for new authoring.",
+          "deprecated": true
         },
         "composition": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Canonical reusable composition reference."
         },
         "overrides": {
           "type": "object",
@@ -2532,6 +2540,16 @@
             "semantic",
             "parts"
           ]
+        },
+        "arguments": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/compositionParameterValue"
+          },
+          "description": "Named values supplied to the referenced composition parameter interface."
         }
       },
       "additionalProperties": true,
@@ -2551,7 +2569,12 @@
             "composition"
           ]
         }
-      ]
+      ],
+      "dependentRequired": {
+        "arguments": [
+          "composition"
+        ]
+      }
     },
     "exploration": {
       "type": "object",
@@ -2699,7 +2722,7 @@
           "additionalProperties": false
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "visibility": {
       "type": "object",
@@ -2715,7 +2738,7 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "binding": {
       "type": "object",
@@ -4068,7 +4091,8 @@
             "extends"
           ]
         }
-      ]
+      ],
+      "description": "Legacy reusable template retained for backward compatibility. Prefer composition definitions for new authoring."
     },
     "composition": {
       "type": "object",
@@ -4313,6 +4337,16 @@
             }
           },
           "additionalProperties": false
+        },
+        "parameters": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/compositionParameterDefinition"
+          },
+          "description": "Small public parameter interface for composition instances. Parameters map names to deterministic template paths."
         }
       },
       "additionalProperties": true,
@@ -4338,7 +4372,7 @@
           ]
         }
       ],
-      "description": "Reusable semantic subtree with an implicit renderer-neutral group root."
+      "description": "Canonical reusable semantic subtree with an implicit renderer-neutral group root."
     },
     "geometryDefinition": {
       "oneOf": [
@@ -6231,6 +6265,218 @@
         }
       },
       "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Standard World 0.9 metadata core. Additional JSON-safe project metadata remains allowed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "thumbnail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "homepage": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "compositionParameterValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/vec2"
+        },
+        {
+          "$ref": "#/$defs/vec3"
+        }
+      ]
+    },
+    "compositionParameterDefinition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "string"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "number"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "boolean"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "vec2"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "$ref": "#/$defs/vec2"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "vec3"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "$ref": "#/$defs/vec3"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "material"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "asset"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "description": "Named deterministic alias over an RFC 6901 template override path. No expressions or scripting are evaluated."
     }
   }
 }

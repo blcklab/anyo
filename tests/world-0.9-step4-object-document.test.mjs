@@ -27,7 +27,7 @@ test('Object 0.1 schema reuses World 0.9 resource and composition definitions wh
   assert.equal(objectSchema.properties.geometries.additionalProperties.$ref, './world-0.9.schema.json#/$defs/geometryDefinition')
   assert.equal(objectSchema.properties.compositions.additionalProperties.$ref, './world-0.9.schema.json#/$defs/composition')
   assert.equal(objectSchema.properties.root.allOf[0].$ref, './world-0.9.schema.json#/$defs/composition')
-  assert.deepEqual(objectSchema.properties.root.allOf[1].not.anyOf.map((entry) => entry.required[0]), ['use', 'composition', 'repeat', 'instanceId', 'overrides', 'loading'])
+  assert.deepEqual(objectSchema.properties.root.allOf[1].not.anyOf.map((entry) => entry.required[0]), ['use', 'composition', 'arguments', 'repeat', 'instanceId', 'overrides', 'loading'])
   assert.equal(objectSchema.properties.imports.additionalProperties.$ref, './world-0.9.schema.json#/$defs/importDefinition')
   assert.equal(objectSchema.additionalProperties, false)
   assert.ok(worldSchema.$defs.composition, 'World 0.9 composition definition remains the shared root vocabulary')

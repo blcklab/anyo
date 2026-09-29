@@ -92,6 +92,44 @@ Procedural entities may also opt into the existing Anyo collision system with `c
 
 See `docs/migrations/MIGRATION_WORLD_0.8.md` for the full S14 contract and compatibility boundary.
 
+## Canonical reusable authoring in World 0.9
+
+For new reusable authoring, use top-level `compositions` plus entity `composition` references. Legacy `prefabs` plus `use` remain supported for backward compatibility and are not removed by World 0.9.
+
+World 0.9 compositions may expose a deliberately small public parameter interface. A parameter is only a typed name for an existing RFC 6901 JSON-Pointer template path; it is not an expression, script, or callback.
+
+```json
+{
+  "version": "0.9",
+  "materials": {
+    "green": { "baseColor": "#3f8f4a" },
+    "autumn": { "baseColor": "#c76b2a" }
+  },
+  "compositions": {
+    "tree": {
+      "children": [
+        { "id": "crown", "type": "sphere", "radius": 1, "material": "green" }
+      ],
+      "parameters": {
+        "radius": { "type": "number", "path": "/children/0/radius", "default": 1 },
+        "foliage": { "type": "material", "path": "/children/0/material", "default": "green" }
+      }
+    }
+  },
+  "entities": [
+    {
+      "id": "hero-tree",
+      "composition": "tree",
+      "arguments": { "radius": 1.35, "foliage": "autumn" }
+    }
+  ]
+}
+```
+
+Supported parameter types are `string`, `number`, `boolean`, `vec2`, `vec3`, `material`, and `asset`. Parameters are inherited with composition inheritance. When a value is supplied, deterministic precedence is: authored template value → parameter default → instance `arguments` → advanced JSON-Pointer `overrides` → direct instance fields.
+
+`overrides` remain available as the advanced escape hatch for cases where a composition intentionally does not expose a named public parameter. Parameter defaults and arguments never execute code. Imported Object 0.1 compositions preserve the same contract; material/asset defaults are namespaced during import lowering.
+
 ## Authoring identity
 
 Entities may contain an optional `authoringId`. It is a stable, renderer-independent identity used by editor sessions and picking bridges. Runtime IDs can change after prefab or repeat expansion, while `authoringId` identifies the editable source declaration.
@@ -139,7 +177,7 @@ Modes:
 - `production`: missing required references, registrations, and renderer capabilities are errors.
 - `generator`: strictest mode; unknown stable fields are errors unless data is stored in a namespaced extension contract.
 
-Semantic validation covers room, floor, material, asset, geometry, prefab, opening, spawn, binding, action, web-application, custom-component, custom-entity, model-format, and material-texture references. Validation returns structured diagnostic codes and JSON-pointer paths.
+Semantic validation covers room, floor, material, asset, geometry, prefab/composition, composition parameter/argument, opening, spawn, binding, action, web-application, custom-component, custom-entity, model-format, and material-texture references. Validation returns structured diagnostic codes and JSON-pointer paths.
 
 A world may opt into the same checks during loading:
 

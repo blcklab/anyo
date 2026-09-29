@@ -1,0 +1,50 @@
+{
+  "version": "0.9",
+  "materials": {
+    "graphite": { "baseColor": "#20242b" },
+    "accent": { "baseColor": "#ff8844" }
+  },
+  "assets": {
+    "panel-a": { "type": "image", "src": "./panel-a.webp" },
+    "panel-b": { "type": "image", "src": "./panel-b.webp" }
+  },
+  "compositions": {
+    "card-base": {
+      "children": [
+        { "id": "body", "type": "box", "size": [1, 1, 0.1], "position": [0, 0, 0], "material": "graphite", "visible": true },
+        { "id": "art", "type": "image", "asset": "panel-a", "size": [1, 1] }
+      ],
+      "parameters": {
+        "width": { "type": "number", "path": "/children/0/size/0", "default": 1.25 },
+        "offset": { "type": "vec3", "path": "/children/0/position", "default": [0, 0.25, 0] },
+        "visible": { "type": "boolean", "path": "/children/0/visible", "default": true },
+        "material": { "type": "material", "path": "/children/0/material", "default": "graphite" },
+        "art": { "type": "asset", "path": "/children/1/asset", "default": "panel-a" }
+      }
+    },
+    "card": {
+      "extends": "card-base",
+      "parameters": {
+        "height": { "type": "number", "path": "/children/0/size/1", "default": 1.5 }
+      }
+    }
+  },
+  "entities": [
+    {
+      "id": "card-instance",
+      "composition": "card",
+      "arguments": {
+        "width": 2,
+        "height": 3,
+        "offset": [1, 2, 3],
+        "visible": false,
+        "material": "accent",
+        "art": "panel-b"
+      },
+      "overrides": {
+        "/children/0/size/1": 4
+      },
+      "position": [10, 0, 0]
+    }
+  ]
+}
