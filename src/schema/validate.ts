@@ -597,12 +597,36 @@ function validateEntity(
     }
   }
   if (entity.type === 'light') {
+    if (entity.lightType !== undefined && !['ambient', 'directional', 'point', 'spot'].includes(entity.lightType)) {
+      issue(issues, 'LIGHT_TYPE_INVALID', `${path}/lightType`, 'lightType must be ambient, directional, point, or spot.')
+    }
     if (entity.intensity !== undefined && typeof entity.intensity === 'number') {
       if (!Number.isFinite(entity.intensity) || entity.intensity < 0) issue(issues, 'LIGHT_INTENSITY_INVALID', `${path}/intensity`, 'Light intensity must be finite and non-negative.')
       else if (entity.intensity > 100) issue(issues, 'LIGHT_INTENSITY_HIGH', `${path}/intensity`, 'Light intensity above 100 is likely to overexpose nearby surfaces.', 'Start between 1 and 20 and use range plus decay to shape local light.', 'warning')
     }
-    if (entity.range !== undefined && typeof entity.range === 'number' && (!Number.isFinite(entity.range) || entity.range <= 0)) issue(issues, 'LIGHT_RANGE_INVALID', `${path}/range`, 'Point-light range must be a positive finite number.')
+    if (entity.range !== undefined && typeof entity.range === 'number' && (!Number.isFinite(entity.range) || entity.range <= 0)) issue(issues, 'LIGHT_RANGE_INVALID', `${path}/range`, 'Local-light range must be a positive finite number.')
     if (entity.decay !== undefined && typeof entity.decay === 'number' && (!Number.isFinite(entity.decay) || entity.decay <= 0 || entity.decay > 4)) issue(issues, 'LIGHT_DECAY_INVALID', `${path}/decay`, 'Point-light decay must be greater than 0 and no more than 4.')
+    if (entity.direction !== undefined && !isFiniteVector(entity.direction, 3)) {
+      issue(issues, 'LIGHT_DIRECTION_INVALID', `${path}/direction`, 'Light direction must contain three finite numbers.')
+    }
+    if (entity.lightType === 'spot') {
+      if (entity.direction === undefined) {
+        issue(issues, 'SPOT_LIGHT_DIRECTION_REQUIRED', `${path}/direction`, 'Spot lights require a non-zero local-space direction vector.')
+      } else if (isFiniteVector(entity.direction, 3) && Math.hypot(...entity.direction) <= 1e-8) {
+        issue(issues, 'SPOT_LIGHT_DIRECTION_INVALID', `${path}/direction`, 'Spot-light direction must not be the zero vector.')
+      }
+      if (entity.innerCone !== undefined && (!Number.isFinite(entity.innerCone) || entity.innerCone < 0 || entity.innerCone > Math.PI / 2)) {
+        issue(issues, 'SPOT_LIGHT_INNER_CONE_INVALID', `${path}/innerCone`, 'Spot-light innerCone must be between 0 and PI/2 radians.')
+      }
+      if (entity.outerCone !== undefined && (!Number.isFinite(entity.outerCone) || entity.outerCone <= 0 || entity.outerCone > Math.PI / 2)) {
+        issue(issues, 'SPOT_LIGHT_OUTER_CONE_INVALID', `${path}/outerCone`, 'Spot-light outerCone must be greater than 0 and no more than PI/2 radians.')
+      }
+      if (typeof entity.innerCone === 'number' && Number.isFinite(entity.innerCone) && typeof entity.outerCone === 'number' && Number.isFinite(entity.outerCone) && entity.innerCone > entity.outerCone) {
+        issue(issues, 'SPOT_LIGHT_CONE_ORDER_INVALID', `${path}/innerCone`, 'Spot-light innerCone must not exceed outerCone.')
+      }
+    } else if (entity.direction !== undefined || entity.innerCone !== undefined || entity.outerCone !== undefined) {
+      issue(issues, 'SPOT_LIGHT_FIELDS_REQUIRE_SPOT', path, 'direction, innerCone, and outerCone are reserved for lightType "spot".')
+    }
     if (entity.castShadow !== undefined && typeof entity.castShadow !== 'boolean' && !(isRecord(entity.castShadow) && typeof entity.castShadow.$bind === 'string')) issue(issues, 'LIGHT_CAST_SHADOW_INVALID', `${path}/castShadow`, 'castShadow must be boolean or a binding.')
     validateShadowDefinition(entity.shadow, `${path}/shadow`, issues)
   }

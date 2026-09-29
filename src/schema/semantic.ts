@@ -29,7 +29,7 @@ const TOP_LEVEL_FIELDS = new Set([
 const ENTITY_FIELDS = new Set([
   'id', 'authoringId', 'instanceId', 'use', 'composition', 'arguments', 'overrides', 'repeat', 'type', 'room', 'position', 'rotation',
   'scale', 'size', 'radius', 'height', 'surface', 'material', 'geometry', 'construction', 'materialBindings', 'asset', 'src',
-  'content', 'color', 'intensity', 'lightType', 'range', 'decay', 'castShadow', 'receiveShadow', 'shadow', 'collision', 'collisionPolicy', 'visible', 'children',
+  'content', 'color', 'intensity', 'lightType', 'direction', 'range', 'decay', 'innerCone', 'outerCone', 'castShadow', 'receiveShadow', 'shadow', 'collision', 'collisionPolicy', 'visible', 'children',
   'components', 'interaction', 'trigger', 'audio', 'lod', 'loading', 'webSurface',
   'data', 'style', 'enabled', 'layers', 'pickLayers', 'editorLayers', 'events', 'extensions',
   'version', 'extends', 'provenance',

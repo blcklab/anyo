@@ -10,6 +10,7 @@ import {
   Mesh,
   Node,
   PointLight,
+  SpotLight,
   ParticleEmitter,
   OrthographicCamera,
   PerspectiveCamera,
@@ -65,7 +66,7 @@ class FakeGpuRenderer {
       offscreenCanvas: true,
       features: createRendererFeatures({
         text: true, images: true, models: true,
-        ambientLights: true, directionalLights: true, pointLights: true,
+        ambientLights: true, directionalLights: true, pointLights: true, spotLights: true,
         picking: true, trianglePicking: true, instancedPicking: true,
         shadows: false, xr: false,
         ...overrides,
@@ -200,6 +201,7 @@ test('Sekai64 maps all required primitive and light types', async () => {
     primitive('ambient', 'light', { lightType: 'ambient' }),
     primitive('directional', 'light', { lightType: 'directional' }),
     primitive('point', 'light', { lightType: 'point' }),
+    primitive('spot', 'light', { lightType: 'spot', direction: [0, -1, 0], range: 14, innerCone: 0.3, outerCone: 0.65 }),
   ]
   const renderer = new Sekai64Renderer({ canvas: canvas(), engineFactory: engineFactory('webgpu') })
   await renderer.mount(compiled(items), document())
@@ -217,6 +219,11 @@ test('Sekai64 maps all required primitive and light types', async () => {
   assert.ok(nodes.get('ambient') instanceof AmbientLight)
   assert.ok(nodes.get('directional') instanceof DirectionalLight)
   assert.ok(nodes.get('point') instanceof PointLight)
+  assert.ok(nodes.get('spot') instanceof SpotLight)
+  assert.deepEqual(nodes.get('spot').direction.toArray(), [0, -1, 0])
+  assert.equal(nodes.get('spot').range, 14)
+  assert.equal(nodes.get('spot').innerCone, 0.3)
+  assert.equal(nodes.get('spot').outerCone, 0.65)
   assert.equal(renderer.roomGroups.has('room'), true)
   renderer.dispose()
 })
@@ -701,4 +708,24 @@ test('Step 4 realizes the same generic anyo.vfx component as one batched Particl
     assert.equal(emitter.children.length, 0, 'particles must not create one scene Node per particle')
     renderer.dispose()
   }
+})
+
+test('Sekai64 spot lights stay active while unsupported spot shadow/decay requests emit diagnostics', async () => {
+  const spot = primitive('spot-diagnostic', 'light', {
+    lightType: 'spot',
+    direction: [0, -1, 0],
+    range: 10,
+    decay: 3,
+    innerCone: 0.2,
+    outerCone: 0.5,
+    castShadow: true,
+  })
+  const renderer = new Sekai64Renderer({ canvas: canvas(), engineFactory: engineFactory('webgpu') })
+  await renderer.mount(compiled([spot]), document())
+  const node = renderer.nodes.get('spot-diagnostic')
+  assert.ok(node instanceof SpotLight)
+  const codes = new Set(renderer.getDiagnostics().map((entry) => entry.code))
+  assert.equal(codes.has('ANYO_SEKAI64_SPOT_SHADOW_UNSUPPORTED'), true)
+  assert.equal(codes.has('ANYO_SEKAI64_SPOT_DECAY_UNSUPPORTED'), true)
+  renderer.dispose()
 })

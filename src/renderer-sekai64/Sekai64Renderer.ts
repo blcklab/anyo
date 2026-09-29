@@ -17,6 +17,7 @@ import {
   PlaneGeometry,
   ParticleEmitter,
   PointLight,
+  SpotLight,
   Scene,
   SphereGeometry,
   StandardMaterial,
@@ -333,10 +334,11 @@ function capabilitiesFromEngine(engine: Engine, assetLoaders: AssetLoaderRegistr
     text: features.text,
     images: features.images,
     models: features.models,
-    lights: features.ambientLights || features.directionalLights || features.pointLights,
+    lights: features.ambientLights || features.directionalLights || features.pointLights || features.spotLights,
     ambientLights: features.ambientLights,
     directionalLights: features.directionalLights,
     pointLights: features.pointLights,
+    spotLights: features.spotLights,
     picking: features.picking,
     trianglePicking: features.trianglePicking,
     instancedPicking: features.instancedPicking,
@@ -1594,6 +1596,33 @@ export class Sekai64Renderer implements RendererAdapter {
     if (primitive.lightType === 'directional') {
       const light = new DirectionalLight(options)
       light.castShadow = Boolean(primitive.castShadow && this.capabilityState.shadows)
+      return light
+    }
+    if (primitive.lightType === 'spot') {
+      const light = new SpotLight({
+        ...options,
+        range: primitive.range ?? 10,
+        decay: primitive.decay ?? 2,
+        direction: primitive.direction ?? [0, -1, 0],
+        innerCone: primitive.innerCone,
+        outerCone: primitive.outerCone,
+      })
+      if (primitive.castShadow) {
+        this.reportDiagnostic({
+          severity: 'warning',
+          code: 'ANYO_SEKAI64_SPOT_SHADOW_UNSUPPORTED',
+          message: `Spot-light shadows are not available for primitive "${primitive.id}"; the light remains active without shadows.`,
+          details: { primitiveId: primitive.id },
+        })
+      }
+      if (primitive.decay !== undefined) {
+        this.reportDiagnostic({
+          severity: 'warning',
+          code: 'ANYO_SEKAI64_SPOT_DECAY_UNSUPPORTED',
+          message: `Spot-light decay is not configurable in this Sekai64 renderer revision for primitive "${primitive.id}"; renderer-native spot falloff remains active.`,
+          details: { primitiveId: primitive.id, requestedDecay: primitive.decay },
+        })
+      }
       return light
     }
     const light = new PointLight({ ...options, range: primitive.range ?? 10, decay: primitive.decay ?? 2 })

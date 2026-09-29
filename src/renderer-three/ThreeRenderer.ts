@@ -28,7 +28,7 @@ export class ThreeRenderer implements RendererAdapter {
     name: 'three',
     capabilities: {
       models: true, text: true, images: true, lights: true,
-      ambientLights: true, directionalLights: true, pointLights: true,
+      ambientLights: true, directionalLights: true, pointLights: true, spotLights: false,
       picking: true, trianglePicking: true, instancedPicking: false,
       roomVisibility: true, incrementalUpdates: true, runtimeTransforms: true, instancing: false, shadows: true, xr: false, backend: 'webgl',
       materialFeatures: ['normalScale', 'occlusionStrength', 'emissiveIntensity', 'transmission', 'ior', 'thickness', 'attenuation'],

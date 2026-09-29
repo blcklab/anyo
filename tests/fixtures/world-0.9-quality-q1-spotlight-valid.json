@@ -1,0 +1,39 @@
+{
+  "version": "0.9",
+  "entities": [
+    {
+      "id": "gallery-spot",
+      "type": "light",
+      "lightType": "spot",
+      "position": [2, 4, 1],
+      "direction": [0, -1, 0],
+      "color": "#fff1d8",
+      "intensity": 3.5,
+      "range": 14,
+      "innerCone": 0.3,
+      "outerCone": 0.65
+    },
+    {
+      "id": "ambient",
+      "type": "light",
+      "lightType": "ambient",
+      "intensity": 0.25
+    },
+    {
+      "id": "sun",
+      "type": "light",
+      "lightType": "directional",
+      "rotation": [0.4, 0.2, 0],
+      "intensity": 1.25
+    },
+    {
+      "id": "lamp",
+      "type": "light",
+      "lightType": "point",
+      "position": [0, 2, 0],
+      "intensity": 2,
+      "range": 8,
+      "decay": 2
+    }
+  ]
+}

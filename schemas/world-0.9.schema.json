@@ -2295,8 +2295,10 @@
           "enum": [
             "ambient",
             "directional",
-            "point"
-          ]
+            "point",
+            "spot"
+          ],
+          "description": "Renderer-neutral light kind. World 0.9 supports ambient, directional, point, and spot lights."
         },
         "collision": {
           "type": "boolean"
@@ -2550,6 +2552,22 @@
             "$ref": "#/$defs/compositionParameterValue"
           },
           "description": "Named values supplied to the referenced composition parameter interface."
+        },
+        "direction": {
+          "$ref": "#/$defs/vec3",
+          "description": "Local-space direction vector for spot lights. Entity/composition transforms rotate this vector into world space."
+        },
+        "innerCone": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5707963267948966,
+          "description": "Spot-light inner cone angle in radians. Must not exceed outerCone."
+        },
+        "outerCone": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1.5707963267948966,
+          "description": "Spot-light outer cone angle in radians."
         }
       },
       "additionalProperties": true,
@@ -2574,7 +2592,30 @@
         "arguments": [
           "composition"
         ]
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "light"
+              },
+              "lightType": {
+                "const": "spot"
+              }
+            },
+            "required": [
+              "type",
+              "lightType"
+            ]
+          },
+          "then": {
+            "required": [
+              "direction"
+            ]
+          }
+        }
+      ]
     },
     "exploration": {
       "type": "object",
@@ -3850,8 +3891,10 @@
           "enum": [
             "ambient",
             "directional",
-            "point"
-          ]
+            "point",
+            "spot"
+          ],
+          "description": "Renderer-neutral light kind. World 0.9 supports ambient, directional, point, and spot lights."
         },
         "collision": {
           "type": "boolean"
@@ -4067,6 +4110,22 @@
             }
           },
           "additionalProperties": false
+        },
+        "direction": {
+          "$ref": "#/$defs/vec3",
+          "description": "Local-space direction vector for spot lights. Entity/composition transforms rotate this vector into world space."
+        },
+        "innerCone": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5707963267948966,
+          "description": "Spot-light inner cone angle in radians. Must not exceed outerCone."
+        },
+        "outerCone": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1.5707963267948966,
+          "description": "Spot-light outer cone angle in radians."
         }
       },
       "additionalProperties": true,
@@ -4092,7 +4151,30 @@
           ]
         }
       ],
-      "description": "Legacy reusable template retained for backward compatibility. Prefer composition definitions for new authoring."
+      "description": "Legacy reusable template retained for backward compatibility. Prefer composition definitions for new authoring.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "light"
+              },
+              "lightType": {
+                "const": "spot"
+              }
+            },
+            "required": [
+              "type",
+              "lightType"
+            ]
+          },
+          "then": {
+            "required": [
+              "direction"
+            ]
+          }
+        }
+      ]
     },
     "composition": {
       "type": "object",
@@ -4172,8 +4254,10 @@
           "enum": [
             "ambient",
             "directional",
-            "point"
-          ]
+            "point",
+            "spot"
+          ],
+          "description": "Renderer-neutral light kind. World 0.9 supports ambient, directional, point, and spot lights."
         },
         "collision": {
           "type": "boolean"
@@ -4347,6 +4431,22 @@
             "$ref": "#/$defs/compositionParameterDefinition"
           },
           "description": "Small public parameter interface for composition instances. Parameters map names to deterministic template paths."
+        },
+        "direction": {
+          "$ref": "#/$defs/vec3",
+          "description": "Local-space direction vector for spot lights. Entity/composition transforms rotate this vector into world space."
+        },
+        "innerCone": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5707963267948966,
+          "description": "Spot-light inner cone angle in radians. Must not exceed outerCone."
+        },
+        "outerCone": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1.5707963267948966,
+          "description": "Spot-light outer cone angle in radians."
         }
       },
       "additionalProperties": true,
@@ -4372,7 +4472,30 @@
           ]
         }
       ],
-      "description": "Canonical reusable semantic subtree with an implicit renderer-neutral group root."
+      "description": "Canonical reusable semantic subtree with an implicit renderer-neutral group root.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "light"
+              },
+              "lightType": {
+                "const": "spot"
+              }
+            },
+            "required": [
+              "type",
+              "lightType"
+            ]
+          },
+          "then": {
+            "required": [
+              "direction"
+            ]
+          }
+        }
+      ]
     },
     "geometryDefinition": {
       "oneOf": [

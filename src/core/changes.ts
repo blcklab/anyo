@@ -41,8 +41,11 @@ function primitiveContentChanged(a: CompiledPrimitive, b: CompiledPrimitive): bo
     a.color !== b.color ||
     a.intensity !== b.intensity ||
     a.lightType !== b.lightType ||
+    !equalValue(a.direction, b.direction) ||
     a.range !== b.range ||
     a.decay !== b.decay ||
+    a.innerCone !== b.innerCone ||
+    a.outerCone !== b.outerCone ||
     a.castShadow !== b.castShadow ||
     a.receiveShadow !== b.receiveShadow ||
     !equalValue(a.shadow, b.shadow) ||

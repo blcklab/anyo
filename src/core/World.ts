@@ -1645,9 +1645,13 @@ Detach the surface attachment before committing a runtime world transform.`)
           ? 'ambientLights'
           : primitive.lightType === 'directional'
             ? 'directionalLights'
-            : 'pointLights'
+            : primitive.lightType === 'spot'
+              ? 'spotLights'
+              : 'pointLights'
         const specificSupport = info.capabilities[specific]
-        if (specificSupport === false || (specificSupport === undefined && !info.capabilities.lights)) missing.set(specific, primitive)
+        if (specific === 'spotLights') {
+          if (specificSupport !== true) missing.set(specific, primitive)
+        } else if (specificSupport === false || (specificSupport === undefined && !info.capabilities.lights)) missing.set(specific, primitive)
       }
       if (primitive.assetType && primitive.assetFormat && info.capabilities.assetFormats) {
         const supported = info.capabilities.assetFormats[primitive.assetType]
