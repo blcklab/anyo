@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0-rc.6
+
+- Instantiate resolved native Anyo Object imports through ordinary namespaced assets, materials, geometries, compositions, entities, components, and collision paths.
+- Lower public import aliases to deterministic generated root compositions while keeping Sekai64 and other renderers unaware of source-document modularity.
+- Preserve imported-template source-document provenance on compiled authoring references for editor/tooling diagnostics.
+- Reject import-alias/local-composition ambiguity and deterministic generated-resource conflicts instead of silently overwriting content.
+- Preserve legacy worlds exactly when no imports exist; Step 6 is a structural no-op for non-modular documents.
+- Keep authoring `imports` declarations in the runtime-lowered document; deterministic removal/flattening remains Step 7.
+
 ## 0.11.0-rc.5
 
 - Add World/Object import declarations and a platform-neutral recursive document resolver for World 0.9.

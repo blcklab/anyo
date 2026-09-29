@@ -180,3 +180,5 @@ export type { CanonicalizeWorldOptions } from './canonical.js'
 
 export { AnyoImportError, createFetchAnyoDocumentLoader, resolveAnyoObjectDocumentUrls, resolveWorldDocumentImports } from './imports.js'
 export type { AnyoImportErrorCode } from './imports.js'
+
+export { instantiateResolvedWorldDocument } from './instantiate.js'

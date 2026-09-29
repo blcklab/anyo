@@ -77,8 +77,12 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
       if (Object.prototype.hasOwnProperty.call(raw.root, field)) addIssue(issues, 'ANYO_OBJECT_ROOT_FIELD_INVALID', `/root/${field}`, `Object roots use composition-definition vocabulary; "${field}" is only valid on entity instances.`)
     }
     if (root.extends !== undefined && (typeof root.extends !== 'string' || !root.extends.trim())) addIssue(issues, 'ANYO_OBJECT_ROOT_EXTENDS_INVALID', '/root/extends', 'root.extends must be a non-empty local composition id when provided.')
-    if (root.extends && (!isRecord(raw.compositions) || !Object.prototype.hasOwnProperty.call(raw.compositions, root.extends))) {
-      addIssue(issues, 'ANYO_OBJECT_ROOT_EXTENDS_UNKNOWN', '/root/extends', `Unknown local composition "${root.extends}".`)
+    if (root.extends) {
+      const hasLocalComposition = isRecord(raw.compositions) && Object.prototype.hasOwnProperty.call(raw.compositions, root.extends)
+      const hasImportedComposition = isRecord(raw.imports) && Object.prototype.hasOwnProperty.call(raw.imports, root.extends)
+      if (!hasLocalComposition && !hasImportedComposition) {
+        addIssue(issues, 'ANYO_OBJECT_ROOT_EXTENDS_UNKNOWN', '/root/extends', `Unknown local/imported composition "${root.extends}".`)
+      }
     }
   }
 
@@ -89,6 +93,7 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
       assets: raw.assets as AnyoObjectDocument['assets'],
       materials: raw.materials as AnyoObjectDocument['materials'],
       geometries: raw.geometries as AnyoObjectDocument['geometries'],
+      imports: raw.imports as AnyoObjectDocument['imports'],
       compositions: raw.compositions as AnyoObjectDocument['compositions'],
       entities: [rootAsEntity(raw.root as unknown as CompositionDefinition)],
     }
