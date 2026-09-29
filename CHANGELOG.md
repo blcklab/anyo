@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.11.0-rc.15
+
+### World 0.9 Step 12 — Procedural Sky Adapter Fix
+
+- Fixed the Sekai64 procedural-sky adapter so an enabled sky remains the rendered background independently of procedural star density.
+- Disabling stars, omitting stars, or setting star density to zero no longer hides an otherwise valid procedural sky.
+- Kept procedural sun/cloud generation and star generation unchanged; this release only corrects background ownership in the existing adapter path.
+- Added runtime regression coverage for no-stars, disabled-stars, and zero-density-stars sky configurations.
+- Preserved the frozen World 0.8 schema and all accepted World 0.9 authoring contracts.
+
+## 0.11.0-rc.14
+
+- Final Quality Pass Q3: add deterministic World 0.9 area scatter authoring as a normalization-time placement primitive beside `repeat`.
+- Support bounded rectangle, circle, and polygon XZ areas with stable seeded placement, existing transform-variation vocabulary, optional deterministic `minDistance`, and explicit unsatisfiable-density failure.
+- Expand scatter into ordinary entities/composition instances with generated authoring provenance; preserve native-object/import/bundle behavior without adding a renderer or frame-time subsystem.
+- Keep reusable prefab/composition/Object roots scatter-free, reject `repeat + scatter` and surface-placement scatter in v1, and leave World 0.8 unchanged.
+- Add focused schema/semantic/normalization/bundle/provenance tests and World 0.9 authoring documentation.
+
 ## 0.11.0-rc.13
 
 - Final Quality Pass Q2: add generic World 0.9 procedural vertex-color authoring to the existing renderer-neutral geometry compiler.

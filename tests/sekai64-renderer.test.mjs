@@ -80,6 +80,7 @@ class FakeGpuRenderer {
   setEnvironmentLighting(value) { this.environmentLighting = value }
   setShadowOptions(value) { this.shadowOptions = value }
   setImageQuality(value) { this.imageQuality = value }
+  setEnvironmentMap(value) { this.environmentMap = value }
   render(scene) {
     let draws = 0
     let visible = 0
@@ -185,6 +186,35 @@ test('Sekai64 forwards trusted renderer modules into engine creation', async () 
   assert.equal(records[0].options.modules[0], module)
   assert.equal(records[0].engine.modules.has('test.renderer-module'), true)
   renderer.dispose()
+})
+
+
+
+test('Step 12 keeps an enabled procedural sky visible when stars are absent, disabled, or zero-density', async () => {
+  for (const stars of [undefined, { enabled: false, density: 0.75 }, { enabled: true, density: 0 }]) {
+    const records = []
+    const renderer = new Sekai64Renderer({ canvas: canvas(), engineFactory: engineFactory('webgpu', {}, records) })
+    const world = document()
+    world.environment.sky = {
+      enabled: true,
+      width: 64,
+      height: 32,
+      zenithColor: '#102030',
+      horizonColor: '#405060',
+      sunIntensity: 0.6,
+      cloudCoverage: 0.25,
+      cloudDensity: 0.4,
+      seed: 12,
+      ...(stars === undefined ? {} : { stars }),
+    }
+    await renderer.mount(compiled([]), world)
+    await renderer.whenIdle()
+    assert.equal(records.length, 1)
+    assert.equal(records[0].nativeRenderer.environmentMap?.background, true)
+    assert.equal(records[0].nativeRenderer.environmentMap?.width, 64)
+    assert.equal(records[0].nativeRenderer.environmentMap?.height, 32)
+    renderer.dispose()
+  }
 })
 
 test('Sekai64 maps all required primitive and light types', async () => {

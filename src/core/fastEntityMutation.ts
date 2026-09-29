@@ -251,7 +251,7 @@ export function prepareFastEntityMutation(
   const sourceEntity = getValueAtPointer(sourceDocument, node.sourcePath)
   if (!sourceEntity || typeof sourceEntity !== 'object' || Array.isArray(sourceEntity)) return null
   const entity = sourceEntity as EntityDefinition
-  if (!FAST_ENTITY_TYPES.has(entity.type) || entity.surface || entity.use || entity.repeat || (entity.components?.length ?? 0) > 0) return null
+  if (!FAST_ENTITY_TYPES.has(entity.type) || entity.surface || entity.use || entity.repeat || entity.scatter || (entity.components?.length ?? 0) > 0) return null
   if (compiled.colliders.some((collider) => collider.entityId === node.id)) return null
   if (compiled.triggers.some((trigger) => trigger.entityId === node.id)) return null
   if (node.primitiveIds.some((id) => compiled.primitiveById.get(id)?.collision)) return null

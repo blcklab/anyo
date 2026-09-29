@@ -244,6 +244,107 @@
       },
       "additionalProperties": false
     },
+    "scatterArea": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "size"
+          ],
+          "properties": {
+            "type": {
+              "const": "rectangle"
+            },
+            "size": {
+              "$ref": "#/$defs/positiveVec2"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "radius"
+          ],
+          "properties": {
+            "type": {
+              "const": "circle"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "points"
+          ],
+          "properties": {
+            "type": {
+              "const": "polygon"
+            },
+            "points": {
+              "type": "array",
+              "minItems": 3,
+              "items": {
+                "$ref": "#/$defs/vec2"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "scatterVariation": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/axisVariation"
+        },
+        "rotation": {
+          "$ref": "#/$defs/axisVariation"
+        },
+        "scale": {
+          "$ref": "#/$defs/scaleVariation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scatter": {
+      "type": "object",
+      "required": [
+        "count",
+        "area"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": -4294967295,
+          "maximum": 4294967295
+        },
+        "area": {
+          "$ref": "#/$defs/scatterArea"
+        },
+        "minDistance": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "variation": {
+          "$ref": "#/$defs/scatterVariation"
+        }
+      },
+      "additionalProperties": false
+    },
     "wall": {
       "enum": [
         "north",
@@ -2405,6 +2506,9 @@
             }
           },
           "additionalProperties": false
+        },
+        "scatter": {
+          "$ref": "#/$defs/scatter"
         },
         "components": {
           "type": "array",

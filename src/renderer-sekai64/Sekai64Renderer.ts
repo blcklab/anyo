@@ -1731,7 +1731,9 @@ export class Sekai64Renderer implements RendererAdapter {
         starSeed: stars?.seed ?? environment.sky.seed,
         intensity: environment.lighting.diffuseIntensity,
       })
-      renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: starDensity > 0, backgroundIntensity: 1, label: sky.label })
+      // Sky visibility is controlled by environment.sky.enabled. Stars are only one
+      // procedural layer and must never decide whether the generated sky is the background.
+      renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: true, backgroundIntensity: 1, label: sky.label })
       sky.dispose()
     } else renderer.setEnvironmentMap?.(undefined)
     if (colorLutAsset && !this.options.colorGrading?.lut) this.queueColorLut(renderer as { setColorGrading?: (grading: Record<string, unknown>) => void }, colorLutAsset, lutIntensity)

@@ -87,6 +87,11 @@
               },
               {
                 "required": [
+                  "scatter"
+                ]
+              },
+              {
+                "required": [
                   "instanceId"
                 ]
               },

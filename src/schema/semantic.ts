@@ -27,7 +27,7 @@ const TOP_LEVEL_FIELDS = new Set([
   'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 const ENTITY_FIELDS = new Set([
-  'id', 'authoringId', 'instanceId', 'use', 'composition', 'arguments', 'overrides', 'repeat', 'type', 'room', 'position', 'rotation',
+  'id', 'authoringId', 'instanceId', 'use', 'composition', 'arguments', 'overrides', 'repeat', 'scatter', 'type', 'room', 'position', 'rotation',
   'scale', 'size', 'radius', 'height', 'surface', 'material', 'geometry', 'construction', 'materialBindings', 'asset', 'src',
   'content', 'color', 'intensity', 'lightType', 'direction', 'range', 'decay', 'innerCone', 'outerCone', 'castShadow', 'receiveShadow', 'shadow', 'collision', 'collisionPolicy', 'visible', 'children',
   'components', 'interaction', 'trigger', 'audio', 'lod', 'loading', 'webSurface',
