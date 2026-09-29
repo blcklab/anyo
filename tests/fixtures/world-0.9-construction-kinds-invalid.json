@@ -1,0 +1,121 @@
+{
+  "wall": {
+    "type": "wall",
+    "from": [
+      0,
+      0,
+      0
+    ],
+    "to": [
+      4,
+      0,
+      0
+    ],
+    "height": 3,
+    "thikness": 0.2
+  },
+  "floor": {
+    "type": "floor",
+    "size": [
+      0,
+      6
+    ],
+    "thickness": 0.2
+  },
+  "ceiling": {
+    "type": "ceiling",
+    "size": [
+      8,
+      6
+    ],
+    "thickness": 0.2,
+    "opacity": 0.8
+  },
+  "panel": {
+    "type": "panel",
+    "size": [
+      2,
+      1
+    ],
+    "thickness": 0
+  },
+  "column": {
+    "type": "column",
+    "height": 3,
+    "shape": "triangle"
+  },
+  "beam": {
+    "type": "beam",
+    "from": [
+      0,
+      0
+    ],
+    "to": [
+      4,
+      0,
+      0
+    ],
+    "height": 0.3,
+    "depth": 0.2
+  },
+  "stairs": {
+    "type": "stairs",
+    "width": 1.4,
+    "height": 1.8,
+    "steps": 0,
+    "depth": 2.7
+  },
+  "railing": {
+    "type": "railing",
+    "path": {
+      "kind": "line",
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    },
+    "height": 1.0,
+    "railSegments": 2
+  },
+  "trim": {
+    "type": "trim",
+    "path": {
+      "kind": "line",
+      "points": [
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "roof": {
+    "type": "roof",
+    "size": [
+      8,
+      6
+    ],
+    "thickness": 0.2,
+    "pitch": 2.0
+  },
+  "doorOpening": {
+    "type": "doorOpening",
+    "width": 0,
+    "height": 2.2
+  },
+  "windowOpening": {
+    "type": "windowOpening",
+    "width": 1.2,
+    "height": 1.0,
+    "sillHeight": -0.1
+  }
+}

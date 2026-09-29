@@ -49,7 +49,7 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-8 fields', async () => {
+test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-9 fields', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
@@ -72,11 +72,15 @@ test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-8 
       delete copy.properties.imports
       delete copy.$defs.importDefinition
       copy.$defs.geometryDefinition = structuredClone(schema08.$defs.geometryDefinition)
+      copy.$defs.constructionDefinition = structuredClone(schema08.$defs.constructionDefinition)
       for (const name of [
         'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurve',
         'geometryBox', 'geometryRoundedBox', 'geometryPlane', 'geometrySphere', 'geometryCylinder', 'geometryCone', 'geometryCapsule', 'geometryDisc',
         'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometryTransform', 'geometryMirror', 'geometryNoise',
         'geometryBend', 'geometryTwist', 'geometryTaper', 'geometryUnion', 'geometrySubtract', 'geometryIntersect',
+        'constructionWallOpening', 'constructionWall', 'constructionFloor', 'constructionCeiling', 'constructionPanel', 'constructionColumn',
+        'constructionBeam', 'constructionStairs', 'constructionRailing', 'constructionTrim', 'constructionRoof', 'constructionDoorOpening',
+        'constructionWindowOpening',
       ]) delete copy.$defs[name]
     }
     return copy
