@@ -5,6 +5,7 @@ import { inspectArchitectureDocument } from './architecture.js'
 import { hasOwn, parseJsonPointer } from './safePath.js'
 import { COMPOSITION_PARAMETER_NAME_PATTERN, COMPOSITION_PARAMETER_TYPES, isCompositionParameterValue, mergeCompositionParameters } from './compositionParameters.js'
 import { compositionCatalogWithImports, inspectAnyoImportMap, inspectImportCompositionConflicts } from './imports.js'
+import { normalizeVertexColorDefinition } from '../geometry/attributes/vertexColor.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -746,6 +747,33 @@ function validateEntity(
   })
 }
 
+function validateGeometryVertexColor(definition: unknown, path: string, issues: ValidationIssue[]): void {
+  if (!isRecord(definition)) return
+  if (definition.vertexColor !== undefined) {
+    try {
+      normalizeVertexColorDefinition(definition.vertexColor as never)
+    } catch (error) {
+      const geometryIssues = (error as { issues?: Array<{ code?: string; path?: string; message?: string }> }).issues ?? []
+      if (geometryIssues.length === 0) {
+        issue(issues, 'GEOMETRY_VERTEX_COLOR_INVALID', `${path}/vertexColor`, String(error))
+      } else {
+        for (const geometryIssue of geometryIssues) {
+          const relative = geometryIssue.path?.startsWith('/vertexColor') ? geometryIssue.path : `/vertexColor${geometryIssue.path ?? ''}`
+          issue(issues, geometryIssue.code ?? 'GEOMETRY_VERTEX_COLOR_INVALID', `${path}${relative}`, geometryIssue.message ?? 'Invalid vertex-color definition.')
+        }
+      }
+    }
+  }
+  for (const key of ['source', 'left', 'right']) {
+    if (definition[key] !== undefined) validateGeometryVertexColor(definition[key], `${path}/${key}`, issues)
+  }
+}
+
+function validateEntityGeometryVertexColor(entity: EntityDefinition, path: string, issues: ValidationIssue[]): void {
+  if (isRecord(entity.geometry)) validateGeometryVertexColor(entity.geometry, `${path}/geometry`, issues)
+  entity.children?.forEach((child, index) => validateEntityGeometryVertexColor(child, `${path}/children/${index}`, issues))
+}
+
 function validateProceduralEntityVersion(entity: EntityDefinition, path: string, allowProcedural: boolean, issues: ValidationIssue[]): void {
   if (!allowProcedural && (entity.type === 'geometry' || entity.type === 'construction')) {
     issue(issues, 'PROCEDURAL_ENTITIES_REQUIRE_0_8', `${path}/type`, `Entity type "${entity.type}" requires Anyo world schema 0.8 or newer.`)
@@ -818,6 +846,12 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     const path = `/geometries/${geometryId}`
     if (!geometryId.trim()) issue(issues, 'GEOMETRY_ID_REQUIRED', path, 'Geometry ids must be non-empty strings.')
     if (!isRecord(geometry) || typeof geometry.kind !== 'string' || !geometry.kind.trim()) issue(issues, 'GEOMETRY_DEFINITION_INVALID', path, 'Geometry definitions must be objects with a non-empty kind.')
+    else if (version.startsWith('0.9')) validateGeometryVertexColor(geometry, path, issues)
+  }
+  if (version.startsWith('0.9')) {
+    document.entities?.forEach((entity, index) => validateEntityGeometryVertexColor(entity, `/entities/${index}`, issues))
+    for (const [name, prefab] of Object.entries(document.prefabs ?? {})) validateEntityGeometryVertexColor(prefab as EntityDefinition, `/prefabs/${name}`, issues)
+    for (const [name, composition] of Object.entries(document.compositions ?? {})) validateEntityGeometryVertexColor(composition as EntityDefinition, `/compositions/${name}`, issues)
   }
 
   for (const [assetId, asset] of Object.entries(document.assets ?? {})) {

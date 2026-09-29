@@ -5284,6 +5284,122 @@
       },
       "additionalProperties": false
     },
+    "geometryVertexColorHex": {
+      "type": "string",
+      "pattern": "^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+    },
+    "geometryVertexColor": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/geometryVertexColorConstant"
+        },
+        {
+          "$ref": "#/$defs/geometryVertexColorGradient"
+        },
+        {
+          "$ref": "#/$defs/geometryVertexColorNoise"
+        }
+      ]
+    },
+    "geometryVertexColorConstant": {
+      "type": "object",
+      "required": [
+        "mode",
+        "color"
+      ],
+      "properties": {
+        "mode": {
+          "const": "constant"
+        },
+        "color": {
+          "$ref": "#/$defs/geometryVertexColorHex"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryVertexColorGradient": {
+      "type": "object",
+      "required": [
+        "mode",
+        "axis",
+        "stops"
+      ],
+      "properties": {
+        "mode": {
+          "const": "gradient"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "stops": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/geometryVertexColorGradientStop"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryVertexColorGradientStop": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "$ref": "#/$defs/geometryVertexColorHex"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "geometryVertexColorNoise": {
+      "type": "object",
+      "required": [
+        "mode",
+        "colors"
+      ],
+      "properties": {
+        "mode": {
+          "const": "noise"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "frequency": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "strength": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "colors": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/geometryVertexColorHex"
+            },
+            {
+              "$ref": "#/$defs/geometryVertexColorHex"
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
     "geometryProfile": {
       "type": "object",
       "required": [
@@ -5539,6 +5655,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "size": {
           "$ref": "#/$defs/positiveVec3"
         }
@@ -5565,6 +5684,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "size": {
           "$ref": "#/$defs/positiveVec3"
@@ -5602,6 +5724,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "size": {
           "$ref": "#/$defs/positiveVec2"
         }
@@ -5628,6 +5753,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "radius": {
           "type": "number",
@@ -5666,6 +5794,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "radius": {
           "type": "number",
@@ -5707,6 +5838,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "radius": {
           "type": "number",
           "exclusiveMinimum": 0
@@ -5746,6 +5880,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "radius": {
           "type": "number",
@@ -5789,6 +5926,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "radius": {
           "type": "number",
           "exclusiveMinimum": 0
@@ -5821,6 +5961,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "radius": {
           "type": "number",
@@ -5865,6 +6008,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "points": {
           "type": "array",
           "items": {
@@ -5897,6 +6043,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "profile": {
           "$ref": "#/$defs/latheProfile"
@@ -5934,6 +6083,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "profile": {
           "$ref": "#/$defs/geometryProfile"
@@ -5980,6 +6132,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "profile": {
           "$ref": "#/$defs/geometryProfile"
@@ -6030,6 +6185,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "source": {
           "$ref": "#/$defs/geometryDefinition"
@@ -6090,6 +6248,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "source": {
           "$ref": "#/$defs/geometryDefinition"
         },
@@ -6130,6 +6291,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "source": {
           "$ref": "#/$defs/geometryDefinition"
@@ -6189,6 +6353,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "source": {
           "$ref": "#/$defs/geometryDefinition"
         },
@@ -6234,6 +6401,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "source": {
           "$ref": "#/$defs/geometryDefinition"
         },
@@ -6271,6 +6441,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "source": {
           "$ref": "#/$defs/geometryDefinition"
@@ -6316,6 +6489,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "left": {
           "$ref": "#/$defs/geometryDefinition"
         },
@@ -6348,6 +6524,9 @@
         "tangents": {
           "type": "boolean"
         },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
         "left": {
           "$ref": "#/$defs/geometryDefinition"
         },
@@ -6379,6 +6558,9 @@
         },
         "tangents": {
           "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
         },
         "left": {
           "$ref": "#/$defs/geometryDefinition"

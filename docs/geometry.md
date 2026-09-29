@@ -458,3 +458,56 @@ The deformation modifiers wrap any source geometry:
 
 Like S16 noise, these are authored geometry changes: changing a bend/twist/taper parameter creates a new content-addressed geometry resource. Moving the resulting entity remains a runtime transform and does not rebuild geometry.
 
+
+## World 0.9 procedural vertex colors
+
+World 0.9 can generate renderer-neutral RGBA vertex colors directly from procedural geometry authoring. This is a geometry-quality feature rather than a material or shader scripting system. World 0.8 remains unchanged.
+
+Three bounded modes are supported:
+
+```json
+{
+  "kind": "sphere",
+  "radius": 1,
+  "vertexColor": {
+    "mode": "constant",
+    "color": "#6f8c55"
+  }
+}
+```
+
+```json
+{
+  "kind": "sphere",
+  "vertexColor": {
+    "mode": "gradient",
+    "axis": "y",
+    "stops": [
+      [0, "#32442c"],
+      [0.55, "#668957"],
+      [1, "#8eaa68"]
+    ]
+  }
+}
+```
+
+```json
+{
+  "kind": "sphere",
+  "vertexColor": {
+    "mode": "noise",
+    "seed": 12345,
+    "frequency": 1.2,
+    "strength": 0.25,
+    "colors": ["#48623d", "#72945c"]
+  }
+}
+```
+
+Authored hexadecimal colors use `#RGB`, `#RGBA`, `#RRGGBB`, or `#RRGGBBAA`. RGB channels are converted from authored sRGB into linear vertex-buffer values; alpha stays linear. Sekai64 already treats vertex colors as linear data and composes them with standard PBR base color and base-color texture using its existing glTF-compatible path.
+
+Gradient coordinates are normalized from the compiled geometry's local bounds on the selected `x`, `y`, or `z` axis. Degenerate axes resolve to `0.5`. Stops must be strictly increasing within `[0, 1]`; values outside the first/last stop clamp to the end colors.
+
+Noise is deterministic. It reuses Anyo's existing integer-hashed geometry noise sampler, samples normalized local bounds, and never uses global random state. `strength: 0` yields the midpoint of the two colors and `strength: 1` allows the complete deterministic noise range between them.
+
+Vertex colors are generated at the geometry-compiler boundary. A colored source therefore keeps its channel through bend, twist, taper, geometry-noise deformation, transform, surface attribute regeneration, and CSG interpolation. If an outer geometry operator authors its own `vertexColor`, the outer policy intentionally regenerates colors from that operator's compiled local positions. This makes coloring deterministic and compositional without adding per-kind coloring implementations.
