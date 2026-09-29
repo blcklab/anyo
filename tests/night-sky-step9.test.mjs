@@ -43,7 +43,8 @@ test('Step 9 validates generic procedural star controls and rejects unsafe range
 test('Step 9 Sekai64 adapter maps sky-star intent into the existing procedural environment path', async () => {
   const source = await readFile(new URL('../src/renderer-sekai64/Sekai64Renderer.ts', import.meta.url), 'utf8')
   for (const field of ['starDensity', 'starIntensity', 'starBrightnessVariation', 'starSizeVariation', 'starColorTemperatureVariation', 'starSeed']) assert.match(source, new RegExp(field))
-  assert.match(source, /background: starDensity > 0/)
+  assert.match(source, /background: true/)
+  assert.doesNotMatch(source, /background: starDensity > 0/)
   for (const forbidden of ['StarSystem', 'StarRenderer', 'StarEntity', 'createStarNode']) assert.equal(source.includes(forbidden), false)
 })
 

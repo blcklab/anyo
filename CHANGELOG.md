@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0-rc.15
+
+### World 0.9 Step 12 — Procedural Sky Adapter Fix
+
+- Fixed the Sekai64 procedural-sky adapter so an enabled sky remains the rendered background independently of procedural star density.
+- Disabling stars, omitting stars, or setting star density to zero no longer hides an otherwise valid procedural sky.
+- Kept procedural sun/cloud generation and star generation unchanged; this release only corrects background ownership in the existing adapter path.
+- Added runtime regression coverage for no-stars, disabled-stars, and zero-density-stars sky configurations.
+- Preserved the frozen World 0.8 schema and all accepted World 0.9 authoring contracts.
+
 ## 0.11.0-rc.14
 
 - Final Quality Pass Q3: add deterministic World 0.9 area scatter authoring as a normalization-time placement primitive beside `repeat`.
