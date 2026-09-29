@@ -11,6 +11,30 @@ export type GeometryNormalMode = 'flat' | 'smooth'
 export type GeometryUvMode = 'generated' | 'planar' | 'box' | 'cylindrical' | 'spherical'
 export type GeometryUvAxis = 'xy' | 'xz' | 'yz' | 'auto'
 
+export type GeometryVertexColorAxis = 'x' | 'y' | 'z'
+export type GeometryVertexColorGradientStop = [number, string]
+
+export interface GeometryVertexColorConstantDefinition {
+  mode: 'constant'
+  color: string
+}
+
+export interface GeometryVertexColorGradientDefinition {
+  mode: 'gradient'
+  axis: GeometryVertexColorAxis
+  stops: GeometryVertexColorGradientStop[]
+}
+
+export interface GeometryVertexColorNoiseDefinition {
+  mode: 'noise'
+  seed?: number
+  frequency?: number
+  strength?: number
+  colors: [string, string]
+}
+
+export type GeometryVertexColorDefinition = GeometryVertexColorConstantDefinition | GeometryVertexColorGradientDefinition | GeometryVertexColorNoiseDefinition
+
 export interface GeometryNormalPolicy {
   mode: GeometryNormalMode
   /** Radians. Smooth faces whose normal angle exceeds this threshold stay split. */
@@ -35,7 +59,9 @@ export interface GeometryDefinition {
   uv?: GeometryUvPolicy
   /** Generate renderer-neutral xyzw tangent attributes after normals and UVs are resolved. */
   tangents?: boolean
-  [key: string]: GeometryJsonValue | GeometryNormalPolicy | GeometryUvPolicy | GeometryDefinition | undefined
+  /** Optional deterministic RGBA vertex-color generation for World 0.9 authoring. */
+  vertexColor?: GeometryVertexColorDefinition
+  [key: string]: GeometryJsonValue | GeometryNormalPolicy | GeometryUvPolicy | GeometryVertexColorDefinition | GeometryDefinition | undefined
 }
 
 export interface BoxGeometryDefinition extends GeometryDefinition {

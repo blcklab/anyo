@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0-rc.13
+
+- Final Quality Pass Q2: add generic World 0.9 procedural vertex-color authoring to the existing renderer-neutral geometry compiler.
+- Add bounded `constant`, local-bounds `gradient`, and deterministic seeded `noise` modes; authored hex colors are converted from sRGB to linear RGBA vertex-buffer values.
+- Reuse the existing geometry noise sampler, preserve source vertex colors through deformation/transform/CSG and surface-attribute regeneration, and allow an outer geometry node to intentionally regenerate its own color policy.
+- Keep Sekai64 unchanged: Anyo already forwards `GeometryMesh.colors`, while accepted Sekai64 rc.43 WebGL2/WebGPU shaders multiply material base color × vertex color × base-color texture.
+- Add schema/semantic/compiler/resource-adapter/declaration regressions plus focused geometry documentation while keeping World 0.8 unchanged.
+
 ## 0.11.0-rc.12
 
 - Final Quality Pass Q1: add renderer-neutral World 0.9 spotlight authoring through the existing generic `type: "light"` contract.

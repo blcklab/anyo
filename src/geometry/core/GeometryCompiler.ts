@@ -7,6 +7,7 @@ import { normalizeGeometryDefinition } from './normalizeGeometry.js'
 import { hashGeometryDefinition } from './hashGeometry.js'
 import { BUILTIN_GEOMETRY_KINDS } from '../primitives/index.js'
 import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfacePolicy.js'
+import { applyVertexColorPolicy, normalizeVertexColorPolicy } from '../attributes/vertexColor.js'
 
 export interface GeometryCompileContext {
   readonly limits: GeometrySafetyLimits
@@ -61,7 +62,7 @@ export class GeometryCompiler {
     if (!kindCompiler) throw new GeometryValidationError([{ code: 'GEOMETRY_KIND_UNSUPPORTED', path: '/kind', message: `Unsupported geometry kind "${base.kind}".` }])
     const context = this.#contextFor(modifierDepth, booleanDepth)
     const kindNormalized = kindCompiler.normalize ? kindCompiler.normalize(base, context) : base
-    return normalizeGeometryDefinition(normalizeSurfacePolicy(kindNormalized), { limits: this.#limits })
+    return normalizeGeometryDefinition(normalizeVertexColorPolicy(normalizeSurfacePolicy(kindNormalized)), { limits: this.#limits })
   }
 
   keyFor(definition: unknown): string {
@@ -79,7 +80,8 @@ export class GeometryCompiler {
     if (cached) return cached
     const kindCompiler = this.#kinds.get(normalized.kind)!
     const compiled = kindCompiler.compile(normalized, this.#contextFor(modifierDepth, booleanDepth))
-    const mesh = finalizeGeometryMesh(applySurfacePolicy(compiled, normalized), { limits: this.#limits })
+    const colored = applyVertexColorPolicy(compiled, normalized)
+    const mesh = finalizeGeometryMesh(applySurfacePolicy(colored, normalized), { limits: this.#limits })
     if (this.#cache) return this.#cache.set(normalized, mesh)
     void key
     return mesh
