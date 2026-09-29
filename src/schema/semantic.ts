@@ -22,7 +22,7 @@ const BUILTIN_COMPONENT_TYPES = new Set([
 const MARKER_COMPONENTS = new Set(['anyo.vfx', 'anyo.map', 'anyo.mapFeature', 'anyo.animation', 'anyo.rigidBody', 'anyo.characterController', 'anyo.joint', 'anyo.billboard'])
 
 const TOP_LEVEL_FIELDS = new Set([
-  '$schema', 'version', 'revision', 'units', 'metadata', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'geometries',
+  '$schema', 'version', 'revision', 'units', 'metadata', 'imports', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'geometries',
   'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 const ENTITY_FIELDS = new Set([
@@ -150,7 +150,8 @@ function inspectEntity(
   mode: ValidationMode,
   issues: ValidationIssue[],
 ): void {
-  inspectUnknownFields(entity, ENTITY_FIELDS, path, mode, issues)
+  const stableBuiltinShape = !entity.type || BUILTIN_ENTITY_TYPES.has(entity.type) || Boolean(entity.use) || Boolean(entity.composition)
+  if (stableBuiltinShape) inspectUnknownFields(entity, ENTITY_FIELDS, path, mode, issues)
   if (entity.room && !roomIds.has(entity.room)) {
     add(issues, severity(mode, true), 'ANYO_ENTITY_ROOM_NOT_FOUND', `${path}/room`, `Entity "${entity.id}" references missing room "${entity.room}".`)
   }

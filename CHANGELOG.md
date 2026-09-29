@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0-rc.10
+
+- World 0.9 Step 10: standardize a small shared metadata core (`id`, `title`, `description`, `author`, `license`, `tags`, `thumbnail`, `repository`, `homepage`) while preserving additional project/tool metadata.
+- Tighten proven built-in World 0.9 authoring structures so common typos such as material `roughnes` are rejected, while intentional `data`, `extensions`, asset `options`, and registered custom entity/component payloads remain extensible.
+- Share metadata validation with native Object 0.1 documents and add compatibility tests for custom extension schemas and registered custom entity payloads.
+- Keep World 0.8 and runtime rendering/geometry/construction behavior unchanged.
+
 ## 0.11.0-rc.9
 
 - World 0.9 Step 9: replace the generic construction object schema with strict discriminated variants for all 12 public construction types derived from the rc.8 architecture runtime.

@@ -1,0 +1,50 @@
+{
+  "version": "0.9",
+  "metadata": {
+    "id": "blcklab-strict-authoring",
+    "title": "BLCKLAB Strict Authoring",
+    "description": "World 0.9 metadata core fixture",
+    "author": "BLCKLAB",
+    "license": "MIT",
+    "tags": ["showcase", "strict"],
+    "thumbnail": "assets/thumbnail.webp",
+    "repository": "https://example.test/blcklab/strict-world",
+    "homepage": "https://example.test/strict-world",
+    "registryRank": 7
+  },
+  "data": {
+    "application": {
+      "featureFlags": { "experimental-ui": true }
+    }
+  },
+  "extensions": {
+    "blcklab.world": {
+      "editorTheme": "dark",
+      "arbitrary": { "nested": true }
+    }
+  },
+  "materials": {
+    "wall": {
+      "baseColor": "#202020",
+      "roughness": 0.8
+    }
+  },
+  "assets": {
+    "prop": {
+      "type": "model",
+      "src": "./assets/prop.glb",
+      "options": {
+        "pluginOption": { "quality": "high" }
+      }
+    }
+  },
+  "entities": [
+    {
+      "id": "cube",
+      "type": "box",
+      "material": "wall",
+      "data": { "appOwned": true },
+      "extensions": { "blcklab.entity": { "selected": true } }
+    }
+  ]
+}

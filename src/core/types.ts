@@ -1394,6 +1394,21 @@ export type AnyoImportMap = Record<string, AnyoImportDefinition>
 
 export type AnyoObjectDocumentVersion = '0.1' | `0.1.${string}`
 
+/** Standard authoring metadata shared by World 0.9 and native Object 0.1 documents. */
+export interface WorldMetadataDefinition {
+  id?: string
+  title?: string
+  description?: string
+  author?: string
+  license?: string
+  tags?: string[]
+  thumbnail?: string
+  repository?: string
+  homepage?: string
+  /** Project/tooling-specific JSON metadata remains intentionally extensible. */
+  [key: string]: unknown
+}
+
 /**
  * Standalone reusable declarative Anyo object document.
  * Object documents reuse World 0.9 assets, materials, geometries, compositions, and composition-root vocabulary.
@@ -1403,7 +1418,7 @@ export interface AnyoObjectDocument {
   $schema?: string
   kind: 'anyo-object'
   version: AnyoObjectDocumentVersion
-  metadata?: Record<string, unknown>
+  metadata?: WorldMetadataDefinition
   imports?: AnyoImportMap
   assets?: Record<string, AssetDefinition>
   materials?: Record<string, MaterialDefinition>
@@ -1418,7 +1433,7 @@ export interface WorldDocument {
   /** Monotonic authored-document revision used by stable transactions. */
   revision?: number
   units?: 'meters'
-  metadata?: Record<string, unknown>
+  metadata?: WorldMetadataDefinition
   /** Optional modular authoring imports available in World 0.9+. */
   imports?: AnyoImportMap
   data?: Record<string, unknown>

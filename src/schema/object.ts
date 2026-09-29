@@ -90,6 +90,7 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
   if (structuralErrors.length === 0 && isRecord(raw.root)) {
     const synthetic: WorldDocument = {
       version: '0.9',
+      metadata: raw.metadata as AnyoObjectDocument['metadata'],
       assets: raw.assets as AnyoObjectDocument['assets'],
       materials: raw.materials as AnyoObjectDocument['materials'],
       geometries: raw.geometries as AnyoObjectDocument['geometries'],

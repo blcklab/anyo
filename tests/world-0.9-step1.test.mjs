@@ -49,7 +49,7 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-9 fields', async () => {
+test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-10 fields', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
@@ -71,6 +71,16 @@ test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-9 
       delete copy.$defs.exploration.properties.spawn.properties.rotation
       delete copy.properties.imports
       delete copy.$defs.importDefinition
+      // Step 10: standardized metadata + strict built-in authoring objects.
+      copy.properties.metadata = structuredClone(schema08.properties.metadata)
+      copy.properties.data = structuredClone(schema08.properties.data)
+      delete copy.$defs.metadata
+      for (const name of ['asset', 'audio', 'building', 'environment', 'exploration', 'floor', 'interaction', 'lod', 'material', 'opening', 'room', 'stair', 'trigger', 'visibility']) {
+        copy.$defs[name].additionalProperties = schema08.$defs[name].additionalProperties
+      }
+      copy.$defs.asset.properties.options = structuredClone(schema08.$defs.asset.properties.options)
+      copy.$defs.room.properties.data = structuredClone(schema08.$defs.room.properties.data)
+      copy.$defs.entity.properties.data = structuredClone(schema08.$defs.entity.properties.data)
       copy.$defs.geometryDefinition = structuredClone(schema08.$defs.geometryDefinition)
       copy.$defs.constructionDefinition = structuredClone(schema08.$defs.constructionDefinition)
       for (const name of [

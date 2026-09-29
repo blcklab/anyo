@@ -76,6 +76,32 @@ function validateShadowDefinition(value: unknown, path: string, issues: Validati
   }
 }
 
+
+function validateMetadata(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    issue(issues, 'METADATA_INVALID', path, 'metadata must be an object when provided.')
+    return
+  }
+  const nonEmpty = ['id', 'title', 'author', 'license', 'thumbnail', 'repository', 'homepage'] as const
+  for (const field of nonEmpty) {
+    const raw = value[field]
+    if (raw !== undefined && (typeof raw !== 'string' || !raw.trim())) {
+      issue(issues, 'METADATA_FIELD_INVALID', `${path}/${field}`, `${field} must be a non-empty string when provided.`)
+    }
+  }
+  if (value.description !== undefined && typeof value.description !== 'string') {
+    issue(issues, 'METADATA_FIELD_INVALID', `${path}/description`, 'description must be a string when provided.')
+  }
+  if (value.tags !== undefined) {
+    if (!Array.isArray(value.tags) || value.tags.some((tag) => typeof tag !== 'string' || !tag.trim())) {
+      issue(issues, 'METADATA_TAGS_INVALID', `${path}/tags`, 'tags must be an array of non-empty strings.')
+    } else if (new Set(value.tags).size !== value.tags.length) {
+      issue(issues, 'METADATA_TAGS_DUPLICATED', `${path}/tags`, 'tags must not contain duplicates.')
+    }
+  }
+}
+
 function validateEnvironment(document: WorldDocument, issues: ValidationIssue[]): void {
   const environment = document.environment
   if (!environment) return
@@ -610,6 +636,8 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
   } else if (!version.startsWith('0.7') && !version.startsWith('0.8') && !version.startsWith('0.9')) {
     issue(issues, 'VERSION_LEGACY', '/version', `Version ${version} is supported through automatic migration.`, 'Save the document again to upgrade it to 0.7.', 'warning')
   }
+
+  if (version.startsWith('0.9')) validateMetadata(document.metadata, '/metadata', issues)
 
   const allowProcedural = version.startsWith('0.8') || version.startsWith('0.9')
   if (!version.startsWith('0.9') && document.imports !== undefined) issue(issues, 'ANYO_IMPORTS_REQUIRE_0_9', '/imports', 'Top-level imports require Anyo world schema 0.9 or newer.')

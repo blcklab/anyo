@@ -1,0 +1,28 @@
+{
+  "version": "0.9",
+  "metadata": {
+    "id": "",
+    "title": 42,
+    "tags": ["duplicate", "duplicate"]
+  },
+  "materials": {
+    "wall": {
+      "baseColor": "#202020",
+      "roughnes": 0.8
+    }
+  },
+  "environment": {
+    "background": "#000000",
+    "ambentLight": { "intensity": 0.4 }
+  },
+  "exploration": {
+    "walkSpeeed": 4
+  },
+  "entities": [
+    {
+      "id": "cube",
+      "type": "box",
+      "positon": [0, 0, 0]
+    }
+  ]
+}
