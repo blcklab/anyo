@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0-rc.11
+
+- World 0.9 Step 11: make `compositions` + `composition` the canonical new-authoring primitive while preserving legacy `prefabs` + `use` compatibility.
+- Add a minimal deterministic composition parameter interface: typed `parameters` map names to RFC 6901 template paths and instance `arguments` reuse the existing template-override machinery without expressions or scripting.
+- Support inherited parameters plus `string`, `number`, `boolean`, `vec2`, `vec3`, `material`, and `asset` values; preserve explicit override/instance-field precedence.
+- Preserve Object 0.1/import/bundle behavior, including namespace rewriting for imported resource-typed parameter defaults and arguments.
+- Add schema/runtime/declaration/regression coverage while keeping World 0.8 and legacy prefab runtime behavior unchanged.
+
 ## 0.11.0-rc.10
 
 - World 0.9 Step 10: standardize a small shared metadata core (`id`, `title`, `description`, `author`, `license`, `tags`, `thumbnail`, `repository`, `homepage`) while preserving additional project/tool metadata.
@@ -207,6 +215,14 @@ Generic semantic compositions S23 for world schema 0.8.
 - No Sekai64, Player, VRM, animation, camera, collision, or renderer behavior changes.
 
 # Changelog
+
+## 0.11.0-rc.11
+
+- World 0.9 Step 11: make `compositions` + `composition` the canonical new-authoring primitive while preserving legacy `prefabs` + `use` compatibility.
+- Add a minimal deterministic composition parameter interface: typed `parameters` map names to RFC 6901 template paths and instance `arguments` reuse the existing template-override machinery without expressions or scripting.
+- Support inherited parameters plus `string`, `number`, `boolean`, `vec2`, `vec3`, `material`, and `asset` values; preserve explicit override/instance-field precedence.
+- Preserve Object 0.1/import/bundle behavior, including namespace rewriting for imported resource-typed parameter defaults and arguments.
+- Add schema/runtime/declaration/regression coverage while keeping World 0.8 and legacy prefab runtime behavior unchanged.
 
 ## 0.11.0-rc.7
 
@@ -436,6 +452,14 @@ Add S2 precision procedural primitives to `@blcklab/anyo/geometry`: box, rounded
 Start the precision procedural-geometry milestone with a renderer-neutral S1 foundation. Add stable coordinate conventions, JSON-safe definition normalization, deterministic hashing, safety limits, mesh validation, bounds, reusable caching, a pluggable compiler registry, and the `@blcklab/anyo/geometry` subpath. No renderer, Player, world-schema, or existing primitive semantics change in this revision.
 
 # Changelog
+
+## 0.11.0-rc.11
+
+- World 0.9 Step 11: make `compositions` + `composition` the canonical new-authoring primitive while preserving legacy `prefabs` + `use` compatibility.
+- Add a minimal deterministic composition parameter interface: typed `parameters` map names to RFC 6901 template paths and instance `arguments` reuse the existing template-override machinery without expressions or scripting.
+- Support inherited parameters plus `string`, `number`, `boolean`, `vec2`, `vec3`, `material`, and `asset` values; preserve explicit override/instance-field precedence.
+- Preserve Object 0.1/import/bundle behavior, including namespace rewriting for imported resource-typed parameter defaults and arguments.
+- Add schema/runtime/declaration/regression coverage while keeping World 0.8 and legacy prefab runtime behavior unchanged.
 
 ## 0.11.0-rc.7
 

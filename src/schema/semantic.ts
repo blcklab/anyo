@@ -10,6 +10,7 @@ import type {
 } from '../core/types.js'
 import type { ValidationIssue } from './errors.js'
 import { getDataPath } from './bindings.js'
+import { resolveCompositionParameterDefinitions } from './compositionParameters.js'
 
 const BUILTIN_ENTITY_TYPES = new Set([
   'box', 'plane', 'cylinder', 'disc', 'cone', 'sphere', 'text', 'image', 'model', 'light', 'group',
@@ -26,7 +27,7 @@ const TOP_LEVEL_FIELDS = new Set([
   'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 const ENTITY_FIELDS = new Set([
-  'id', 'authoringId', 'instanceId', 'use', 'composition', 'overrides', 'repeat', 'type', 'room', 'position', 'rotation',
+  'id', 'authoringId', 'instanceId', 'use', 'composition', 'arguments', 'overrides', 'repeat', 'type', 'room', 'position', 'rotation',
   'scale', 'size', 'radius', 'height', 'surface', 'material', 'geometry', 'construction', 'materialBindings', 'asset', 'src',
   'content', 'color', 'intensity', 'lightType', 'range', 'decay', 'castShadow', 'receiveShadow', 'shadow', 'collision', 'collisionPolicy', 'visible', 'children',
   'components', 'interaction', 'trigger', 'audio', 'lod', 'loading', 'webSurface',
@@ -170,6 +171,19 @@ function inspectEntity(
   if (entity.asset && !assetIds.has(entity.asset)) {
     add(issues, severity(mode, true), 'ANYO_ASSET_NOT_FOUND', `${path}/asset`, `Asset "${entity.asset}" does not exist.`)
   }
+  if (entity.composition && entity.arguments && document.compositions?.[entity.composition]) {
+    const parameters = resolveCompositionParameterDefinitions(entity.composition, document.compositions) ?? {}
+    for (const [name, value] of Object.entries(entity.arguments)) {
+      const parameter = parameters[name]
+      if (!parameter || typeof value !== 'string') continue
+      if (parameter.type === 'material' && !materialIds.has(value)) {
+        add(issues, severity(mode, true), 'ANYO_COMPOSITION_ARGUMENT_MATERIAL_NOT_FOUND', `${path}/arguments/${name}`, `Composition argument material "${value}" does not exist.`)
+      }
+      if (parameter.type === 'asset' && !assetIds.has(value)) {
+        add(issues, severity(mode, true), 'ANYO_COMPOSITION_ARGUMENT_ASSET_NOT_FOUND', `${path}/arguments/${name}`, `Composition argument asset "${value}" does not exist.`)
+      }
+    }
+  }
   if (entity.type && !BUILTIN_ENTITY_TYPES.has(entity.type) && !has(options.entityTypeRegistry, entity.type)) {
     add(issues, severity(mode, true), 'ANYO_ENTITY_TYPE_NOT_REGISTERED', `${path}/type`, `Entity type "${entity.type}" is not registered.`)
   }
@@ -295,7 +309,10 @@ export function inspectWorldSemantics(document: WorldDocument, options: WorldVal
   }
   document.entities?.forEach((entity, index) => inspectEntity(entity, `/entities/${index}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues))
   for (const [name, prefab] of Object.entries(document.prefabs ?? {})) inspectEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues)
-  for (const [name, composition] of Object.entries(document.compositions ?? {})) inspectEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues)
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) {
+    const { parameters: _parameters, ...compositionEntity } = composition
+    inspectEntity({ ...compositionEntity, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, document, roomIds, materialIds, assetIds, geometryIds, options, mode, issues)
+  }
   for (const [event, actions] of Object.entries(document.events ?? {})) actions.forEach((action, index) => inspectAction(action, `/events/${event}/${index}`, options, mode, issues))
   if (document.exploration?.spawn?.room && !roomIds.has(document.exploration.spawn.room)) add(issues, severity(mode, true), 'ANYO_SPAWN_ROOM_NOT_FOUND', '/exploration/spawn/room', `Spawn room "${document.exploration.spawn.room}" does not exist.`)
   inspectBindings(document, '', document.data ?? {}, options, mode, issues)

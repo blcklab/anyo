@@ -78,11 +78,13 @@
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/prefab"
-      }
+      },
+      "description": "Legacy reusable templates retained for backward compatibility. Prefer compositions for new authoring.",
+      "deprecated": true
     },
     "compositions": {
       "type": "object",
-      "description": "Reusable renderer-neutral semantic subtrees. Composition roots normalize to groups.",
+      "description": "Canonical reusable renderer-neutral semantic subtrees. Composition roots normalize to groups and may expose a small named parameter interface.",
       "additionalProperties": {
         "$ref": "#/$defs/composition"
       }
@@ -2338,11 +2340,14 @@
         },
         "use": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Legacy prefab reference retained for backward compatibility. Prefer composition for new authoring.",
+          "deprecated": true
         },
         "composition": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Canonical reusable composition reference."
         },
         "overrides": {
           "type": "object",
@@ -2535,6 +2540,16 @@
             "semantic",
             "parts"
           ]
+        },
+        "arguments": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/compositionParameterValue"
+          },
+          "description": "Named values supplied to the referenced composition parameter interface."
         }
       },
       "additionalProperties": true,
@@ -2554,7 +2569,12 @@
             "composition"
           ]
         }
-      ]
+      ],
+      "dependentRequired": {
+        "arguments": [
+          "composition"
+        ]
+      }
     },
     "exploration": {
       "type": "object",
@@ -4071,7 +4091,8 @@
             "extends"
           ]
         }
-      ]
+      ],
+      "description": "Legacy reusable template retained for backward compatibility. Prefer composition definitions for new authoring."
     },
     "composition": {
       "type": "object",
@@ -4316,6 +4337,16 @@
             }
           },
           "additionalProperties": false
+        },
+        "parameters": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/compositionParameterDefinition"
+          },
+          "description": "Small public parameter interface for composition instances. Parameters map names to deterministic template paths."
         }
       },
       "additionalProperties": true,
@@ -4341,7 +4372,7 @@
           ]
         }
       ],
-      "description": "Reusable semantic subtree with an implicit renderer-neutral group root."
+      "description": "Canonical reusable semantic subtree with an implicit renderer-neutral group root."
     },
     "geometryDefinition": {
       "oneOf": [
@@ -6280,6 +6311,172 @@
         }
       },
       "additionalProperties": true
+    },
+    "compositionParameterValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/vec2"
+        },
+        {
+          "$ref": "#/$defs/vec3"
+        }
+      ]
+    },
+    "compositionParameterDefinition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "string"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "number"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "boolean"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "vec2"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "$ref": "#/$defs/vec2"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "vec3"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "$ref": "#/$defs/vec3"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "material"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "const": "asset"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])+)*$"
+            },
+            "default": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "description": "Named deterministic alias over an RFC 6901 template override path. No expressions or scripting are evaluated."
     }
   }
 }

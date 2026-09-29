@@ -57,7 +57,7 @@ await world.disposeAsync()
 
 - Versioned JSON world documents, schema validation, normalization, and deterministic migrations
 - Stable IDs, patches, transactions, history, and canonical serialization
-- Entities, components, assets, prefabs, schema-0.8 compositions, buildings, rooms, portals, zones, and interactions
+- Entities, components, assets, canonical World 0.9 compositions, backward-compatible prefabs, buildings, rooms, portals, zones, and interactions
 - Renderer-independent runtime systems and transient transforms
 - First-person exploration, collision-aware world navigation, and optional WebXR integration
 - Optional editor, web-surface, renderer, and runtime subpaths

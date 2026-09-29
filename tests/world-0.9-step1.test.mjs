@@ -49,7 +49,7 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-10 fields', async () => {
+test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-11 fields', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
@@ -65,6 +65,24 @@ test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-10
       delete copy.$defs.entity.properties.instanceId
       delete copy.$defs.entity.properties.overrides
       delete copy.$defs.entity.properties.loading
+      // Step 11: compositions are canonical and expose optional named parameters/arguments.
+      delete copy.$defs.entity.properties.arguments
+      delete copy.$defs.entity.dependentRequired
+      if (copy.$defs.entity.properties.use) {
+        delete copy.$defs.entity.properties.use.description
+        delete copy.$defs.entity.properties.use.deprecated
+      }
+      if (copy.$defs.entity.properties.composition) delete copy.$defs.entity.properties.composition.description
+      if (copy.$defs.composition?.properties) delete copy.$defs.composition.properties.parameters
+      delete copy.$defs.compositionParameterValue
+      delete copy.$defs.compositionParameterDefinition
+      if (copy.properties.prefabs) {
+        delete copy.properties.prefabs.description
+        delete copy.properties.prefabs.deprecated
+      }
+      if (copy.properties.compositions) copy.properties.compositions.description = schema08.properties.compositions.description
+      if (copy.$defs.prefab) delete copy.$defs.prefab.description
+      if (copy.$defs.composition) copy.$defs.composition.description = schema08.$defs.composition.description
       copy.$defs.entity.anyOf = copy.$defs.entity.anyOf.filter((variant) => variant.required?.[0] !== 'composition')
       delete copy.$defs.exploration.properties.mode
       delete copy.$defs.exploration.properties.character
