@@ -47,3 +47,39 @@ export function inspectAnyoImportMap(value: unknown, path: string, issues: Valid
   }
   return valid
 }
+
+
+/**
+ * Build the composition catalog visible to authoring validation.
+ * World/Object import aliases behave like external composition targets until Step 6
+ * lowers them to deterministic generated composition ids.
+ */
+export function compositionCatalogWithImports(
+  compositions: Record<string, import('../core/types.js').CompositionDefinition> | undefined,
+  imports: AnyoImportMap | undefined,
+): Record<string, import('../core/types.js').CompositionDefinition> {
+  const output: Record<string, import('../core/types.js').CompositionDefinition> = {}
+  for (const alias of Object.keys(imports ?? {}).sort()) output[alias] = { type: 'group', children: [] }
+  for (const [id, composition] of Object.entries(compositions ?? {})) output[id] = composition
+  return output
+}
+
+/** Report ambiguous public names before import aliases are lowered to generated ids. */
+export function inspectImportCompositionConflicts(
+  compositions: Record<string, import('../core/types.js').CompositionDefinition> | undefined,
+  imports: AnyoImportMap | undefined,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!imports || !compositions) return
+  for (const alias of Object.keys(imports).sort()) {
+    if (Object.prototype.hasOwnProperty.call(compositions, alias)) {
+      add(
+        issues,
+        'ANYO_IMPORT_ALIAS_COMPOSITION_CONFLICT',
+        `${path}/${alias.replace(/~/g, '~0').replace(/\//g, '~1')}`,
+        `Import alias "${alias}" conflicts with a local composition of the same name.`,
+      )
+    }
+  }
+}

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.11.0-rc.8
+
+- World 0.9 Step 8: replace the generic geometry object schema with strict discriminated variants for all 22 public built-in geometry kinds derived from the rc.7 runtime/compiler.
+- Strongly schema primitive, profile/extrusion/sweep, modifier, boolean, curve, normal, UV, quality, tangent, and safety-bounded segment fields while leaving cross-field/topology constraints to the existing semantic/compiler validation where JSON Schema would be misleading.
+- Add paired valid/invalid authoring fixtures for every built-in geometry kind and contract tests that verify exact runtime/schema kind coverage, strict unknown-field rejection, runtime compilation of valid fixtures, and semantic-only constraint enforcement.
+- Keep geometry runtime behavior and World 0.8 unchanged.
+
+## 0.11.0-rc.7
+
+- World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
+- Bundled output removes external Anyo JSON `imports`, preserves namespace-qualified reusable resources/compositions and provenance, and canonicalizes object-key ordering for reproducible serialization.
+- Add round-trip tests proving modular and bundled worlds normalize/compile equivalently and that bundled worlds load without any external Anyo JSON document dependency.
+
+## 0.11.0-rc.6
+
+- Instantiate resolved native Anyo Object imports through ordinary namespaced assets, materials, geometries, compositions, entities, components, and collision paths.
+- Lower public import aliases to deterministic generated root compositions while keeping Sekai64 and other renderers unaware of source-document modularity.
+- Preserve imported-template source-document provenance on compiled authoring references for editor/tooling diagnostics.
+- Reject import-alias/local-composition ambiguity and deterministic generated-resource conflicts instead of silently overwriting content.
+- Preserve legacy worlds exactly when no imports exist; Step 6 is a structural no-op for non-modular documents.
+- Keep authoring `imports` declarations in the runtime-lowered document; deterministic removal/flattening remains Step 7.
+
 ## 0.11.0-rc.5
 
 - Add World/Object import declarations and a platform-neutral recursive document resolver for World 0.9.
@@ -171,6 +193,12 @@ Generic semantic compositions S23 for world schema 0.8.
 - No Sekai64, Player, VRM, animation, camera, collision, or renderer behavior changes.
 
 # Changelog
+
+## 0.11.0-rc.7
+
+- World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
+- Bundled output removes external Anyo JSON `imports`, preserves namespace-qualified reusable resources/compositions and provenance, and canonicalizes object-key ordering for reproducible serialization.
+- Add round-trip tests proving modular and bundled worlds normalize/compile equivalently and that bundled worlds load without any external Anyo JSON document dependency.
 
 ## 0.10.0-rc.3-dev.20
 
@@ -394,6 +422,12 @@ Add S2 precision procedural primitives to `@blcklab/anyo/geometry`: box, rounded
 Start the precision procedural-geometry milestone with a renderer-neutral S1 foundation. Add stable coordinate conventions, JSON-safe definition normalization, deterministic hashing, safety limits, mesh validation, bounds, reusable caching, a pluggable compiler registry, and the `@blcklab/anyo/geometry` subpath. No renderer, Player, world-schema, or existing primitive semantics change in this revision.
 
 # Changelog
+
+## 0.11.0-rc.7
+
+- World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
+- Bundled output removes external Anyo JSON `imports`, preserves namespace-qualified reusable resources/compositions and provenance, and canonicalizes object-key ordering for reproducible serialization.
+- Add round-trip tests proving modular and bundled worlds normalize/compile equivalently and that bundled worlds load without any external Anyo JSON document dependency.
 
 ## 0.10.0-rc.2-dev.2
 

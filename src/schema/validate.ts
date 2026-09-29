@@ -3,7 +3,7 @@ import { AnyoValidationError, type ValidationIssue } from './errors.js'
 import { inspectWorldSemantics } from './semantic.js'
 import { inspectArchitectureDocument } from './architecture.js'
 import { parseJsonPointer } from './safePath.js'
-import { inspectAnyoImportMap } from './imports.js'
+import { compositionCatalogWithImports, inspectAnyoImportMap, inspectImportCompositionConflicts } from './imports.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -613,7 +613,16 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
 
   const allowProcedural = version.startsWith('0.8') || version.startsWith('0.9')
   if (!version.startsWith('0.9') && document.imports !== undefined) issue(issues, 'ANYO_IMPORTS_REQUIRE_0_9', '/imports', 'Top-level imports require Anyo world schema 0.9 or newer.')
-  if (version.startsWith('0.9')) inspectAnyoImportMap(document.imports, '/imports', issues)
+  if (version.startsWith('0.9')) {
+    inspectAnyoImportMap(document.imports, '/imports', issues)
+    inspectImportCompositionConflicts(document.compositions, document.imports, '/imports', issues)
+  }
+  const visibleCompositions = version.startsWith('0.9')
+    ? compositionCatalogWithImports(document.compositions, document.imports)
+    : (document.compositions ?? {})
+  const validationDocument = visibleCompositions === document.compositions
+    ? document
+    : { ...document, compositions: visibleCompositions }
   document.entities?.forEach((entity, index) => validateProceduralEntityVersion(entity, `/entities/${index}`, allowProcedural, issues))
   for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {
     for (const [roomIndex, room] of floor.rooms.entries()) {
@@ -938,23 +947,23 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
       }
 
       for (const [entityIndex, entity] of (room.entities ?? []).entries()) {
-        validateEntity(entity, `${roomPath}/entities/${entityIndex}`, issues, document.prefabs, document.compositions, entityIds)
+        validateEntity(entity, `${roomPath}/entities/${entityIndex}`, issues, document.prefabs, visibleCompositions, entityIds)
       }
     }
   }
 
   for (const [entityIndex, entity] of (document.entities ?? []).entries()) {
-    validateEntity(entity, `/entities/${entityIndex}`, issues, document.prefabs, document.compositions, entityIds)
+    validateEntity(entity, `/entities/${entityIndex}`, issues, document.prefabs, visibleCompositions, entityIds)
   }
 
   const prefabIds = new Set<string>()
   for (const [name, prefab] of Object.entries(document.prefabs ?? {})) {
-    validateEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, issues, document.prefabs, document.compositions, prefabIds, '', Boolean(prefab.extends))
+    validateEntity({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, issues, document.prefabs, visibleCompositions, prefabIds, '', Boolean(prefab.extends))
   }
   const compositionIds = new Set<string>()
   for (const [name, composition] of Object.entries(document.compositions ?? {})) {
-    validateEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, issues, document.prefabs, document.compositions, compositionIds, '', Boolean(composition.extends))
-    if (composition.extends && !document.compositions?.[composition.extends]) issue(issues, 'COMPOSITION_EXTENDS_UNKNOWN', `/compositions/${name}/extends`, `Unknown base composition "${composition.extends}".`)
+    validateEntity({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, issues, document.prefabs, visibleCompositions, compositionIds, '', Boolean(composition.extends))
+    if (composition.extends && !visibleCompositions[composition.extends]) issue(issues, 'COMPOSITION_EXTENDS_UNKNOWN', `/compositions/${name}/extends`, `Unknown base composition "${composition.extends}".`)
   }
 
   for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) {
@@ -978,8 +987,8 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     }
   }
 
-  issues.push(...inspectArchitectureDocument(document, options))
-  issues.push(...inspectWorldSemantics(document, options))
+  issues.push(...inspectArchitectureDocument(validationDocument, options))
+  issues.push(...inspectWorldSemantics(validationDocument, options))
 
   const errors = issues.filter((item) => item.severity === 'error')
   const warnings = issues.filter((item) => item.severity === 'warning')

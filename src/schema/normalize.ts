@@ -322,11 +322,13 @@ function createAuthoringReference(entity: EntityDefinition, sourcePath: string):
   }
 }
 
-function annotateEntity(entity: EntityDefinition, sourcePath: string): WorkingEntity {
+function annotateEntity(entity: EntityDefinition, sourcePath: string, sourceDocumentUrl?: string): WorkingEntity {
+  const authoring = createAuthoringReference(entity, sourcePath)
+  if (sourceDocumentUrl) authoring.sourceDocumentUrl = sourceDocumentUrl
   return {
     ...structuredClone(entity),
-    __authoring: createAuthoringReference(entity, sourcePath),
-    children: entity.children?.map((child, index) => annotateEntity(child, `${sourcePath}/children/${index}`)),
+    __authoring: authoring,
+    children: entity.children?.map((child, index) => annotateEntity(child, `${sourcePath}/children/${index}`, sourceDocumentUrl)),
   }
 }
 
@@ -359,6 +361,9 @@ function markTemplateInstance(entity: WorkingEntity, instance: AuthoringReferenc
     sourcePath: instance.sourcePath,
     instancePath: instance.sourcePath,
     templatePath: template?.sourcePath,
+    ...(template?.sourceDocumentUrl ?? instance.sourceDocumentUrl
+      ? { sourceDocumentUrl: template?.sourceDocumentUrl ?? instance.sourceDocumentUrl }
+      : {}),
     editable: false,
   }
   const nextLineage = `${lineage}/${entity.id}`
@@ -375,6 +380,9 @@ function markRepeated(entity: WorkingEntity, source: AuthoringReference, index: 
     sourcePath: source.sourcePath,
     instancePath: source.sourcePath,
     templatePath: entity.__authoring?.templatePath,
+    ...(entity.__authoring?.sourceDocumentUrl ?? source.sourceDocumentUrl
+      ? { sourceDocumentUrl: entity.__authoring?.sourceDocumentUrl ?? source.sourceDocumentUrl }
+      : {}),
     generatedIndex: index,
     editable: false,
   }
@@ -537,7 +545,8 @@ function expandEntity(
     if (!compositions?.[entity.composition]) throw new Error(`Unknown composition "${entity.composition}".`)
     const template = resolveCompositionDefinition(entity.composition, compositions)
     const templatePath = `/compositions/${escapePointer(entity.composition)}`
-    const templateEntity = annotateEntity({ ...template, id: entity.id, type: 'group' } as EntityDefinition, templatePath)
+    const compositionSource = compositions[entity.composition]?.provenance?.source
+    const templateEntity = annotateEntity({ ...template, id: entity.id, type: 'group' } as EntityDefinition, templatePath, compositionSource)
     const expandedTemplate = expandEntity(templateEntity, prefabs, compositions, [...stack, stackKey])[0]
     if (!expandedTemplate) throw new Error(`Composition "${entity.composition}" produced no entity.`)
     const instanceAuthoring = entity.__authoring ?? createAuthoringReference(entity, `/entities/${escapePointer(entity.id)}`)
@@ -553,6 +562,7 @@ function expandEntity(
       ...instanceAuthoring,
       templatePath,
       instancePath: instanceAuthoring.sourcePath,
+      ...(compositionSource ? { sourceDocumentUrl: compositionSource } : {}),
       editable: true,
     }
   }

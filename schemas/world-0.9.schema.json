@@ -4341,17 +4341,74 @@
       "description": "Reusable semantic subtree with an implicit renderer-neutral group root."
     },
     "geometryDefinition": {
-      "type": "object",
-      "required": [
-        "kind"
-      ],
-      "properties": {
-        "kind": {
-          "type": "string",
-          "minLength": 1
+      "oneOf": [
+        {
+          "$ref": "#/$defs/geometryBox"
+        },
+        {
+          "$ref": "#/$defs/geometryRoundedBox"
+        },
+        {
+          "$ref": "#/$defs/geometryPlane"
+        },
+        {
+          "$ref": "#/$defs/geometrySphere"
+        },
+        {
+          "$ref": "#/$defs/geometryCylinder"
+        },
+        {
+          "$ref": "#/$defs/geometryCone"
+        },
+        {
+          "$ref": "#/$defs/geometryCapsule"
+        },
+        {
+          "$ref": "#/$defs/geometryDisc"
+        },
+        {
+          "$ref": "#/$defs/geometryTorus"
+        },
+        {
+          "$ref": "#/$defs/geometryPolygon"
+        },
+        {
+          "$ref": "#/$defs/geometryLathe"
+        },
+        {
+          "$ref": "#/$defs/geometryExtrude"
+        },
+        {
+          "$ref": "#/$defs/geometrySweep"
+        },
+        {
+          "$ref": "#/$defs/geometryTransform"
+        },
+        {
+          "$ref": "#/$defs/geometryMirror"
+        },
+        {
+          "$ref": "#/$defs/geometryNoise"
+        },
+        {
+          "$ref": "#/$defs/geometryBend"
+        },
+        {
+          "$ref": "#/$defs/geometryTwist"
+        },
+        {
+          "$ref": "#/$defs/geometryTaper"
+        },
+        {
+          "$ref": "#/$defs/geometryUnion"
+        },
+        {
+          "$ref": "#/$defs/geometrySubtract"
+        },
+        {
+          "$ref": "#/$defs/geometryIntersect"
         }
-      },
-      "additionalProperties": true
+      ]
     },
     "constructionDefinition": {
       "type": "object",
@@ -4379,6 +4436,1194 @@
         "integrity": {
           "type": "string",
           "pattern": "^sha256-[A-Za-z0-9+/]+={0,2}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryQuality": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "ultra"
+      ]
+    },
+    "geometryNormalPolicy": {
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "flat",
+            "smooth"
+          ]
+        },
+        "creaseAngle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3.141592653589793
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryUvPolicy": {
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "generated",
+            "planar",
+            "box",
+            "cylindrical",
+            "spherical"
+          ]
+        },
+        "axis": {
+          "enum": [
+            "xy",
+            "xz",
+            "yz",
+            "auto"
+          ]
+        },
+        "scale": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "offset": {
+          "$ref": "#/$defs/vec2"
+        },
+        "metersPerTile": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryProfile": {
+      "type": "object",
+      "required": [
+        "points"
+      ],
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/vec2"
+          },
+          "minItems": 3,
+          "maxItems": 16384
+        },
+        "holes": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/vec2"
+            },
+            "minItems": 3,
+            "maxItems": 16384
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "latheProfile": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 16384,
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "number",
+            "minimum": 0
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "geometryExtrudeBevel": {
+      "type": "object",
+      "required": [
+        "size"
+      ],
+      "properties": {
+        "size": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryCurve": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "points"
+          ],
+          "properties": {
+            "kind": {
+              "const": "line"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/vec3"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            },
+            "closed": {
+              "const": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "points"
+          ],
+          "properties": {
+            "kind": {
+              "const": "polyline"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/vec3"
+              },
+              "minItems": 2,
+              "maxItems": 16384
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            },
+            "closed": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "points"
+          ],
+          "properties": {
+            "kind": {
+              "const": "quadraticBezier"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/vec3"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            },
+            "closed": {
+              "const": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "points"
+          ],
+          "properties": {
+            "kind": {
+              "const": "cubicBezier"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/vec3"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            },
+            "closed": {
+              "const": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "points"
+          ],
+          "properties": {
+            "kind": {
+              "const": "catmullRom"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/vec3"
+              },
+              "minItems": 2,
+              "maxItems": 16384
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            },
+            "closed": {
+              "type": "boolean"
+            },
+            "tension": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "geometryBox": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "box"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryRoundedBox": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "roundedBox"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec3"
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryPlane": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "plane"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "size": {
+          "$ref": "#/$defs/positiveVec2"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometrySphere": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "sphere"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "rings": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryCylinder": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "cylinder"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "cap": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryCone": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "cone"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "cap": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryCapsule": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "capsule"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "rings": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryDisc": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "disc"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryTorus": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "torus"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "tubeRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "tubeSegments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryPolygon": {
+      "type": "object",
+      "required": [
+        "kind",
+        "points"
+      ],
+      "properties": {
+        "kind": {
+          "const": "polygon"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/vec2"
+          },
+          "minItems": 3,
+          "maxItems": 16384
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryLathe": {
+      "type": "object",
+      "required": [
+        "kind",
+        "profile"
+      ],
+      "properties": {
+        "kind": {
+          "const": "lathe"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "profile": {
+          "$ref": "#/$defs/latheProfile"
+        },
+        "segments": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4096
+        },
+        "cap": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryExtrude": {
+      "type": "object",
+      "required": [
+        "kind",
+        "profile",
+        "depth"
+      ],
+      "properties": {
+        "kind": {
+          "const": "extrude"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "profile": {
+          "$ref": "#/$defs/geometryProfile"
+        },
+        "depth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cap": {
+          "type": "boolean"
+        },
+        "bevel": {
+          "oneOf": [
+            {
+              "const": false
+            },
+            {
+              "$ref": "#/$defs/geometryExtrudeBevel"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometrySweep": {
+      "type": "object",
+      "required": [
+        "kind",
+        "profile",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "const": "sweep"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "profile": {
+          "$ref": "#/$defs/geometryProfile"
+        },
+        "path": {
+          "$ref": "#/$defs/geometryCurve"
+        },
+        "cap": {
+          "type": "boolean"
+        },
+        "up": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryTransform": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "const": "transform"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            }
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryMirror": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "const": "mirror"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "offset": {
+          "type": "number"
+        },
+        "includeOriginal": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryNoise": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "const": "noise"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "frequency": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "strength": {
+          "type": "number",
+          "minimum": 0
+        },
+        "octaves": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "lacunarity": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "persistence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "offset": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryBend": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "const": "bend"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "angle": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryTwist": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "const": "twist"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "angle": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryTaper": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "const": "taper"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "startScale": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endScale": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryUnion": {
+      "type": "object",
+      "required": [
+        "kind",
+        "left",
+        "right"
+      ],
+      "properties": {
+        "kind": {
+          "const": "union"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "left": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "right": {
+          "$ref": "#/$defs/geometryDefinition"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometrySubtract": {
+      "type": "object",
+      "required": [
+        "kind",
+        "left",
+        "right"
+      ],
+      "properties": {
+        "kind": {
+          "const": "subtract"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "left": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "right": {
+          "$ref": "#/$defs/geometryDefinition"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryIntersect": {
+      "type": "object",
+      "required": [
+        "kind",
+        "left",
+        "right"
+      ],
+      "properties": {
+        "kind": {
+          "const": "intersect"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "left": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "right": {
+          "$ref": "#/$defs/geometryDefinition"
         }
       },
       "additionalProperties": false

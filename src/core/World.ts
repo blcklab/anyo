@@ -1,4 +1,4 @@
-import { cloneWorldDocument, createFetchAnyoDocumentLoader, findEntityInDocument, getValueAtPointer, hashWorldDocument, resolveWorldDocumentImports, serializeWorldDocument, type SerializeWorldOptions } from '../document/index.js'
+import { cloneWorldDocument, createFetchAnyoDocumentLoader, findEntityInDocument, getValueAtPointer, hashWorldDocument, instantiateResolvedWorldDocument, resolveWorldDocumentImports, serializeWorldDocument, type SerializeWorldOptions } from '../document/index.js'
 import { DocumentHistory } from '../history/index.js'
 import { migrateWorldDocument, type MigrationResult } from '../migrations/index.js'
 import { getDataPath, setDataPath } from '../schema/bindings.js'
@@ -1391,7 +1391,8 @@ Detach the surface attachment before committing a runtime world transform.`)
   private createResolvedSource(): WorldDocument {
     const source = cloneWorldDocument(this.sourceDocument as WorldDocument)
     source.data = structuredClone(this.runtimeData)
-    return source
+    if (!this.resolvedDocumentGraph || Object.keys(this.resolvedDocumentGraph.imports).length === 0) return source
+    return instantiateResolvedWorldDocument({ ...this.resolvedDocumentGraph, document: source })
   }
 
   private prepareWorld(): PreparedWorld {

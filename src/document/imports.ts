@@ -7,6 +7,7 @@ import type {
   ComponentDefinition,
   CompositionDefinition,
   EntityDefinition,
+  PrefabDefinition,
   ResolveWorldImportsOptions,
   ResolvedAnyoImport,
   ResolvedWorldDocumentGraph,
@@ -29,6 +30,7 @@ export type AnyoImportErrorCode =
   | 'ANYO_IMPORT_INTEGRITY_UNVERIFIABLE'
   | 'ANYO_IMPORT_INVALID_DOCUMENT'
   | 'ANYO_IMPORT_JSON_INVALID'
+  | 'ANYO_IMPORTED_RESOURCE_CONFLICT'
   | 'ANYO_IMPORT_NOT_FOUND'
   | 'ANYO_IMPORT_URL_INVALID'
 
@@ -242,7 +244,7 @@ function resolveComponentUrls(component: ComponentDefinition, context: WorldSour
   return output
 }
 
-function resolveEntityLikeUrls<T extends EntityDefinition | CompositionDefinition>(entity: T, context: WorldSourceContext): T {
+function resolveEntityLikeUrls<T extends EntityDefinition | CompositionDefinition | PrefabDefinition>(entity: T, context: WorldSourceContext): T {
   const output = structuredClone(entity) as T
   if (typeof output.src === 'string') output.src = resolveUrl(output.src, context)
   if (output.audio?.src) output.audio = { ...output.audio, src: resolveUrl(output.audio.src, context) }
@@ -266,15 +268,45 @@ function resolveEntityLikeUrls<T extends EntityDefinition | CompositionDefinitio
   return output
 }
 
+function resolveAssetUrls<T extends { src: unknown; lod?: readonly { src?: string }[]; variants?: Record<string, string | { src: string; [key: string]: unknown }> }>(asset: T, context: WorldSourceContext): T {
+  const output = structuredClone(asset)
+  if (typeof output.src === 'string') output.src = resolveUrl(output.src, context) as T['src']
+  if (output.lod) output.lod = output.lod.map((entry) => ({ ...entry, src: entry.src ? resolveUrl(entry.src, context) : entry.src })) as T['lod']
+  if (output.variants) {
+    output.variants = Object.fromEntries(Object.entries(output.variants).map(([name, variant]) => [
+      name,
+      typeof variant === 'string' ? resolveUrl(variant, context) : { ...variant, src: resolveUrl(variant.src, context) },
+    ])) as T['variants']
+  }
+  return output
+}
+
+/** Resolve URL-bearing root-world fields against the source world before portable bundling. */
+export function resolveWorldDocumentUrls(document: WorldDocument, context: WorldSourceContext): WorldDocument {
+  const output = structuredClone(document)
+  if (output.assets) output.assets = Object.fromEntries(Object.entries(output.assets).map(([id, asset]) => [id, resolveAssetUrls(asset, context)]))
+  if (output.entities) output.entities = output.entities.map((entity) => resolveEntityLikeUrls(entity, context))
+  if (output.prefabs) output.prefabs = Object.fromEntries(Object.entries(output.prefabs).map(([id, prefab]) => [id, resolveEntityLikeUrls(prefab, context)]))
+  if (output.compositions) output.compositions = Object.fromEntries(Object.entries(output.compositions).map(([id, composition]) => [id, resolveEntityLikeUrls(composition, context)]))
+  if (output.building) {
+    output.building = {
+      ...output.building,
+      floors: output.building.floors.map((floor) => ({
+        ...floor,
+        rooms: floor.rooms.map((room) => ({
+          ...room,
+          entities: room.entities?.map((entity) => resolveEntityLikeUrls(entity, context)),
+        })),
+      })),
+    }
+  }
+  return output
+}
+
 /** Resolve URL-bearing fields inside one imported object relative to that object's own source document. */
 export function resolveAnyoObjectDocumentUrls(document: AnyoObjectDocument, context: WorldSourceContext): AnyoObjectDocument {
   const output = structuredClone(document)
-  output.assets = Object.fromEntries(Object.entries(output.assets ?? {}).map(([id, asset]) => [id, {
-    ...asset,
-    src: typeof asset.src === 'string' ? resolveUrl(asset.src, context) : asset.src,
-    lod: asset.lod?.map((entry) => ({ ...entry, src: entry.src ? resolveUrl(entry.src, context) : entry.src })),
-    variants: asset.variants ? Object.fromEntries(Object.entries(asset.variants).map(([name, variant]) => [name, typeof variant === 'string' ? resolveUrl(variant, context) : { ...variant, src: resolveUrl(variant.src, context) }])) : undefined,
-  }]))
+  output.assets = Object.fromEntries(Object.entries(output.assets ?? {}).map(([id, asset]) => [id, resolveAssetUrls(asset, context)]))
   output.compositions = Object.fromEntries(Object.entries(output.compositions ?? {}).map(([id, composition]) => [id, resolveEntityLikeUrls(composition, context)]))
   output.root = resolveEntityLikeUrls(output.root, context)
   return output
