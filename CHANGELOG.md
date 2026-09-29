@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0-rc.8
+
+- World 0.9 Step 8: replace the generic geometry object schema with strict discriminated variants for all 22 public built-in geometry kinds derived from the rc.7 runtime/compiler.
+- Strongly schema primitive, profile/extrusion/sweep, modifier, boolean, curve, normal, UV, quality, tangent, and safety-bounded segment fields while leaving cross-field/topology constraints to the existing semantic/compiler validation where JSON Schema would be misleading.
+- Add paired valid/invalid authoring fixtures for every built-in geometry kind and contract tests that verify exact runtime/schema kind coverage, strict unknown-field rejection, runtime compilation of valid fixtures, and semantic-only constraint enforcement.
+- Keep geometry runtime behavior and World 0.8 unchanged.
+
 ## 0.11.0-rc.7
 
 - World 0.9 Step 7: add deterministic modular-to-standalone bundling with `bundleResolvedWorldDocument()` and `bundleWorldDocument()`.
