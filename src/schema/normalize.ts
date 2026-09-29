@@ -22,6 +22,8 @@ import { resolveDocumentBindings } from './bindings.js'
 import { normalizeEnvironmentDefinition, normalizeMaterialDefinition } from '../core/visualContract.js'
 import { hasOwn, parseJsonPointer } from './safePath.js'
 import { mergeCompositionParameters } from './compositionParameters.js'
+import { normalizeProfile, pointInContour } from '../geometry/profiles/index.js'
+import { triangulateProfile } from '../geometry/triangulation/index.js'
 
 const DEFAULTS = {
   roomHeight: 3.2,
@@ -259,7 +261,7 @@ function hashUint32(value: string): number {
 }
 
 /** Stable one-shot PRNG used only during document normalization. */
-function repeatRandom(entityId: string, seed: number, index: number, channel: string): number {
+function placementRandom(entityId: string, seed: number, index: number, channel: string): number {
   let state = hashUint32(`${entityId}:${seed}:${index}:${channel}`) + 0x6d2b79f5
   state = Math.imul(state ^ (state >>> 15), state | 1)
   state ^= state + Math.imul(state ^ (state >>> 7), state | 61)
@@ -275,7 +277,7 @@ function sampleVariationRange(
   fallback: number,
 ): number {
   if (!range) return fallback
-  return range[0] + (range[1] - range[0]) * repeatRandom(entityId, seed, index, channel)
+  return range[0] + (range[1] - range[0]) * placementRandom(entityId, seed, index, channel)
 }
 
 function applyRepeatVariation(entity: WorkingEntity, sourceId: string, index: number, repeat: NonNullable<EntityDefinition['repeat']>): WorkingEntity {
@@ -393,6 +395,179 @@ function markRepeated(entity: WorkingEntity, source: AuthoringReference, index: 
     __authoring: authoring,
     children: entity.children?.map((child) => markRepeated(child, source, index)),
   }
+}
+
+function markScattered(entity: WorkingEntity, source: AuthoringReference, index: number): WorkingEntity {
+  const authoring: AuthoringReference = {
+    id: `${source.id}#scatter:${index}${entity.id === source.id ? '' : `/${hashIdentity(entity.id)}`}`,
+    sourcePath: source.sourcePath,
+    instancePath: source.sourcePath,
+    templatePath: entity.__authoring?.templatePath,
+    ...(entity.__authoring?.sourceDocumentUrl ?? source.sourceDocumentUrl
+      ? { sourceDocumentUrl: entity.__authoring?.sourceDocumentUrl ?? source.sourceDocumentUrl }
+      : {}),
+    generatedIndex: index,
+    editable: false,
+  }
+  return {
+    ...entity,
+    __authoring: authoring,
+    children: entity.children?.map((child) => markScattered(child, source, index)),
+  }
+}
+
+type ScatterAreaSampler = {
+  sample: (ordinal: number) => readonly [number, number] | undefined
+  contains: (x: number, z: number) => boolean
+}
+
+function createScatterAreaSampler(
+  entityId: string,
+  seed: number,
+  area: NonNullable<EntityDefinition['scatter']>['area'],
+): ScatterAreaSampler {
+  if (area.type === 'rectangle') {
+    const [width, depth] = area.size
+    return {
+      sample: (ordinal) => [
+        (placementRandom(entityId, seed, ordinal, 'area.rectangle.x') - 0.5) * width,
+        (placementRandom(entityId, seed, ordinal, 'area.rectangle.z') - 0.5) * depth,
+      ],
+      contains: (x, z) => Math.abs(x) <= width / 2 + 1e-9 && Math.abs(z) <= depth / 2 + 1e-9,
+    }
+  }
+  if (area.type === 'circle') {
+    const radiusSquared = area.radius * area.radius
+    return {
+      sample: (ordinal) => {
+        const x = (placementRandom(entityId, seed, ordinal, 'area.circle.x') * 2 - 1) * area.radius
+        const z = (placementRandom(entityId, seed, ordinal, 'area.circle.z') * 2 - 1) * area.radius
+        return x * x + z * z <= radiusSquared ? [x, z] : undefined
+      },
+      contains: (x, z) => x * x + z * z <= radiusSquared + 1e-9,
+    }
+  }
+
+  const profile = normalizeProfile({ points: area.points }, { path: '/scatter/area' })
+  const triangulated = triangulateProfile(profile, '/scatter/area')
+  const triangles: Array<{ a: Vec2; b: Vec2; c: Vec2; cumulativeArea: number }> = []
+  let totalArea = 0
+  for (let index = 0; index < triangulated.indices.length; index += 3) {
+    const a = triangulated.points[triangulated.indices[index]!]!
+    const b = triangulated.points[triangulated.indices[index + 1]!]!
+    const c = triangulated.points[triangulated.indices[index + 2]!]!
+    const areaValue = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) * 0.5
+    if (areaValue <= 0) continue
+    totalArea += areaValue
+    triangles.push({ a, b, c, cumulativeArea: totalArea })
+  }
+  return {
+    sample: (ordinal) => {
+      const target = placementRandom(entityId, seed, ordinal, 'area.polygon.triangle') * totalArea
+      const triangle = triangles.find((entry) => target < entry.cumulativeArea) ?? triangles.at(-1)
+      if (!triangle) return undefined
+      let u = placementRandom(entityId, seed, ordinal, 'area.polygon.u')
+      let v = placementRandom(entityId, seed, ordinal, 'area.polygon.v')
+      if (u + v > 1) { u = 1 - u; v = 1 - v }
+      return [
+        triangle.a[0] + (triangle.b[0] - triangle.a[0]) * u + (triangle.c[0] - triangle.a[0]) * v,
+        triangle.a[1] + (triangle.b[1] - triangle.a[1]) * u + (triangle.c[1] - triangle.a[1]) * v,
+      ]
+    },
+    contains: (x, z) => pointInContour([x, z], profile.outer, true),
+  }
+}
+
+function applyScatterVariation(
+  entity: WorkingEntity,
+  sourceId: string,
+  candidateOrdinal: number,
+  scatter: NonNullable<EntityDefinition['scatter']>,
+): WorkingEntity {
+  const variation = scatter.variation
+  if (!variation) return entity
+  const seed = scatter.seed ?? 0
+  if (variation.position) {
+    const base = [...(entity.position ?? [0, 0, 0])] as [number, number, number]
+    base[0] += sampleVariationRange(variation.position.x, sourceId, seed, candidateOrdinal, 'position.x', 0)
+    base[1] += sampleVariationRange(variation.position.y, sourceId, seed, candidateOrdinal, 'position.y', 0)
+    base[2] += sampleVariationRange(variation.position.z, sourceId, seed, candidateOrdinal, 'position.z', 0)
+    entity.position = base
+  }
+  if (variation.rotation) {
+    const base = entity.rotation ?? [0, 0, 0]
+    entity.rotation = [
+      base[0] + sampleVariationRange(variation.rotation.x, sourceId, seed, candidateOrdinal, 'rotation.x', 0),
+      base[1] + sampleVariationRange(variation.rotation.y, sourceId, seed, candidateOrdinal, 'rotation.y', 0),
+      base[2] + sampleVariationRange(variation.rotation.z, sourceId, seed, candidateOrdinal, 'rotation.z', 0),
+    ]
+  }
+  if (variation.scale) {
+    const base = typeof entity.scale === 'number'
+      ? [entity.scale, entity.scale, entity.scale] as [number, number, number]
+      : [...(entity.scale ?? [1, 1, 1])] as [number, number, number]
+    const uniform = sampleVariationRange(variation.scale.uniform, sourceId, seed, candidateOrdinal, 'scale.uniform', 1)
+    entity.scale = [
+      base[0] * uniform * sampleVariationRange(variation.scale.x, sourceId, seed, candidateOrdinal, 'scale.x', 1),
+      base[1] * uniform * sampleVariationRange(variation.scale.y, sourceId, seed, candidateOrdinal, 'scale.y', 1),
+      base[2] * uniform * sampleVariationRange(variation.scale.z, sourceId, seed, candidateOrdinal, 'scale.z', 1),
+    ]
+  }
+  return entity
+}
+
+function expandScatter(entity: WorkingEntity): WorkingEntity[] {
+  const scatter = entity.scatter
+  if (!scatter) return [entity]
+  const source = entity.__authoring ?? createAuthoringReference(entity, `/entities/${escapePointer(entity.id)}`)
+  const sourcePosition = entity.position ?? [0, 0, 0]
+  const seed = scatter.seed ?? 0
+  const sampler = createScatterAreaSampler(source.id, seed, scatter.area)
+  const maximumAttempts = Math.max(256, scatter.count * 64)
+  const entities: WorkingEntity[] = []
+  const minDistance = scatter.minDistance
+  const minDistanceSquared = minDistance === undefined ? undefined : minDistance * minDistance
+  const grid = new Map<string, Array<readonly [number, number]>>()
+
+  const separated = (x: number, z: number): boolean => {
+    if (minDistance === undefined || minDistanceSquared === undefined) return true
+    const cellX = Math.floor(x / minDistance)
+    const cellZ = Math.floor(z / minDistance)
+    for (let dz = -1; dz <= 1; dz += 1) for (let dx = -1; dx <= 1; dx += 1) {
+      for (const point of grid.get(`${cellX + dx}:${cellZ + dz}`) ?? []) {
+        const px = x - point[0], pz = z - point[1]
+        if (px * px + pz * pz < minDistanceSquared - 1e-12) return false
+      }
+    }
+    return true
+  }
+  const remember = (x: number, z: number): void => {
+    if (minDistance === undefined) return
+    const key = `${Math.floor(x / minDistance)}:${Math.floor(z / minDistance)}`
+    const bucket = grid.get(key)
+    if (bucket) bucket.push([x, z])
+    else grid.set(key, [[x, z]])
+  }
+
+  for (let ordinal = 0; ordinal < maximumAttempts && entities.length < scatter.count; ordinal += 1) {
+    const sampled = sampler.sample(ordinal)
+    if (!sampled) continue
+    let copy: WorkingEntity = { ...structuredClone(entity), id: `${entity.id}:scatter:${entities.length}`, scatter: undefined }
+    copy.position = [sourcePosition[0] + sampled[0], sourcePosition[1], sourcePosition[2] + sampled[1]]
+    copy = applyScatterVariation(copy, source.id, ordinal, scatter)
+    const finalPosition = copy.position ?? sourcePosition
+    const localX = finalPosition[0] - sourcePosition[0]
+    const localZ = finalPosition[2] - sourcePosition[2]
+    if (!sampler.contains(localX, localZ) || !separated(localX, localZ)) continue
+    remember(localX, localZ)
+    copy = markScattered(copy, source, entities.length)
+    entities.push(copy)
+  }
+
+  if (entities.length !== scatter.count) {
+    throw new Error(`ANYO_SCATTER_DENSITY_UNSATISFIABLE: Scatter "${entity.id}" generated ${entities.length} of ${scatter.count} requested placements before exhausting ${maximumAttempts} deterministic candidates. Reduce count or minDistance, enlarge the area, or reduce position variation.`)
+  }
+  return entities
 }
 
 function expandRepeat(entity: WorkingEntity): WorkingEntity[] {
@@ -587,7 +762,8 @@ function expandEntity(
 
   const children = (resolved.children ?? []).flatMap((child) => expandEntity(child, prefabs, compositions, stack))
   resolved = { ...resolved, children: children.length > 0 ? children : undefined }
-  return expandRepeat(resolved)
+  if (resolved.repeat && resolved.scatter) throw new Error(`Entity "${resolved.id}" cannot use repeat and scatter together.`)
+  return resolved.scatter ? expandScatter(resolved) : expandRepeat(resolved)
 }
 
 function namespaceChildIds(entity: WorkingEntity): NormalizedEntityDefinition {

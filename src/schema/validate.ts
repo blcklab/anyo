@@ -6,6 +6,7 @@ import { hasOwn, parseJsonPointer } from './safePath.js'
 import { COMPOSITION_PARAMETER_NAME_PATTERN, COMPOSITION_PARAMETER_TYPES, isCompositionParameterValue, mergeCompositionParameters } from './compositionParameters.js'
 import { compositionCatalogWithImports, inspectAnyoImportMap, inspectImportCompositionConflicts } from './imports.js'
 import { normalizeVertexColorDefinition } from '../geometry/attributes/vertexColor.js'
+import { normalizeProfile } from '../geometry/profiles/index.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -172,6 +173,69 @@ function validateAxisVariation(value: unknown, path: string, issues: ValidationI
   }
   for (const axis of ['x', 'y', 'z'] as const) validateVariationRange(value[axis], `${path}/${axis}`, issues, positive)
   if (allowUniform) validateVariationRange(value.uniform, `${path}/uniform`, issues, positive)
+}
+
+function validateScatterVariation(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    issue(issues, 'SCATTER_VARIATION_INVALID', path, 'scatter.variation must be an object.')
+    return
+  }
+  const validateRange = (range: unknown, rangePath: string, positive = false): void => {
+    if (range === undefined) return
+    if (!Array.isArray(range) || range.length !== 2 || range.some((item) => typeof item !== 'number' || !Number.isFinite(item))) {
+      issue(issues, 'SCATTER_VARIATION_RANGE_INVALID', rangePath, 'Scatter variation ranges must contain exactly two finite numbers [min, max].')
+      return
+    }
+    const [min, max] = range as [number, number]
+    if (min > max) issue(issues, 'SCATTER_VARIATION_RANGE_ORDER_INVALID', rangePath, 'Scatter variation range minimum must not exceed maximum.')
+    if (positive && min <= 0) issue(issues, 'SCATTER_VARIATION_SCALE_INVALID', rangePath, 'Scatter scale variation ranges must remain greater than zero.')
+  }
+  for (const field of ['position', 'rotation'] as const) {
+    const axes = value[field]
+    if (axes === undefined) continue
+    if (!isRecord(axes)) issue(issues, 'SCATTER_VARIATION_INVALID', `${path}/${field}`, `scatter.variation.${field} must be an object.`)
+    else for (const axis of ['x', 'y', 'z'] as const) validateRange(axes[axis], `${path}/${field}/${axis}`)
+  }
+  const scale = value.scale
+  if (scale !== undefined) {
+    if (!isRecord(scale)) issue(issues, 'SCATTER_VARIATION_INVALID', `${path}/scale`, 'scatter.variation.scale must be an object.')
+    else {
+      validateRange(scale.uniform, `${path}/scale/uniform`, true)
+      for (const axis of ['x', 'y', 'z'] as const) validateRange(scale[axis], `${path}/scale/${axis}`, true)
+    }
+  }
+}
+
+function validateScatterDefinition(entity: EntityDefinition, path: string, issues: ValidationIssue[]): void {
+  const scatter = entity.scatter
+  if (scatter === undefined) return
+  if (entity.repeat !== undefined) issue(issues, 'ANYO_SCATTER_REPEAT_CONFLICT', path, 'An entity cannot use repeat and scatter together.')
+  if (entity.surface !== undefined) issue(issues, 'ANYO_SCATTER_SURFACE_UNSUPPORTED', `${path}/scatter`, 'World 0.9 scatter does not support surface-placement entities; scatter a group/composition containing ordinary content instead.')
+  if (!isRecord(scatter)) {
+    issue(issues, 'ANYO_SCATTER_INVALID', `${path}/scatter`, 'scatter must be an object.')
+    return
+  }
+  if (!Number.isInteger(scatter.count) || Number(scatter.count) < 1) issue(issues, 'ANYO_SCATTER_COUNT_INVALID', `${path}/scatter/count`, 'Scatter count must be a positive integer.')
+  if (scatter.seed !== undefined && (!Number.isSafeInteger(scatter.seed) || Math.abs(Number(scatter.seed)) > 0xffffffff)) issue(issues, 'ANYO_SCATTER_SEED_INVALID', `${path}/scatter/seed`, 'Scatter seed must be a safe integer within 32-bit range.')
+  if (scatter.minDistance !== undefined && (typeof scatter.minDistance !== 'number' || !Number.isFinite(scatter.minDistance) || scatter.minDistance <= 0)) issue(issues, 'ANYO_SCATTER_MIN_DISTANCE_INVALID', `${path}/scatter/minDistance`, 'Scatter minDistance must be a positive finite number.')
+  validateScatterVariation(scatter.variation, `${path}/scatter/variation`, issues)
+  const area = scatter.area
+  if (!isRecord(area)) {
+    issue(issues, 'ANYO_SCATTER_AREA_INVALID', `${path}/scatter/area`, 'Scatter area must be a rectangle, circle, or polygon object.')
+    return
+  }
+  if (area.type === 'rectangle') {
+    if (!Array.isArray(area.size) || area.size.length !== 2 || area.size.some((value) => typeof value !== 'number' || !Number.isFinite(value) || value <= 0)) issue(issues, 'ANYO_SCATTER_RECTANGLE_SIZE_INVALID', `${path}/scatter/area/size`, 'Rectangle scatter size must be exactly two positive finite numbers.')
+  } else if (area.type === 'circle') {
+    if (typeof area.radius !== 'number' || !Number.isFinite(area.radius) || area.radius <= 0) issue(issues, 'ANYO_SCATTER_CIRCLE_RADIUS_INVALID', `${path}/scatter/area/radius`, 'Circle scatter radius must be a positive finite number.')
+  } else if (area.type === 'polygon') {
+    if (!Array.isArray(area.points) || area.points.length < 3) issue(issues, 'ANYO_SCATTER_POLYGON_INVALID', `${path}/scatter/area/points`, 'Polygon scatter requires at least three [x, z] points.')
+    else {
+      try { normalizeProfile({ points: area.points }, { path: `${path}/scatter/area` }) }
+      catch (error) { issue(issues, 'ANYO_SCATTER_POLYGON_INVALID', `${path}/scatter/area/points`, error instanceof Error ? error.message : 'Invalid polygon scatter area.') }
+    }
+  } else issue(issues, 'ANYO_SCATTER_AREA_INVALID', `${path}/scatter/area/type`, 'Scatter area type must be rectangle, circle, or polygon.')
 }
 
 function validateShadowDefinition(value: unknown, path: string, issues: ValidationIssue[]): void {
@@ -597,6 +661,7 @@ function validateEntity(
       }
     }
   }
+  validateScatterDefinition(entity, path, issues)
   if (entity.type === 'light') {
     if (entity.lightType !== undefined && !['ambient', 'directional', 'point', 'spot'].includes(entity.lightType)) {
       issue(issues, 'LIGHT_TYPE_INVALID', `${path}/lightType`, 'lightType must be ambient, directional, point, or spot.')
@@ -787,6 +852,11 @@ function validateProceduralEntityVersion(entity: EntityDefinition, path: string,
   entity.children?.forEach((child, index) => validateProceduralEntityVersion(child, `${path}/children/${index}`, allowProcedural, issues))
 }
 
+function validateScatterVersion(entity: EntityDefinition, path: string, allowScatter: boolean, issues: ValidationIssue[]): void {
+  if (!allowScatter && entity.scatter !== undefined) issue(issues, 'ANYO_SCATTER_REQUIRES_0_9', `${path}/scatter`, 'Deterministic area scatter requires Anyo world schema 0.9 or newer.')
+  entity.children?.forEach((child, index) => validateScatterVersion(child, `${path}/children/${index}`, allowScatter, issues))
+}
+
 export function inspectWorldDocument(document: WorldDocument, options: WorldValidationOptions = {}): ValidationResult {
   const issues: ValidationIssue[] = []
 
@@ -831,6 +901,19 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
   }
   for (const [name, prefab] of Object.entries(document.prefabs ?? {})) validateProceduralEntityVersion({ ...prefab, id: prefab.id ?? `@prefab:${name}` }, `/prefabs/${name}`, allowProcedural, issues)
   for (const [name, composition] of Object.entries(document.compositions ?? {})) validateProceduralEntityVersion({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' }, `/compositions/${name}`, allowProcedural, issues)
+  const allowScatter = version.startsWith('0.9')
+  document.entities?.forEach((entity, index) => validateScatterVersion(entity, `/entities/${index}`, allowScatter, issues))
+  for (const [floorIndex, floor] of (document.building?.floors ?? []).entries()) for (const [roomIndex, room] of floor.rooms.entries()) room.entities?.forEach((entity, entityIndex) => validateScatterVersion(entity, `/building/floors/${floorIndex}/rooms/${roomIndex}/entities/${entityIndex}`, allowScatter, issues))
+  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) {
+    const value = prefab as EntityDefinition
+    if (value.scatter !== undefined) issue(issues, 'ANYO_SCATTER_REUSABLE_ROOT_UNSUPPORTED', `/prefabs/${name}/scatter`, 'Reusable prefab roots cannot own scatter; scatter the prefab instance instead.')
+    validateScatterVersion({ ...prefab, id: prefab.id ?? `@prefab:${name}` } as EntityDefinition, `/prefabs/${name}`, allowScatter, issues)
+  }
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) {
+    const value = composition as EntityDefinition
+    if (value.scatter !== undefined) issue(issues, 'ANYO_SCATTER_REUSABLE_ROOT_UNSUPPORTED', `/compositions/${name}/scatter`, 'Reusable composition roots cannot own scatter; scatter the composition instance instead.')
+    validateScatterVersion({ ...composition, id: composition.id ?? `@composition:${name}`, type: 'group' } as EntityDefinition, `/compositions/${name}`, allowScatter, issues)
+  }
   if (!allowProcedural && document.compositions !== undefined) issue(issues, 'COMPOSITIONS_REQUIRE_0_8', '/compositions', 'Top-level compositions require Anyo world schema 0.8 or newer.')
 
   validateEnvironment(document, issues)

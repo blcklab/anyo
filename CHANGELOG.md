@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0-rc.14
+
+- Final Quality Pass Q3: add deterministic World 0.9 area scatter authoring as a normalization-time placement primitive beside `repeat`.
+- Support bounded rectangle, circle, and polygon XZ areas with stable seeded placement, existing transform-variation vocabulary, optional deterministic `minDistance`, and explicit unsatisfiable-density failure.
+- Expand scatter into ordinary entities/composition instances with generated authoring provenance; preserve native-object/import/bundle behavior without adding a renderer or frame-time subsystem.
+- Keep reusable prefab/composition/Object roots scatter-free, reject `repeat + scatter` and surface-placement scatter in v1, and leave World 0.8 unchanged.
+- Add focused schema/semantic/normalization/bundle/provenance tests and World 0.9 authoring documentation.
+
 ## 0.11.0-rc.13
 
 - Final Quality Pass Q2: add generic World 0.9 procedural vertex-color authoring to the existing renderer-neutral geometry compiler.

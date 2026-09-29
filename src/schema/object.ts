@@ -74,7 +74,7 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
   } else {
     const root = raw.root as unknown as CompositionDefinition
     if (root.type !== undefined && root.type !== 'group') addIssue(issues, 'ANYO_OBJECT_ROOT_TYPE_INVALID', '/root/type', 'Object root type may only be "group" when provided.')
-    for (const field of ['use', 'composition', 'arguments', 'repeat', 'instanceId', 'overrides', 'loading'] as const) {
+    for (const field of ['use', 'composition', 'arguments', 'repeat', 'scatter', 'instanceId', 'overrides', 'loading'] as const) {
       if (Object.prototype.hasOwnProperty.call(raw.root, field)) addIssue(issues, 'ANYO_OBJECT_ROOT_FIELD_INVALID', `/root/${field}`, `Object roots use composition-definition vocabulary; "${field}" is only valid on entity instances.`)
     }
     if (root.extends !== undefined && (typeof root.extends !== 'string' || !root.extends.trim())) addIssue(issues, 'ANYO_OBJECT_ROOT_EXTENDS_INVALID', '/root/extends', 'root.extends must be a non-empty local composition id when provided.')

@@ -20,10 +20,10 @@ An editable entity can carry `authoringId`. Compiled entities expose:
 - stable `authoringId`
 - JSON Pointer `sourcePath`
 - optional prefab `templatePath` and `instancePath`
-- optional repeat `generatedIndex`
+- optional generated-placement `generatedIndex`
 - `editable` status
 
-Generated repeated instances are intentionally protected from direct source mutation because one source repeat declaration can create many runtime instances.
+Generated repeat/scatter instances are intentionally protected from direct source mutation because one source repeat declaration can create many runtime instances.
 
 ## Selection and picking
 

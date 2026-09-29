@@ -49,7 +49,7 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-11 and final-quality Q1-Q2 fields', async () => {
+test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-11 and final-quality Q1-Q3 fields', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
@@ -101,6 +101,9 @@ test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-11
       copy.$defs.entity.properties.data = structuredClone(schema08.$defs.entity.properties.data)
       copy.$defs.geometryDefinition = structuredClone(schema08.$defs.geometryDefinition)
       copy.$defs.constructionDefinition = structuredClone(schema08.$defs.constructionDefinition)
+      // Final quality Q3: deterministic area scatter extends only the World 0.9 entity surface.
+      delete copy.$defs.entity.properties.scatter
+      for (const name of ['scatterArea', 'scatterVariation', 'scatter']) delete copy.$defs[name]
       // Final quality Q2: procedural vertex-color authoring extends only the World 0.9 geometry surface.
       for (const name of ['geometryVertexColorHex', 'geometryVertexColor', 'geometryVertexColorConstant', 'geometryVertexColorGradient', 'geometryVertexColorGradientStop', 'geometryVertexColorNoise']) delete copy.$defs[name]
       // Final quality Q1: spotlight authoring extends only the World 0.9 light surface.

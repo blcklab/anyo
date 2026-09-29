@@ -602,7 +602,7 @@ export interface ExtensionResolutionDiagnostic {
 }
 
 /** @deprecated Prefer CompositionDefinition for new reusable authoring. Prefabs remain supported for backward compatibility. */
-export interface PrefabDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition' | 'arguments'> {
+export interface PrefabDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'scatter' | 'use' | 'composition' | 'arguments'> {
   id?: string
   version?: string
   extends?: string
@@ -623,7 +623,7 @@ export interface CompositionParameterDefinition {
   default?: CompositionParameterValue
 }
 
-export interface CompositionDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'use' | 'composition' | 'arguments' | 'type'> {
+export interface CompositionDefinition extends Omit<EntityDefinition, 'id' | 'repeat' | 'scatter' | 'use' | 'composition' | 'arguments' | 'type'> {
   id?: string
   version?: string
   extends?: string
@@ -1061,6 +1061,24 @@ export interface EntityRepeatDefinition {
   variation?: EntityRepeatVariationDefinition
 }
 
+export type ScatterAreaDefinition =
+  | { type: 'rectangle'; size: Vec2 }
+  | { type: 'circle'; radius: number }
+  | { type: 'polygon'; points: readonly Vec2[] }
+
+export type EntityScatterVariationDefinition = Omit<EntityRepeatVariationDefinition, 'seed'>
+
+/** Deterministic World 0.9 area placement expanded during document normalization. */
+export interface EntityScatterDefinition {
+  count: number
+  /** Stable author seed. Omitted seeds default to zero. */
+  seed?: number
+  area: ScatterAreaDefinition
+  /** Minimum parent-local XZ origin separation after position variation. */
+  minDistance?: number
+  variation?: EntityScatterVariationDefinition
+}
+
 
 export type WebSurfaceRenderMode = 'auto' | 'dom-overlay' | 'snapshot' | 'external'
 export type WebSurfaceAnimationTrigger = 'mount' | 'focus' | 'blur' | 'select' | 'visible' | 'hidden'
@@ -1263,6 +1281,8 @@ export interface EntityDefinition {
   /** JSON-Pointer keyed overrides applied to the referenced prefab/composition before instance fields. */
   overrides?: Record<string, JsonValue>
   repeat?: EntityRepeatDefinition
+  /** World 0.9 deterministic area placement; mutually exclusive with repeat. */
+  scatter?: EntityScatterDefinition
   type?:
     | 'box'
     | 'plane'

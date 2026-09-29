@@ -130,11 +130,38 @@ Supported parameter types are `string`, `number`, `boolean`, `vec2`, `vec3`, `ma
 
 `overrides` remain available as the advanced escape hatch for cases where a composition intentionally does not expose a named public parameter. Parameter defaults and arguments never execute code. Imported Object 0.1 compositions preserve the same contract; material/asset defaults are namespaced during import lowering.
 
+## Deterministic area scatter — World 0.9
+
+World 0.9 ordinary entity instances may use `scatter` to generate deterministic parent-local XZ placement before rendering. Scatter is an authoring/normalization primitive, not a renderer or vegetation subsystem. It expands to ordinary generated entities and therefore works with normal entity types, compositions, and imported native-object aliases.
+
+```json
+{
+  "id": "meadow-grass",
+  "composition": "grass-clump",
+  "scatter": {
+    "count": 120,
+    "seed": 4221,
+    "area": { "type": "rectangle", "size": [18, 12] },
+    "minDistance": 0.35,
+    "variation": {
+      "rotation": { "y": [0, 6.283185307179586] },
+      "scale": { "uniform": [0.75, 1.25] }
+    }
+  }
+}
+```
+
+Supported v1 areas are `rectangle`, `circle`, and simple `polygon` (no holes). The authored entity position is the scatter origin; area X maps to local X and the second area coordinate maps to local Z. Position variation is applied before inside-area and `minDistance` acceptance, so accepted final origins remain inside the declared area. Rotation and scale use the same deterministic range vocabulary as repeat.
+
+`minDistance` is optional and means minimum separation between final generated entity origins in parent-local XZ space. It does not inspect geometry bounds, colliders, terrain, navigation, or environment state. Sampling uses a deterministic bounded spatial-hash rejection pass with `max(256, count * 64)` candidate attempts; impossible density requests fail with `ANYO_SCATTER_DENSITY_UNSATISFIABLE` instead of silently under-filling.
+
+`repeat` and `scatter` are mutually exclusive on one entity. Reusable prefab/composition roots and Object 0.1 roots do not own scatter; scatter the instance instead. Surface-placement entities are intentionally excluded from v1. Scatter disappears during normalization, so renderers and Player-facing compiled worlds receive only ordinary entities/resources. Bundling may preserve the standalone World 0.9 `scatter` declaration while removing external Anyo JSON imports.
+
 ## Authoring identity
 
-Entities may contain an optional `authoringId`. It is a stable, renderer-independent identity used by editor sessions and picking bridges. Runtime IDs can change after prefab or repeat expansion, while `authoringId` identifies the editable source declaration.
+Entities may contain an optional `authoringId`. It is a stable, renderer-independent identity used by editor sessions and picking bridges. Runtime IDs can change after prefab, repeat, or scatter expansion, while `authoringId` identifies the editable source declaration.
 
-Generated repeat instances expose compiler provenance but are not directly editable until an authoring tool detaches them into ordinary entities.
+Generated repeat/scatter instances expose compiler provenance but are not directly editable until an authoring tool detaches them into ordinary entities.
 
 ## Assets, components, and materials
 
