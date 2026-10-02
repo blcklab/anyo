@@ -412,6 +412,56 @@ function validateSurfaceHost(component: ComponentDefinition, context: ComponentV
   }
 }
 
+function validatePointField(component: ComponentDefinition, context: ComponentValidationContext): void {
+  if (!(component.enabled ?? true)) return
+  if (component.space !== undefined && component.space !== 'world' && component.space !== 'directional') {
+    throw componentError('ANYO_POINT_FIELD_SPACE_INVALID', context, 'Field: space')
+  }
+  if (!Array.isArray(component.points) || component.points.length === 0) {
+    throw componentError('ANYO_POINT_FIELD_POINTS_REQUIRED', context, 'Field: points')
+  }
+  if (component.points.length > 100_000) {
+    throw componentError('ANYO_POINT_FIELD_LIMIT_EXCEEDED', context, 'Field: points; maximum: 100000')
+  }
+  if (component.defaultColor !== undefined && (typeof component.defaultColor !== 'string' || !component.defaultColor.trim())) {
+    throw componentError('ANYO_POINT_FIELD_DEFAULT_COLOR_INVALID', context, 'Field: defaultColor')
+  }
+  if (component.defaultSize !== undefined && (typeof component.defaultSize !== 'number' || !Number.isFinite(component.defaultSize) || component.defaultSize <= 0)) {
+    throw componentError('ANYO_POINT_FIELD_DEFAULT_SIZE_INVALID', context, 'Field: defaultSize')
+  }
+  if (component.defaultIntensity !== undefined && (typeof component.defaultIntensity !== 'number' || !Number.isFinite(component.defaultIntensity) || component.defaultIntensity < 0)) {
+    throw componentError('ANYO_POINT_FIELD_DEFAULT_INTENSITY_INVALID', context, 'Field: defaultIntensity')
+  }
+  const directional = component.space === 'directional'
+  for (const [index, value] of component.points.entries()) {
+    if (!isRecord(value)) throw componentError('ANYO_POINT_FIELD_POINT_INVALID', context, `Field: points/${index}`)
+    const position = finiteVec3(value.position)
+    if (!position) throw componentError('ANYO_POINT_FIELD_POSITION_INVALID', context, `Field: points/${index}/position`)
+    if (directional && Math.hypot(position[0], position[1], position[2]) <= 0) throw componentError('ANYO_POINT_FIELD_DIRECTION_ZERO', context, `Field: points/${index}/position`)
+    if (value.color !== undefined && (typeof value.color !== 'string' || !value.color.trim())) throw componentError('ANYO_POINT_FIELD_COLOR_INVALID', context, `Field: points/${index}/color`)
+    if (value.size !== undefined && (typeof value.size !== 'number' || !Number.isFinite(value.size) || value.size <= 0)) throw componentError('ANYO_POINT_FIELD_SIZE_INVALID', context, `Field: points/${index}/size`)
+    if (value.intensity !== undefined && (typeof value.intensity !== 'number' || !Number.isFinite(value.intensity) || value.intensity < 0)) throw componentError('ANYO_POINT_FIELD_INTENSITY_INVALID', context, `Field: points/${index}/intensity`)
+  }
+}
+
+function compilePointField(component: ComponentDefinition): Readonly<Record<string, JsonValue>> {
+  const space = component.space === 'directional' ? 'directional' : 'world'
+  const defaultColor = typeof component.defaultColor === 'string' && component.defaultColor.trim() ? component.defaultColor : '#ffffff'
+  const defaultSize = typeof component.defaultSize === 'number' && Number.isFinite(component.defaultSize) && component.defaultSize > 0 ? component.defaultSize : 1
+  const defaultIntensity = typeof component.defaultIntensity === 'number' && Number.isFinite(component.defaultIntensity) && component.defaultIntensity >= 0 ? component.defaultIntensity : 1
+  const points = (Array.isArray(component.points) ? component.points : []).map((value) => {
+    const point = isRecord(value) ? value : {}
+    const position = finiteVec3(point.position) ?? [0, 0, 0]
+    return {
+      position: position as unknown as JsonValue,
+      color: typeof point.color === 'string' && point.color.trim() ? point.color : defaultColor,
+      size: typeof point.size === 'number' && Number.isFinite(point.size) && point.size > 0 ? point.size : defaultSize,
+      intensity: typeof point.intensity === 'number' && Number.isFinite(point.intensity) && point.intensity >= 0 ? point.intensity : defaultIntensity,
+    } as unknown as JsonValue
+  })
+  return Object.freeze({ space, defaultColor, defaultSize, defaultIntensity, points })
+}
+
 export function registerBuiltInComponents(registry: ComponentTypeRegistry): void {
   const registrations: ComponentTypeRegistration[] = [
     { type: 'anyo.interactable' },
@@ -419,6 +469,7 @@ export function registerBuiltInComponents(registry: ComponentTypeRegistry): void
     { type: 'anyo.map' },
     { type: 'anyo.mapFeature' },
     { type: 'anyo.vfx', compile: compileVfxComponent },
+    { type: 'anyo.pointField', validate: validatePointField, compile: compilePointField },
     {
       type: 'anyo.audio',
       validate(component, context) {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0-rc.16
+
+- Added the generic built-in `anyo.pointField` component through the existing namespaced component extension surface; World 0.8 and World 0.9 schema bytes remain unchanged.
+- Point fields support `world` and `directional` spaces plus per-point position, color, pixel size, and intensity with bounded validation and a 100,000-point authoring limit.
+- The Sekai64 adapter realizes point fields through the optional native `PointField` capability when available and emits one compatibility diagnostic instead of breaking older Sekai64 installations.
+- Updated the development/test Sekai64 baseline to `0.8.0-rc.46` while preserving Anyo's broad optional peer range.
+- No SiriusX, Helios, Luna, astronomy, or other domain-package dependency was added to Anyo.
+
 ## 0.11.0-rc.15
 
 ### World 0.9 Step 12 — Procedural Sky Adapter Fix

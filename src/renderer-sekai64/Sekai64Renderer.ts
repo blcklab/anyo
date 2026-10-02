@@ -1,3 +1,4 @@
+import * as Sekai64Package from '@blcklab/sekai64'
 import {
   AmbientLight,
   BoxGeometry,
@@ -370,6 +371,36 @@ function colorToLinearTriplet(value: string): readonly [number, number, number] 
   return [srgbChannelToLinear(color.r), srgbChannelToLinear(color.g), srgbChannelToLinear(color.b)] as const
 }
 
+
+interface Sekai64PointFieldPointLike {
+  position: readonly [number, number, number]
+  color?: readonly [number, number, number, number]
+  size?: number
+  intensity?: number
+}
+interface Sekai64PointFieldConstructor {
+  new(options?: {
+    id?: string
+    name?: string
+    tags?: readonly string[]
+    visible?: boolean
+    layerMask?: number
+    space?: 'world' | 'directional'
+    points?: readonly Sekai64PointFieldPointLike[]
+  }): Node
+}
+function resolvePointFieldConstructor(): Sekai64PointFieldConstructor | undefined {
+  return (Sekai64Package as unknown as { PointField?: Sekai64PointFieldConstructor }).PointField
+}
+function pointFieldRecord(value: unknown): Readonly<Record<string, unknown>> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Readonly<Record<string, unknown>> : {}
+}
+function pointFieldVec3(value: unknown): readonly [number, number, number] | undefined {
+  return Array.isArray(value) && value.length === 3 && value.every((item) => typeof item === 'number' && Number.isFinite(item))
+    ? [Number(value[0]), Number(value[1]), Number(value[2])]
+    : undefined
+}
+
 export class Sekai64Renderer implements RendererAdapter {
   readonly canvas: HTMLCanvasElement
   readonly camera: Sekai64CameraAdapter
@@ -405,6 +436,7 @@ export class Sekai64Renderer implements RendererAdapter {
   private readonly externalNodeByPrimitiveId = new Map<string, Node>()
   private readonly primitiveCache = new Map<string, CompiledPrimitive>()
   private readonly particleEmitters = new Map<string, ParticleEmitter>()
+  private readonly pointFields = new Map<string, Node>()
   private lastParticleFrameTime = 0
   private readonly diagnostics: RendererDiagnostic[] = []
   private readonly diagnosticListeners = new Set<(diagnostic: RendererDiagnostic) => void>()
@@ -555,6 +587,7 @@ export class Sekai64Renderer implements RendererAdapter {
     this.installEnvironment(document)
     this.mountPrimitiveBatches(compiled.primitives, generation)
     this.mountParticleEmitters(compiled.entities ?? [])
+    this.mountPointFields(compiled.entities ?? [])
     if (compiled.resourceGraph) {
       const native = this.getNativeAccess()
       if (!native) throw new Error('Sekai64 native access is unavailable for Anyo ResourceGraph realization.')
@@ -1070,6 +1103,62 @@ export class Sekai64Renderer implements RendererAdapter {
       this.reportDiagnostic({ ...diagnostic })
     })
     return engine
+  }
+
+  private mountPointFields(entities: readonly CompiledEntityNode[]): void {
+    if (!this.scene) return
+    const PointFieldConstructor = resolvePointFieldConstructor()
+    let warnedUnavailable = false
+    for (const entity of entities) {
+      if (entity.enabled === false) continue
+      for (const [componentIndex, component] of (entity.components ?? []).entries()) {
+        if (!component.enabled || component.type !== 'anyo.pointField') continue
+        if (!PointFieldConstructor) {
+          if (!warnedUnavailable) {
+            this.reportDiagnostic({
+              severity: 'warning',
+              code: 'ANYO_SEKAI64_POINT_FIELD_UNSUPPORTED',
+              message: 'The active Sekai64 version does not expose PointField rendering. The component is skipped; upgrade Sekai64 to a point-field-capable release.',
+            })
+            warnedUnavailable = true
+          }
+          continue
+        }
+        const data = component.data as Readonly<Record<string, unknown>>
+        const sourcePoints = Array.isArray(data.points) ? data.points : []
+        const points: Sekai64PointFieldPointLike[] = []
+        for (const source of sourcePoints) {
+          const point = pointFieldRecord(source)
+          const position = pointFieldVec3(point.position)
+          if (!position) continue
+          const color = typeof point.color === 'string' ? colorToLinearTriplet(point.color) : [1, 1, 1] as const
+          points.push({
+            position,
+            color: [color[0], color[1], color[2], 1],
+            size: typeof point.size === 'number' && Number.isFinite(point.size) && point.size > 0 ? point.size : 1,
+            intensity: typeof point.intensity === 'number' && Number.isFinite(point.intensity) && point.intensity >= 0 ? point.intensity : 1,
+          })
+        }
+        const id = `anyo-point-field:${entity.id}:${component.id ?? componentIndex}`
+        const pointField = new PointFieldConstructor({
+          id,
+          name: id,
+          tags: ['anyo-point-field'],
+          visible: true,
+          layerMask: (entity.renderMask ?? DEFAULT_RENDER_MASK) & RENDER_MASK_LIMIT,
+          space: data.space === 'directional' ? 'directional' : 'world',
+          points,
+        })
+        pointField.setTransform({
+          position: entity.transform.position,
+          rotation: entity.transform.rotation,
+          scale: entity.transform.scale,
+        })
+        const parent = entity.roomId ? this.roomGroups.get(entity.roomId) : undefined
+        ;(parent ?? this.scene).add(pointField)
+        this.pointFields.set(id, pointField)
+      }
+    }
   }
 
   private mountParticleEmitters(entities: readonly CompiledEntityNode[]): void {
@@ -1877,6 +1966,7 @@ export class Sekai64Renderer implements RendererAdapter {
     this.externalNodeByPrimitiveId.clear()
     this.primitiveCache.clear()
     this.particleEmitters.clear()
+    this.pointFields.clear()
     this.lastParticleFrameTime = 0
     this.document = null
     this.compiled = null

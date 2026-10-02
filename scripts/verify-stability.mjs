@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = new URL('../', import.meta.url)
 const pkg = JSON.parse(await readFile(new URL('package.json', root), 'utf8'))
-assert.equal(pkg.version, '0.11.0-rc.15')
+assert.equal(pkg.version, '0.11.0-rc.16')
 assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'Anyo core must keep zero runtime dependencies.')
 
 const expectedSubpaths = [

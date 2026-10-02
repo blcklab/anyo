@@ -32,8 +32,29 @@ Anyo 0.5 introduces namespaced components as renderer-independent JSON data. Com
 - `anyo.trigger`
 - `anyo.animation`
 - `anyo.billboard`
+- `anyo.pointField`
 
 The animation and billboard definitions are preserved as compiled component data for optional systems. They do not add a heavy animation or billboard engine to Anyo core.
+
+### `anyo.pointField`
+
+`anyo.pointField` describes a compact generic set of visual points without implying stars, particles, or any provider package. `world` space uses normal world positions; `directional` space treats each position as a direction and is suitable for camera-translation-invariant fields. Point sizes are renderer-facing pixel sizes.
+
+```json
+{
+  "type": "anyo.pointField",
+  "space": "directional",
+  "defaultColor": "#ffffff",
+  "defaultSize": 0.8,
+  "defaultIntensity": 1,
+  "points": [
+    { "position": [0.2, 0.9, -0.3], "size": 1.2, "intensity": 1.4 },
+    { "position": [-0.4, 0.7, 0.5], "color": "#dce8ff" }
+  ]
+}
+```
+
+The built-in validator bounds a field to 100,000 points. External packages may generate this JSON, but Anyo does not depend on or identify the package that produced it. Rendering requires a renderer adapter that exposes point-field capability; older Sekai64 releases skip the component with a diagnostic.
 
 ## Legacy compatibility
 

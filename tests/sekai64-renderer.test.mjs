@@ -12,6 +12,7 @@ import {
   PointLight,
   SpotLight,
   ParticleEmitter,
+  PointField,
   OrthographicCamera,
   PerspectiveCamera,
   StandardMaterial,
@@ -660,6 +661,48 @@ test('environment sun uses a finite downward fallback for zero or overflowing ve
   }
 })
 
+
+test('rc16 realizes one generic anyo.pointField as one native directional PointField in WebGL2 and WebGPU', async () => {
+  for (const backend of ['webgl2', 'webgpu']) {
+    const renderer = new Sekai64Renderer({ canvas: canvas(), engineFactory: engineFactory(backend) })
+    const world = compiled([])
+    const entity = {
+      id: 'catalog-stars', authoringId: 'catalog-stars', type: 'group', childIds: [],
+      transform: { position: [5, 2, -8], rotation: [0, 0, 0], scale: [1, 1, 1] },
+      localTransform: { position: [5, 2, -8], rotation: [0, 0, 0], scale: [1, 1, 1] },
+      components: [{
+        type: 'anyo.pointField', enabled: true, sourcePath: '/entities/0/components/0',
+        data: {
+          space: 'directional',
+          points: [
+            { position: [0, 3, 4], color: '#ffffff', size: 0.8, intensity: 0.6 },
+            { position: [1, 0, 0], color: '#808080', size: 1.4, intensity: 1.8 },
+          ],
+        },
+      }],
+      sourcePath: '/entities/0', authoring: { id: 'catalog-stars', sourcePath: '/entities/0', editable: true },
+      primitiveIds: [], resourceInstanceIds: [], resourceInstanceTransforms: {}, enabled: true,
+      renderMask: 1, pickingMask: 1, editorMask: 1,
+    }
+    world.entities = [entity]
+    world.entityById = new Map([[entity.id, entity]])
+    world.entityByAuthoringId = new Map([[entity.authoringId, entity]])
+
+    await renderer.mount(world, document())
+    let field
+    renderer.getNativeAccess().scene.traverse((node) => { if (node instanceof PointField) field = node })
+    assert.ok(field instanceof PointField)
+    assert.equal(field.space, 'directional')
+    assert.equal(field.count, 2)
+    assert.deepEqual(Array.from(field.sizes), [0.800000011920929, 1.399999976158142])
+    assert.deepEqual(Array.from(field.intensities), [0.6000000238418579, 1.7999999523162842])
+    assert.deepEqual(Array.from(field.positions.slice(0, 3)), [0, 0.6000000238418579, 0.800000011920929])
+    assert.equal(field.position.x, 5)
+    assert.equal(field.position.y, 2)
+    assert.equal(field.position.z, -8)
+    renderer.dispose()
+  }
+})
 
 test('Step 4 realizes the same generic anyo.vfx component as one batched ParticleEmitter in WebGL2 and WebGPU', async () => {
   for (const backend of ['webgl2', 'webgpu']) {
