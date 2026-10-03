@@ -56,6 +56,14 @@ The animation and billboard definitions are preserved as compiled component data
 
 The built-in validator bounds a field to 100,000 points. External packages may generate this JSON, but Anyo does not depend on or identify the package that produced it. Rendering requires a renderer adapter that exposes point-field capability; older Sekai64 releases skip the component with a diagnostic.
 
+Runtime hosts can update an already-mounted field without rewriting the authored document:
+
+```ts
+world.setPointFieldPoints('sky', nextPoints, 'stars')
+```
+
+`setPointFieldPoints()` is a provider-neutral hot path intended for time sliders, live datasets, telemetry, and other dynamic point sources. `resetPointFieldPoints()` restores the authored point payload. Runtime point updates are transient application state and are not serialized into `world.anyo.json`.
+
 ## Legacy compatibility
 
 The existing fields remain supported:

@@ -662,7 +662,7 @@ test('environment sun uses a finite downward fallback for zero or overflowing ve
 })
 
 
-test('rc16 realizes one generic anyo.pointField as one native directional PointField in WebGL2 and WebGPU', async () => {
+test('rc17 realizes one generic anyo.pointField as one native directional PointField in WebGL2 and WebGPU', async () => {
   for (const backend of ['webgl2', 'webgpu']) {
     const renderer = new Sekai64Renderer({ canvas: canvas(), engineFactory: engineFactory(backend) })
     const world = compiled([])
@@ -700,6 +700,29 @@ test('rc16 realizes one generic anyo.pointField as one native directional PointF
     assert.equal(field.position.x, 5)
     assert.equal(field.position.y, 2)
     assert.equal(field.position.z, -8)
+
+    const fieldIdentity = field
+    const beforeVersion = field.pointVersion
+    renderer.applyRuntimePointFields([{
+      entityId: 'catalog-stars', authoringId: 'catalog-stars', componentSourcePath: '/entities/0/components/0', space: 'directional',
+      points: [
+        { position: [0, 0, 2], color: '#ffffff', size: 1.1, intensity: 2.2 },
+        { position: [-2, 0, 0], color: '#dce8ff', size: 0.6, intensity: 0.4 },
+      ],
+    }])
+    assert.strictEqual(field, fieldIdentity, 'runtime updates must preserve the native PointField node')
+    assert.equal(field.pointVersion, beforeVersion + 1)
+    assert.equal(field.count, 2)
+    assert.deepEqual(Array.from(field.positions.slice(0, 3)), [0, 0, 1])
+    assert.deepEqual(Array.from(field.positions.slice(3, 6)), [-1, 0, 0])
+
+    renderer.applyRuntimePointFields([{
+      entityId: 'catalog-stars', authoringId: 'catalog-stars', componentSourcePath: '/entities/0/components/0', space: 'directional',
+      points: [{ position: [0, 5, 0], color: '#ffffff', size: 0.9, intensity: 1 }],
+    }])
+    assert.strictEqual(field, fieldIdentity)
+    assert.equal(field.count, 1)
+    assert.deepEqual(Array.from(field.positions), [0, 1, 0])
     renderer.dispose()
   }
 })

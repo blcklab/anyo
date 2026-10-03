@@ -2026,6 +2026,33 @@ export interface RuntimeTransformUpdate {
   resourceInstanceId?: string
 }
 
+/** Runtime point input accepted from host/provider code. */
+export interface RuntimePointFieldInput {
+  position: Vec3
+  color?: string
+  size?: number
+  intensity?: number
+}
+
+/** Normalized runtime-only point payload used by renderer adapters. */
+export interface RuntimePointFieldPoint {
+  position: Vec3
+  color: string
+  size: number
+  intensity: number
+}
+
+/** Renderer-neutral hot-path update for an already compiled `anyo.pointField`. */
+export interface RuntimePointFieldUpdate {
+  entityId: string
+  authoringId: string
+  componentId?: string
+  /** Stable compiled component source path used when no explicit component id exists. */
+  componentSourcePath: string
+  space: 'world' | 'directional'
+  points: readonly RuntimePointFieldPoint[]
+}
+
 export interface RuntimeTransformStoreLike {
   set(entityId: string, transform: RuntimeTransformInput, options: RuntimeTransformWriteOptions): void
   clear(entityId: string, source?: string): boolean
@@ -2111,6 +2138,8 @@ export interface RendererAdapter {
   applyChanges?(changes: readonly WorldChange[], compiled: CompiledWorld, document: NormalizedWorldDocument): void | Promise<void>
   /** Synchronous hot path for animation, physics, and procedural runtime transforms. */
   applyRuntimeTransforms?(updates: readonly RuntimeTransformUpdate[]): void
+  /** Synchronous hot path for provider-driven updates to existing generic point fields. */
+  applyRuntimePointFields?(updates: readonly RuntimePointFieldUpdate[]): void
   updatePrimitive?(primitive: CompiledPrimitive): void | Promise<void>
   removePrimitive?(primitiveId: string): void | Promise<void>
   setPrimitiveVisibility?(primitiveId: string, visible: boolean): void
@@ -2338,6 +2367,10 @@ export interface WorldLike {
   readonly isPreviewing: boolean
   tick(deltaSeconds: number): void
   flushRuntimeTransforms(): Promise<number>
+  /** Replaces runtime points without mutating the authored world document. */
+  setPointFieldPoints(entityId: string, points: readonly RuntimePointFieldInput[], componentId?: string): void
+  /** Restores the authored point payload for a runtime-overridden point field. */
+  resetPointFieldPoints(entityId: string, componentId?: string): boolean
   whenReady(): Promise<void>
   whenIdle(): Promise<void>
   getAssetProgress(): RendererAssetProgress

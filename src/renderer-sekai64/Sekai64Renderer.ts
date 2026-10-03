@@ -55,6 +55,7 @@ import type {
   RendererDiagnostic,
   RendererAssetProgress,
   RuntimeTransformUpdate,
+  RuntimePointFieldUpdate,
   RendererInfo,
   CameraProjection,
   RayPickOptions,
@@ -378,6 +379,9 @@ interface Sekai64PointFieldPointLike {
   size?: number
   intensity?: number
 }
+interface Sekai64PointFieldNode extends Node {
+  setPoints(points: readonly Sekai64PointFieldPointLike[]): this
+}
 interface Sekai64PointFieldConstructor {
   new(options?: {
     id?: string
@@ -387,7 +391,7 @@ interface Sekai64PointFieldConstructor {
     layerMask?: number
     space?: 'world' | 'directional'
     points?: readonly Sekai64PointFieldPointLike[]
-  }): Node
+  }): Sekai64PointFieldNode
 }
 function resolvePointFieldConstructor(): Sekai64PointFieldConstructor | undefined {
   return (Sekai64Package as unknown as { PointField?: Sekai64PointFieldConstructor }).PointField
@@ -399,6 +403,22 @@ function pointFieldVec3(value: unknown): readonly [number, number, number] | und
   return Array.isArray(value) && value.length === 3 && value.every((item) => typeof item === 'number' && Number.isFinite(item))
     ? [Number(value[0]), Number(value[1]), Number(value[2])]
     : undefined
+}
+
+function pointFieldRuntimeKey(entityId: string, componentSourcePath: string): string {
+  return `${entityId}::${componentSourcePath}`
+}
+
+function toSekai64PointFieldPoints(points: readonly { position: readonly [number, number, number]; color: string; size: number; intensity: number }[]): Sekai64PointFieldPointLike[] {
+  return points.map((point) => {
+    const color = colorToLinearTriplet(point.color)
+    return {
+      position: point.position,
+      color: [color[0], color[1], color[2], 1],
+      size: point.size,
+      intensity: point.intensity,
+    }
+  })
 }
 
 export class Sekai64Renderer implements RendererAdapter {
@@ -436,7 +456,7 @@ export class Sekai64Renderer implements RendererAdapter {
   private readonly externalNodeByPrimitiveId = new Map<string, Node>()
   private readonly primitiveCache = new Map<string, CompiledPrimitive>()
   private readonly particleEmitters = new Map<string, ParticleEmitter>()
-  private readonly pointFields = new Map<string, Node>()
+  private readonly pointFields = new Map<string, Sekai64PointFieldNode>()
   private lastParticleFrameTime = 0
   private readonly diagnostics: RendererDiagnostic[] = []
   private readonly diagnosticListeners = new Set<(diagnostic: RendererDiagnostic) => void>()
@@ -690,6 +710,15 @@ export class Sekai64Renderer implements RendererAdapter {
       if (update.primitive) { this.applyPrimitiveTransform(update.primitive); continue }
       const node = this.externalNodeByPrimitiveId.get(update.resourceInstanceId ?? update.primitiveId)
       if (node) node.setTransform({ position: update.transform.position, rotation: update.transform.rotation, scale: update.transform.scale })
+    }
+  }
+
+  applyRuntimePointFields(updates: readonly RuntimePointFieldUpdate[]): void {
+    this.assertAlive()
+    for (const update of updates) {
+      const pointField = this.pointFields.get(pointFieldRuntimeKey(update.entityId, update.componentSourcePath))
+      if (!pointField) continue
+      pointField.setPoints(toSekai64PointFieldPoints(update.points))
     }
   }
 
@@ -1156,7 +1185,7 @@ export class Sekai64Renderer implements RendererAdapter {
         })
         const parent = entity.roomId ? this.roomGroups.get(entity.roomId) : undefined
         ;(parent ?? this.scene).add(pointField)
-        this.pointFields.set(id, pointField)
+        this.pointFields.set(pointFieldRuntimeKey(entity.id, component.sourcePath), pointField)
       }
     }
   }

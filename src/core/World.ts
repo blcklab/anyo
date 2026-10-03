@@ -23,6 +23,7 @@ import { WorldExplorationController } from './WorldExploration.js'
 import type {
   ActionHandler,
   Bounds3,
+  CompiledComponent,
   CompiledEntityNode,
   CompiledPrimitive,
   CompiledWorld,
@@ -44,6 +45,9 @@ import type {
   RendererFrameDriver,
   RendererAssetProgress,
   RuntimeTransformUpdate,
+  RuntimePointFieldInput,
+  RuntimePointFieldPoint,
+  RuntimePointFieldUpdate,
   SystemFrameDriver,
   WorldSystem,
   Matrix4Tuple,
@@ -239,6 +243,7 @@ export class World {
   private rendererEventCleanups: Array<() => void> = []
   private mutationQueue: Promise<void> = Promise.resolve()
   private runtimeTransformQueue: Promise<void> = Promise.resolve()
+  private readonly runtimePointFieldOverrides = new Map<string, RuntimePointFieldUpdate>()
   private previewState: PreviewState | null = null
   private readonly systemScheduler: SystemScheduler
   private readonly validationOptions: WorldValidationOptions
@@ -289,11 +294,13 @@ export class World {
       const previousResolvedDocumentGraph = this.resolvedDocumentGraph
       const previousRuntimeData = structuredClone(this.runtimeData)
       const previousRuntimeTransforms = this.transforms.snapshotLayers()
+      const previousRuntimePointFields = new Map(this.runtimePointFieldOverrides)
       const resolvedGraph = await resolveWorldDocumentImports(migration.document, { sourceContext: loaded.sourceContext, documentLoader: this.documentLoader, validation: this.validationOptions })
       this.sourceDocument = migration.document
       this.sourceContext = loaded.sourceContext
       this.resolvedDocumentGraph = resolvedGraph
       this.runtimeData = structuredClone(migration.document.data ?? {})
+      this.runtimePointFieldOverrides.clear()
       try {
         await this.rebuild({ preserveRuntime: false, resetRuntimeTransforms: true })
       } catch (error) {
@@ -302,6 +309,8 @@ export class World {
         this.resolvedDocumentGraph = previousResolvedDocumentGraph
         this.runtimeData = previousRuntimeData
         this.transforms.restoreLayers(previousRuntimeTransforms)
+        this.runtimePointFieldOverrides.clear()
+        for (const [key, update] of previousRuntimePointFields) this.runtimePointFieldOverrides.set(key, update)
         if (previousSource) {
           try { await this.rebuild({ preserveRuntime: true }) }
           catch (restoreError) { this.warningHandler(`World rollback failed after load error: ${String(restoreError)}`) }
@@ -446,6 +455,110 @@ export class World {
       this.transforms.restoreUpdates(updates)
       throw error
     }
+  }
+
+  setPointFieldPoints(entityId: string, points: readonly RuntimePointFieldInput[], componentId?: string): void {
+    this.assertReady()
+    const { entity, component } = this.resolveRuntimePointFieldTarget(entityId, componentId)
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.applyRuntimePointFields) {
+      throw new Error('The attached renderer does not support runtime point-field synchronization.')
+    }
+    const update = this.createRuntimePointFieldUpdate(entity, component, points)
+    this.runtimePointFieldOverrides.set(this.runtimePointFieldKey(update.entityId, update.componentSourcePath), update)
+    this.renderer.applyRuntimePointFields?.([update])
+    this.events.emit('runtime:point-field', { type: 'set', update })
+  }
+
+  resetPointFieldPoints(entityId: string, componentId?: string): boolean {
+    this.assertReady()
+    const { entity, component } = this.resolveRuntimePointFieldTarget(entityId, componentId)
+    const key = this.runtimePointFieldKey(entity.id, component.sourcePath)
+    const removed = this.runtimePointFieldOverrides.delete(key)
+    if (!removed) return false
+    const sourcePoints = Array.isArray(component.data.points) ? component.data.points as unknown as RuntimePointFieldInput[] : []
+    const update = this.createRuntimePointFieldUpdate(entity, component, sourcePoints)
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.applyRuntimePointFields) {
+      throw new Error('The attached renderer does not support runtime point-field synchronization.')
+    }
+    this.renderer.applyRuntimePointFields?.([update])
+    this.events.emit('runtime:point-field', { type: 'reset', update })
+    return true
+  }
+
+  private resolveRuntimePointFieldTarget(entityId: string, componentId?: string): { entity: CompiledEntityNode; component: CompiledComponent } {
+    const compiled = this.compiled
+    if (!compiled) throw new Error('Cannot update a point field before a world is loaded.')
+    const entity = compiled.entityById.get(entityId) ?? compiled.entityByAuthoringId.get(entityId)
+    if (!entity) throw new Error(`Unknown point-field entity "${entityId}".`)
+    const pointFields = (entity.components ?? []).filter((component) => component.enabled && component.type === 'anyo.pointField')
+    const component = componentId
+      ? pointFields.find((candidate) => candidate.id === componentId)
+      : pointFields.length === 1 ? pointFields[0] : undefined
+    if (!component) {
+      if (componentId) throw new Error(`Entity "${entityId}" has no enabled anyo.pointField component with id "${componentId}".`)
+      if (pointFields.length === 0) throw new Error(`Entity "${entityId}" has no enabled anyo.pointField component.`)
+      throw new Error(`Entity "${entityId}" has multiple anyo.pointField components; provide componentId.`)
+    }
+    return { entity, component }
+  }
+
+  private createRuntimePointFieldUpdate(entity: CompiledEntityNode, component: CompiledComponent, points: readonly RuntimePointFieldInput[]): RuntimePointFieldUpdate {
+    if (!Array.isArray(points)) throw new Error('setPointFieldPoints requires an array of points.')
+    if (points.length > 100_000) throw new Error('Runtime point fields are limited to 100000 points.')
+    const data = component.data as Readonly<Record<string, unknown>>
+    const space = data.space === 'directional' ? 'directional' : 'world'
+    const defaultColor = typeof data.defaultColor === 'string' && data.defaultColor.trim() ? data.defaultColor : '#ffffff'
+    const defaultSize = typeof data.defaultSize === 'number' && Number.isFinite(data.defaultSize) && data.defaultSize > 0 ? data.defaultSize : 1
+    const defaultIntensity = typeof data.defaultIntensity === 'number' && Number.isFinite(data.defaultIntensity) && data.defaultIntensity >= 0 ? data.defaultIntensity : 1
+    const normalized: RuntimePointFieldPoint[] = points.map((point, index) => {
+      if (!point || typeof point !== 'object') throw new Error(`Runtime point field points/${index} must be an object.`)
+      const position = point.position
+      if (!Array.isArray(position) || position.length !== 3 || position.some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+        throw new Error(`Runtime point field points/${index}/position must be a finite vec3.`)
+      }
+      if (space === 'directional' && Math.hypot(position[0], position[1], position[2]) <= 0) {
+        throw new Error(`Runtime directional point field points/${index}/position must be non-zero.`)
+      }
+      const color = point.color === undefined ? defaultColor : point.color
+      if (typeof color !== 'string' || !color.trim()) throw new Error(`Runtime point field points/${index}/color must be a non-empty string.`)
+      const size = point.size === undefined ? defaultSize : point.size
+      if (typeof size !== 'number' || !Number.isFinite(size) || size <= 0) throw new Error(`Runtime point field points/${index}/size must be a positive finite number.`)
+      const intensity = point.intensity === undefined ? defaultIntensity : point.intensity
+      if (typeof intensity !== 'number' || !Number.isFinite(intensity) || intensity < 0) throw new Error(`Runtime point field points/${index}/intensity must be a non-negative finite number.`)
+      return { position: [position[0], position[1], position[2]], color, size, intensity }
+    })
+    return {
+      entityId: entity.id,
+      authoringId: entity.authoringId,
+      componentId: component.id,
+      componentSourcePath: component.sourcePath,
+      space,
+      points: normalized,
+    }
+  }
+
+  private runtimePointFieldKey(entityId: string, componentSourcePath: string): string {
+    return `${entityId}::${componentSourcePath}`
+  }
+
+  private reapplyRuntimePointFieldOverrides(compiled: CompiledWorld): void {
+    if (this.runtimePointFieldOverrides.size === 0) return
+    const updates: RuntimePointFieldUpdate[] = []
+    for (const [key, update] of this.runtimePointFieldOverrides) {
+      const entity = compiled.entityById.get(update.entityId)
+      const component = entity?.components?.find((candidate) => candidate.enabled && candidate.type === 'anyo.pointField' && candidate.sourcePath === update.componentSourcePath)
+      if (!entity || !component) {
+        this.runtimePointFieldOverrides.delete(key)
+        continue
+      }
+      updates.push(update)
+    }
+    if (updates.length === 0) return
+    if (this.renderer.applyRuntimePointFields) {
+      this.renderer.applyRuntimePointFields(updates)
+      return
+    }
+    if (!isHeadlessRenderer(this.renderer)) this.warningHandler('The attached renderer does not support runtime point-field synchronization; provider-driven point-field overrides were retained but not applied.')
   }
 
   private flushRuntimeTransformsForFrame(): void {
@@ -1276,6 +1389,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.sourceContext = undefined
     this.resolvedDocumentGraph = null
     this.runtimeData = {}
+    this.runtimePointFieldOverrides.clear()
     this.transforms.clearAll()
     this.transforms.updateWorld(null)
     this.query.update(null)
@@ -1562,6 +1676,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.compiled = prepared.compiled
     this.query.update(prepared.compiled)
     this.transforms.updateWorld(prepared.compiled)
+    this.reapplyRuntimePointFieldOverrides(prepared.compiled)
     const context: PluginRuntimeContext = {
       world: this,
       renderer: this.renderer,

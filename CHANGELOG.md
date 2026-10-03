@@ -1,3 +1,12 @@
+## 0.11.0-rc.17
+
+- Add the generic runtime `World.setPointFieldPoints()` / `resetPointFieldPoints()` hot path for provider-driven updates to an existing `anyo.pointField` without mutating authored World JSON.
+- Runtime point-field overrides are reapplied after renderer replacement/rebuild and remain independent of provider packages.
+- Extend `RendererAdapter` with optional synchronous `applyRuntimePointFields()`; the Sekai64 adapter maps updates into native `PointField.setPoints()`.
+- Allow runtime updates to temporarily use zero points while preserving the authored non-empty point-field contract.
+- Move the development/test Sekai64 baseline to `0.8.0-rc.47`; the optional peer range remains unchanged.
+- World 0.8 and World 0.9 schema files remain byte-identical.
+
 # Changelog
 
 ## 0.11.0-rc.16
