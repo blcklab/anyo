@@ -2053,6 +2053,28 @@ export interface RuntimePointFieldUpdate {
   points: readonly RuntimePointFieldPoint[]
 }
 
+/** Runtime-only procedural cloud state supplied by host/weather/time code. */
+export interface RuntimeProceduralCloudStateInput {
+  enabled?: boolean
+  coverage?: number
+  density?: number
+  scale?: number
+  seed?: number
+  offset?: readonly [number, number]
+  evolution?: number
+}
+
+/** Normalized renderer-neutral procedural cloud state. */
+export interface RuntimeProceduralCloudState {
+  enabled: boolean
+  coverage: number
+  density: number
+  scale: number
+  seed: number
+  offset: readonly [number, number]
+  evolution: number
+}
+
 export interface RuntimeTransformStoreLike {
   set(entityId: string, transform: RuntimeTransformInput, options: RuntimeTransformWriteOptions): void
   clear(entityId: string, source?: string): boolean
@@ -2140,6 +2162,8 @@ export interface RendererAdapter {
   applyRuntimeTransforms?(updates: readonly RuntimeTransformUpdate[]): void
   /** Synchronous hot path for provider-driven updates to existing generic point fields. */
   applyRuntimePointFields?(updates: readonly RuntimePointFieldUpdate[]): void
+  /** Synchronous hot path for host-driven procedural cloud motion/weather state. */
+  applyRuntimeProceduralCloudState?(state: RuntimeProceduralCloudState): void
   updatePrimitive?(primitive: CompiledPrimitive): void | Promise<void>
   removePrimitive?(primitiveId: string): void | Promise<void>
   setPrimitiveVisibility?(primitiveId: string, visible: boolean): void
@@ -2371,6 +2395,10 @@ export interface WorldLike {
   setPointFieldPoints(entityId: string, points: readonly RuntimePointFieldInput[], componentId?: string): void
   /** Restores the authored point payload for a runtime-overridden point field. */
   resetPointFieldPoints(entityId: string, componentId?: string): boolean
+  /** Applies runtime-only procedural cloud state without rewriting the authored world. */
+  setProceduralCloudState(state: RuntimeProceduralCloudStateInput): void
+  /** Restores authored/default procedural cloud state. */
+  resetProceduralCloudState(): boolean
   whenReady(): Promise<void>
   whenIdle(): Promise<void>
   getAssetProgress(): RendererAssetProgress

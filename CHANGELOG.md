@@ -1,3 +1,11 @@
+## 0.11.0-rc.18
+
+- Added runtime-only procedural cloud state through the existing renderer-neutral `World` runtime surface: `setProceduralCloudState()` and `resetProceduralCloudState()`.
+- Runtime cloud updates support generic `enabled`, `coverage`, `density`, `scale`, `seed`, `offset`, and `evolution` values without rewriting authored World JSON.
+- The Sekai64 adapter now uses renderer-native dynamic clouds when available and keeps the existing baked `createProceduralSky()` cloud path as a compatibility fallback.
+- Dynamic cloud overrides survive renderer replacement/rebuild and reset cleanly to the authored procedural-sky cloud state.
+- World 0.8 and World 0.9 schemas are intentionally unchanged; no SiriusX, Vue, weather-package, or other domain dependency was added.
+
 ## 0.11.0-rc.17
 
 - Add the generic runtime `World.setPointFieldPoints()` / `resetPointFieldPoints()` hot path for provider-driven updates to an existing `anyo.pointField` without mutating authored World JSON.

@@ -377,3 +377,18 @@ Variation is expanded once at authoring normalization time. It does not add a ru
 ```
 
 `textureTransform` is renderer-neutral. Pair it with `textureWrap: "repeat"` (or per-axis `{ "s", "t" }`) when UVs should tile beyond the 0–1 range. The Sekai64 adapter reports both capabilities and Sekai64 0.8.0-rc.37 implements them in WebGL2 and WebGPU. Anyo still has no `TreeSystem`, `CloudRenderer`, `RockEntity`, or other object-specific realism subsystem.
+### Runtime procedural clouds
+
+When a renderer exposes the optional procedural-cloud runtime capability, host code may update the existing procedural sky without changing authored World JSON:
+
+```ts
+world.setProceduralCloudState({
+  offset: [0.2, -0.05],
+  evolution: 1.4,
+  coverage: 0.55,
+  density: 0.8,
+})
+```
+
+`seed` selects the deterministic cloud family. Keep the seed stable for continuous clouds; change `offset` for drift and `evolution` for gradual shape change. `resetProceduralCloudState()` restores the authored/default cloud state.
+

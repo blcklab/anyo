@@ -48,6 +48,8 @@ import type {
   RuntimePointFieldInput,
   RuntimePointFieldPoint,
   RuntimePointFieldUpdate,
+  RuntimeProceduralCloudStateInput,
+  RuntimeProceduralCloudState,
   SystemFrameDriver,
   WorldSystem,
   Matrix4Tuple,
@@ -244,6 +246,7 @@ export class World {
   private mutationQueue: Promise<void> = Promise.resolve()
   private runtimeTransformQueue: Promise<void> = Promise.resolve()
   private readonly runtimePointFieldOverrides = new Map<string, RuntimePointFieldUpdate>()
+  private runtimeProceduralCloudOverride: RuntimeProceduralCloudState | null = null
   private previewState: PreviewState | null = null
   private readonly systemScheduler: SystemScheduler
   private readonly validationOptions: WorldValidationOptions
@@ -295,12 +298,14 @@ export class World {
       const previousRuntimeData = structuredClone(this.runtimeData)
       const previousRuntimeTransforms = this.transforms.snapshotLayers()
       const previousRuntimePointFields = new Map(this.runtimePointFieldOverrides)
+      const previousRuntimeProceduralCloudOverride = this.runtimeProceduralCloudOverride
       const resolvedGraph = await resolveWorldDocumentImports(migration.document, { sourceContext: loaded.sourceContext, documentLoader: this.documentLoader, validation: this.validationOptions })
       this.sourceDocument = migration.document
       this.sourceContext = loaded.sourceContext
       this.resolvedDocumentGraph = resolvedGraph
       this.runtimeData = structuredClone(migration.document.data ?? {})
       this.runtimePointFieldOverrides.clear()
+      this.runtimeProceduralCloudOverride = null
       try {
         await this.rebuild({ preserveRuntime: false, resetRuntimeTransforms: true })
       } catch (error) {
@@ -311,6 +316,7 @@ export class World {
         this.transforms.restoreLayers(previousRuntimeTransforms)
         this.runtimePointFieldOverrides.clear()
         for (const [key, update] of previousRuntimePointFields) this.runtimePointFieldOverrides.set(key, update)
+        this.runtimeProceduralCloudOverride = previousRuntimeProceduralCloudOverride
         if (previousSource) {
           try { await this.rebuild({ preserveRuntime: true }) }
           catch (restoreError) { this.warningHandler(`World rollback failed after load error: ${String(restoreError)}`) }
@@ -483,6 +489,75 @@ export class World {
     this.renderer.applyRuntimePointFields?.([update])
     this.events.emit('runtime:point-field', { type: 'reset', update })
     return true
+  }
+
+  setProceduralCloudState(state: RuntimeProceduralCloudStateInput): void {
+    this.assertReady()
+    const base = this.runtimeProceduralCloudOverride ?? this.createAuthoredProceduralCloudState()
+    const update = this.createRuntimeProceduralCloudState(state, base)
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.applyRuntimeProceduralCloudState) {
+      throw new Error('The attached renderer does not support runtime procedural-cloud synchronization.')
+    }
+    this.runtimeProceduralCloudOverride = update
+    this.renderer.applyRuntimeProceduralCloudState?.(update)
+    this.events.emit('runtime:procedural-clouds', { type: 'set', state: update })
+  }
+
+  resetProceduralCloudState(): boolean {
+    this.assertReady()
+    if (!this.runtimeProceduralCloudOverride) return false
+    this.runtimeProceduralCloudOverride = null
+    const update = this.createAuthoredProceduralCloudState()
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.applyRuntimeProceduralCloudState) {
+      throw new Error('The attached renderer does not support runtime procedural-cloud synchronization.')
+    }
+    this.renderer.applyRuntimeProceduralCloudState?.(update)
+    this.events.emit('runtime:procedural-clouds', { type: 'reset', state: update })
+    return true
+  }
+
+  private createAuthoredProceduralCloudState(): RuntimeProceduralCloudState {
+    const sky = this.document?.environment?.sky
+    if (!sky?.enabled) throw new Error('Runtime procedural clouds require an enabled procedural environment sky.')
+    const coverage = typeof sky.cloudCoverage === 'number' && Number.isFinite(sky.cloudCoverage) ? Math.max(0, Math.min(1, sky.cloudCoverage)) : 0.18
+    const density = typeof sky.cloudDensity === 'number' && Number.isFinite(sky.cloudDensity) ? Math.max(0, sky.cloudDensity) : 0.65
+    const seed = typeof sky.seed === 'number' && Number.isFinite(sky.seed) ? sky.seed : 1
+    return { enabled: coverage > 0, coverage, density, scale: 3.5, seed, offset: [0, 0], evolution: 0 }
+  }
+
+  private createRuntimeProceduralCloudState(input: RuntimeProceduralCloudStateInput, base: RuntimeProceduralCloudState): RuntimeProceduralCloudState {
+    if (!input || typeof input !== 'object') throw new Error('setProceduralCloudState requires a cloud state object.')
+    const coverage = input.coverage ?? base.coverage
+    const density = input.density ?? base.density
+    const scale = input.scale ?? base.scale
+    const seed = input.seed ?? base.seed
+    const evolution = input.evolution ?? base.evolution
+    const offset = input.offset ?? base.offset
+    if (typeof coverage !== 'number' || !Number.isFinite(coverage) || coverage < 0 || coverage > 1) throw new Error('Runtime cloud coverage must be a finite number between 0 and 1.')
+    if (typeof density !== 'number' || !Number.isFinite(density) || density < 0) throw new Error('Runtime cloud density must be a non-negative finite number.')
+    if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.1) throw new Error('Runtime cloud scale must be a finite number greater than or equal to 0.1.')
+    if (typeof seed !== 'number' || !Number.isFinite(seed)) throw new Error('Runtime cloud seed must be finite.')
+    if (typeof evolution !== 'number' || !Number.isFinite(evolution)) throw new Error('Runtime cloud evolution must be finite.')
+    if (!Array.isArray(offset) || offset.length !== 2 || offset.some((value) => typeof value !== 'number' || !Number.isFinite(value))) throw new Error('Runtime cloud offset must be a finite vec2.')
+    return {
+      enabled: input.enabled ?? base.enabled,
+      coverage,
+      density,
+      scale,
+      seed,
+      offset: [offset[0], offset[1]],
+      evolution,
+    }
+  }
+
+  private reapplyRuntimeProceduralCloudOverride(): void {
+    const update = this.runtimeProceduralCloudOverride
+    if (!update) return
+    if (this.renderer.applyRuntimeProceduralCloudState) {
+      this.renderer.applyRuntimeProceduralCloudState(update)
+      return
+    }
+    if (!isHeadlessRenderer(this.renderer)) this.warningHandler('The attached renderer does not support runtime procedural-cloud synchronization; the override was retained but not applied.')
   }
 
   private resolveRuntimePointFieldTarget(entityId: string, componentId?: string): { entity: CompiledEntityNode; component: CompiledComponent } {
@@ -1390,6 +1465,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.resolvedDocumentGraph = null
     this.runtimeData = {}
     this.runtimePointFieldOverrides.clear()
+    this.runtimeProceduralCloudOverride = null
     this.transforms.clearAll()
     this.transforms.updateWorld(null)
     this.query.update(null)
@@ -1677,6 +1753,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.query.update(prepared.compiled)
     this.transforms.updateWorld(prepared.compiled)
     this.reapplyRuntimePointFieldOverrides(prepared.compiled)
+    this.reapplyRuntimeProceduralCloudOverride()
     const context: PluginRuntimeContext = {
       world: this,
       renderer: this.renderer,

@@ -56,6 +56,7 @@ import type {
   RendererAssetProgress,
   RuntimeTransformUpdate,
   RuntimePointFieldUpdate,
+  RuntimeProceduralCloudState,
   RendererInfo,
   CameraProjection,
   RayPickOptions,
@@ -720,6 +721,24 @@ export class Sekai64Renderer implements RendererAdapter {
       if (!pointField) continue
       pointField.setPoints(toSekai64PointFieldPoints(update.points))
     }
+  }
+
+  applyRuntimeProceduralCloudState(state: RuntimeProceduralCloudState): void {
+    this.assertAlive()
+    const engine = this.engine
+    const document = this.document
+    if (!engine || !document) return
+    const environment = normalizeEnvironmentDefinition(document.environment)
+    const renderer = engine.renderer as Engine['renderer'] & { setProceduralClouds?: (clouds: Record<string, unknown> | undefined) => void }
+    if (!renderer.setProceduralClouds) {
+      this.reportDiagnostic({ severity: 'warning', code: 'ANYO_SEKAI64_PROCEDURAL_CLOUD_RUNTIME_UNSUPPORTED', message: 'The active Sekai64 renderer does not expose dynamic procedural clouds; the runtime cloud update was skipped.' })
+      return
+    }
+    renderer.setProceduralClouds({
+      ...state,
+      sunDirection: environment.sky?.sunDirection,
+      sunIntensity: environment.sky?.sunIntensity,
+    })
   }
 
   async updatePrimitive(primitive: CompiledPrimitive): Promise<void> {
@@ -1767,6 +1786,7 @@ export class Sekai64Renderer implements RendererAdapter {
       setPostProcessing?: Engine['renderer']['setPostProcessing']
       setOptimization?: Engine['renderer']['setOptimization']
       setEnvironmentMap?: Engine['renderer']['setEnvironmentMap']
+      setProceduralClouds?: (clouds: Record<string, unknown> | undefined) => void
     }
     renderer.setColorManagement?.({
       ...environment.colorManagement,
@@ -1815,6 +1835,7 @@ export class Sekai64Renderer implements RendererAdapter {
       ...this.options.optimization,
     })
     if (environment.lighting.environmentMap) {
+      renderer.setProceduralClouds?.(undefined)
       if (!this.capabilityState.environmentMaps || !renderer.setEnvironmentMap) {
         this.reportDiagnostic({
           severity: 'warning',
@@ -1828,6 +1849,18 @@ export class Sekai64Renderer implements RendererAdapter {
     } else if (environment.sky?.enabled && renderer.setEnvironmentMap) {
       const stars = environment.sky.stars
       const starDensity = stars && stars.enabled !== false ? stars.density ?? 0.35 : 0
+      const dynamicClouds = typeof renderer.setProceduralClouds === 'function'
+      if (dynamicClouds) renderer.setProceduralClouds?.({
+        enabled: (environment.sky.cloudCoverage ?? 0.18) > 0,
+        coverage: environment.sky.cloudCoverage ?? 0.18,
+        density: environment.sky.cloudDensity ?? 0.65,
+        scale: 3.5,
+        seed: environment.sky.seed ?? 1,
+        offset: [0, 0],
+        evolution: 0,
+        sunDirection: environment.sky.sunDirection,
+        sunIntensity: environment.sky.sunIntensity,
+      })
       const sky = createProceduralSky({
         id: 'anyo-procedural-sky', width: environment.sky.width, height: environment.sky.height,
         zenithColor: environment.sky.zenithColor ? colorToLinearTriplet(environment.sky.zenithColor) : undefined,
@@ -1838,7 +1871,7 @@ export class Sekai64Renderer implements RendererAdapter {
         sunAngularRadius: environment.sky.sunSize,
         sunIntensity: environment.sky.sunIntensity,
         haze: environment.sky.haze,
-        cloudCoverage: environment.sky.cloudCoverage,
+        cloudCoverage: dynamicClouds ? 0 : environment.sky.cloudCoverage,
         cloudDensity: environment.sky.cloudDensity,
         cloudSeed: environment.sky.seed,
         starDensity,
@@ -1853,7 +1886,7 @@ export class Sekai64Renderer implements RendererAdapter {
       // procedural layer and must never decide whether the generated sky is the background.
       renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: true, backgroundIntensity: 1, label: sky.label })
       sky.dispose()
-    } else renderer.setEnvironmentMap?.(undefined)
+    } else { renderer.setProceduralClouds?.(undefined); renderer.setEnvironmentMap?.(undefined) }
     if (colorLutAsset && !this.options.colorGrading?.lut) this.queueColorLut(renderer as { setColorGrading?: (grading: Record<string, unknown>) => void }, colorLutAsset, lutIntensity)
     if (environment.sun.castShadow && !this.capabilityState.shadows) {
       this.reportDiagnostic({
