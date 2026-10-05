@@ -395,6 +395,6 @@ world.setProceduralCloudState({
 
 ### World-authored procedural-cloud appearance
 
-`World.setProceduralCloudState()` is the renderer-neutral runtime surface for dynamic skies. Besides coverage/density/scale/seed and macro `offset`/`evolution`, rc.19 accepts an independent `detailOffset`/`detailEvolution` channel and bounded appearance controls (`macroScale`, `detailScale`, `detailStrength`, `edgeSoftness`, `warpStrength`, `horizonVisibility`, `horizonSoftness`, lighting strengths, and cloud colors). These values remain runtime-only and do not rewrite authored World JSON.
+`World.setProceduralCloudState()` is the renderer-neutral runtime surface for dynamic skies. Besides coverage/density/scale/seed and macro `offset`/`evolution`, rc.20 accepts an independent `detailOffset`/`detailEvolution` channel and bounded appearance controls (`macroScale`, `detailScale`, `detailStrength`, `edgeSoftness`, `warpStrength`, `horizonVisibility`, `horizonSoftness`, `horizonExtension`, `horizonCompression`, `horizonAtmosphericFade`, lighting strengths, and cloud colors). The horizon-underlap fields let a renderer continue distant cloud banks slightly beneath the mathematical horizon while fading them before downward-looking directions; ordinary scene geometry remains independent and renders in front. These values remain runtime-only and do not rewrite authored World JSON.
 
 This contract exists so host/world data can define cloud identity and art direction while Anyo and Sekai64 remain frozen.

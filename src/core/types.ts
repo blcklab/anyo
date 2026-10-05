@@ -2073,6 +2073,12 @@ export interface RuntimeProceduralCloudStateInput {
   warpStrength?: number
   horizonVisibility?: number
   horizonSoftness?: number
+  /** Limited background continuation beneath the mathematical horizon. */
+  horizonExtension?: number
+  /** Compresses under-horizon cloud-domain travel to read as distant cloud banks. */
+  horizonCompression?: number
+  /** Adds haze/attenuation to the under-horizon continuation. */
+  horizonAtmosphericFade?: number
   shadowStrength?: number
   highlightStrength?: number
   silverLiningStrength?: number
@@ -2099,6 +2105,9 @@ export interface RuntimeProceduralCloudState {
   warpStrength: number
   horizonVisibility: number
   horizonSoftness: number
+  horizonExtension: number
+  horizonCompression: number
+  horizonAtmosphericFade: number
   shadowStrength: number
   highlightStrength: number
   silverLiningStrength: number

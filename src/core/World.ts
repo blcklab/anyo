@@ -526,7 +526,7 @@ export class World {
       enabled: coverage > 0, coverage, density, scale: 3.5, seed,
       offset: [0, 0], evolution: 0, detailOffset: [0, 0], detailEvolution: 0,
       macroScale: 1, detailScale: 1, detailStrength: 0.1, edgeSoftness: 0.09, warpStrength: 0.16,
-      horizonVisibility: 0.62, horizonSoftness: 0.18,
+      horizonVisibility: 0.62, horizonSoftness: 0.18, horizonExtension: 0.06, horizonCompression: 0.65, horizonAtmosphericFade: 0.7,
       shadowStrength: 0.24, highlightStrength: 0.58, silverLiningStrength: 0.08,
       ambientColor: [0.86, 0.9, 0.98], shadowColor: [0.68, 0.74, 0.86], lightColor: [1.08, 1.03, 0.96],
     }
@@ -549,6 +549,9 @@ export class World {
     const warpStrength = input.warpStrength ?? base.warpStrength
     const horizonVisibility = input.horizonVisibility ?? base.horizonVisibility
     const horizonSoftness = input.horizonSoftness ?? base.horizonSoftness
+    const horizonExtension = input.horizonExtension ?? base.horizonExtension
+    const horizonCompression = input.horizonCompression ?? base.horizonCompression
+    const horizonAtmosphericFade = input.horizonAtmosphericFade ?? base.horizonAtmosphericFade
     const shadowStrength = input.shadowStrength ?? base.shadowStrength
     const highlightStrength = input.highlightStrength ?? base.highlightStrength
     const silverLiningStrength = input.silverLiningStrength ?? base.silverLiningStrength
@@ -585,6 +588,9 @@ export class World {
       warpStrength: finiteRange(warpStrength, 'warpStrength', 0, 0.6),
       horizonVisibility: finiteRange(horizonVisibility, 'horizonVisibility', 0, 1),
       horizonSoftness: finiteRange(horizonSoftness, 'horizonSoftness', 0.01, 0.6),
+      horizonExtension: finiteRange(horizonExtension, 'horizonExtension', 0, 0.35),
+      horizonCompression: finiteRange(horizonCompression, 'horizonCompression', 0, 1),
+      horizonAtmosphericFade: finiteRange(horizonAtmosphericFade, 'horizonAtmosphericFade', 0, 1),
       shadowStrength: finiteRange(shadowStrength, 'shadowStrength', 0, 1),
       highlightStrength: finiteRange(highlightStrength, 'highlightStrength', 0, 1.5),
       silverLiningStrength: finiteRange(silverLiningStrength, 'silverLiningStrength', 0, 0.5),

@@ -30,6 +30,9 @@ const defaultCloudStyle = {
   warpStrength: 0.16,
   horizonVisibility: 0.62,
   horizonSoftness: 0.18,
+  horizonExtension: 0.06,
+  horizonCompression: 0.65,
+  horizonAtmosphericFade: 0.7,
   shadowStrength: 0.24,
   highlightStrength: 0.58,
   silverLiningStrength: 0.08,
@@ -133,6 +136,9 @@ test('runtime cloud state validates unsafe values and requires an enabled proced
     assert.throws(() => world.setProceduralCloudState({ evolution: Number.POSITIVE_INFINITY }), /evolution must be finite/)
     assert.throws(() => world.setProceduralCloudState({ detailStrength: 0.9 }), /detailStrength/)
     assert.throws(() => world.setProceduralCloudState({ horizonVisibility: -0.1 }), /horizonVisibility/)
+    assert.throws(() => world.setProceduralCloudState({ horizonExtension: 0.5 }), /horizonExtension/)
+    assert.throws(() => world.setProceduralCloudState({ horizonCompression: 2 }), /horizonCompression/)
+    assert.throws(() => world.setProceduralCloudState({ horizonAtmosphericFade: -0.1 }), /horizonAtmosphericFade/)
     assert.throws(() => world.setProceduralCloudState({ ambientColor: [1, Number.NaN, 1] }), /ambientColor/)
   } finally {
     await world.disposeAsync()
@@ -164,6 +170,9 @@ test('runtime cloud appearance and independent detail motion remain renderer-neu
       warpStrength: 0.11,
       horizonVisibility: 0.74,
       horizonSoftness: 0.2,
+      horizonExtension: 0.11,
+      horizonCompression: 0.72,
+      horizonAtmosphericFade: 0.82,
       shadowStrength: 0.31,
       highlightStrength: 0.64,
       silverLiningStrength: 0.05,
@@ -174,6 +183,9 @@ test('runtime cloud appearance and independent detail motion remain renderer-neu
     const state = renderer.cloudStates.at(-1)
     assert.deepEqual(state.detailOffset, [0.15, 0.2])
     assert.equal(state.horizonVisibility, 0.74)
+    assert.equal(state.horizonExtension, 0.11)
+    assert.equal(state.horizonCompression, 0.72)
+    assert.equal(state.horizonAtmosphericFade, 0.82)
     assert.deepEqual(state.shadowColor, [0.55, 0.62, 0.75])
     world.setProceduralCloudState({ coverage: 0.6 })
     assert.equal(renderer.cloudStates.at(-1).macroScale, 0.8)

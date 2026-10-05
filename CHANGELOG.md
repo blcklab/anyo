@@ -1,3 +1,10 @@
+## 0.11.0-rc.20
+
+- Extend the renderer-neutral runtime procedural-cloud state with `horizonExtension`, `horizonCompression`, and `horizonAtmosphericFade`.
+- These generic controls let host/world data remove visible mathematical-horizon cutoffs while keeping the cloud layer document-neutral and renderer-independent.
+- No World 0.8/0.9 schema changes and no weather/astronomy/provider dependency.
+- Validated against Sekai64 rc.52; ordinary world geometry remains unaffected because the renderer realizes the continuation in its background pass.
+
 ## 0.11.0-rc.19
 
 - Finalize the renderer-neutral procedural-cloud authoring contract so hosts/worlds can tune appearance without changing Anyo or Sekai64.
