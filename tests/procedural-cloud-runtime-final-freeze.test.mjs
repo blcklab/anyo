@@ -27,18 +27,18 @@ const defaultCloudStyle = {
   detailScale: 1,
   detailStrength: 0.1,
   edgeSoftness: 0.09,
-  warpStrength: 0.16,
-  horizonVisibility: 0.62,
-  horizonSoftness: 0.18,
+  warpStrength: 0,
+  horizonVisibility: 0,
+  horizonSoftness: 0.14,
   horizonExtension: 0.06,
   horizonCompression: 0.65,
   horizonAtmosphericFade: 0.7,
-  shadowStrength: 0.24,
-  highlightStrength: 0.58,
-  silverLiningStrength: 0.08,
-  ambientColor: [0.86, 0.9, 0.98],
-  shadowColor: [0.68, 0.74, 0.86],
-  lightColor: [1.08, 1.03, 0.96],
+  shadowStrength: 0.13,
+  highlightStrength: 0.9,
+  silverLiningStrength: 0.26,
+  ambientColor: [0.9, 0.96, 1.08],
+  shadowColor: [0.64, 0.72, 0.92],
+  lightColor: [1.34, 1.22, 1.08],
 }
 
 class CloudCamera {
@@ -58,6 +58,7 @@ class CloudRenderer {
   cloudStates = []
   async mount() {}
   applyRuntimeProceduralCloudState(state) { this.cloudStates.push(structuredClone(state)) }
+  resetRuntimeProceduralCloudState() { this.cloudStates.push('reset-authored') }
   setRoomVisibility() {}
   render() {}
   resize() {}
@@ -109,16 +110,7 @@ test('runtime cloud state is document-neutral, partial-update friendly, resettab
     assert.deepEqual(replacement.cloudStates[0].offset, [1.25, -0.5])
 
     assert.equal(world.resetProceduralCloudState(), true)
-    assert.deepEqual(replacement.cloudStates.at(-1), {
-      enabled: true,
-      coverage: 0.42,
-      density: 0.73,
-      scale: 3.5,
-      seed: 991,
-      offset: [0, 0],
-      evolution: 0,
-      ...defaultCloudStyle,
-    })
+    assert.equal(replacement.cloudStates.at(-1), 'reset-authored')
     assert.equal(world.resetProceduralCloudState(), false)
   } finally {
     await world.disposeAsync()
@@ -195,10 +187,13 @@ test('runtime cloud appearance and independent detail motion remain renderer-neu
   }
 })
 
-test('Sekai64 adapter keeps static fallback but removes baked clouds when dynamic cloud capability exists', async () => {
+test('Sekai64 adapter preserves authored baked clouds until runtime clouds are explicitly activated', async () => {
   const source = await readFile(new URL('../src/renderer-sekai64/Sekai64Renderer.ts', import.meta.url), 'utf8')
   assert.match(source, /setProceduralClouds/)
-  assert.match(source, /cloudCoverage: dynamicClouds \? 0 : environment\.sky\.cloudCoverage/)
+  assert.match(source, /cloudCoverage: environment\.sky\.cloudCoverage/)
+  assert.match(source, /cloudCoverage: 0, cloudDensity: environment\.sky\.cloudDensity/)
+  assert.match(source, /runtimeProceduralCloudsActive/)
+  assert.match(source, /resetRuntimeProceduralCloudState/)
   assert.match(source, /applyRuntimeProceduralCloudState/)
   assert.match(source, /sunDirection: environment\.sky\?\.sunDirection/)
 })

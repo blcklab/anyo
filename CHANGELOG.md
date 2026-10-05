@@ -1,3 +1,10 @@
+## 0.11.0-rc.21
+
+- Restore procedural-sky visual backward compatibility: authored/static worlds remain on Sekai64's baked procedural-sky path even when the renderer also exposes dynamic cloud capability.
+- Runtime clouds are now an explicit override: the first `World.setProceduralCloudState()` call switches only that world session to Sekai64's dynamic overlay, while `resetProceduralCloudState()` restores the authored baked sky.
+- Add an optional renderer reset hook so adapters can restore authored presentation without mutating World JSON or recompiling scene geometry.
+- Preserve World 0.8/0.9 schemas and all generic runtime cloud authoring controls.
+
 ## 0.11.0-rc.20
 
 - Extend the renderer-neutral runtime procedural-cloud state with `horizonExtension`, `horizonCompression`, and `horizonAtmosphericFade`.

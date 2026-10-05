@@ -508,10 +508,11 @@ export class World {
     if (!this.runtimeProceduralCloudOverride) return false
     this.runtimeProceduralCloudOverride = null
     const update = this.createAuthoredProceduralCloudState()
-    if (!isHeadlessRenderer(this.renderer) && !this.renderer.applyRuntimeProceduralCloudState) {
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.resetRuntimeProceduralCloudState && !this.renderer.applyRuntimeProceduralCloudState) {
       throw new Error('The attached renderer does not support runtime procedural-cloud synchronization.')
     }
-    this.renderer.applyRuntimeProceduralCloudState?.(update)
+    if (this.renderer.resetRuntimeProceduralCloudState) this.renderer.resetRuntimeProceduralCloudState()
+    else this.renderer.applyRuntimeProceduralCloudState?.(update)
     this.events.emit('runtime:procedural-clouds', { type: 'reset', state: update })
     return true
   }
@@ -525,10 +526,10 @@ export class World {
     return {
       enabled: coverage > 0, coverage, density, scale: 3.5, seed,
       offset: [0, 0], evolution: 0, detailOffset: [0, 0], detailEvolution: 0,
-      macroScale: 1, detailScale: 1, detailStrength: 0.1, edgeSoftness: 0.09, warpStrength: 0.16,
-      horizonVisibility: 0.62, horizonSoftness: 0.18, horizonExtension: 0.06, horizonCompression: 0.65, horizonAtmosphericFade: 0.7,
-      shadowStrength: 0.24, highlightStrength: 0.58, silverLiningStrength: 0.08,
-      ambientColor: [0.86, 0.9, 0.98], shadowColor: [0.68, 0.74, 0.86], lightColor: [1.08, 1.03, 0.96],
+      macroScale: 1, detailScale: 1, detailStrength: 0.1, edgeSoftness: 0.09, warpStrength: 0,
+      horizonVisibility: 0, horizonSoftness: 0.14, horizonExtension: 0.06, horizonCompression: 0.65, horizonAtmosphericFade: 0.7,
+      shadowStrength: 0.13, highlightStrength: 0.9, silverLiningStrength: 0.26,
+      ambientColor: [0.9, 0.96, 1.08], shadowColor: [0.64, 0.72, 0.92], lightColor: [1.34, 1.22, 1.08],
     }
   }
 

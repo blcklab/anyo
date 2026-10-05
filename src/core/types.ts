@@ -2205,6 +2205,8 @@ export interface RendererAdapter {
   applyRuntimePointFields?(updates: readonly RuntimePointFieldUpdate[]): void
   /** Synchronous hot path for host-driven procedural cloud motion/weather state. */
   applyRuntimeProceduralCloudState?(state: RuntimeProceduralCloudState): void
+  /** Restores the renderer's authored procedural-cloud presentation after a runtime override. */
+  resetRuntimeProceduralCloudState?(): void
   updatePrimitive?(primitive: CompiledPrimitive): void | Promise<void>
   removePrimitive?(primitiveId: string): void | Promise<void>
   setPrimitiveVisibility?(primitiveId: string, visible: boolean): void
