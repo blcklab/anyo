@@ -57,6 +57,7 @@ import type {
   RuntimeTransformUpdate,
   RuntimePointFieldUpdate,
   RuntimeProceduralCloudState,
+  RuntimeEnvironmentState,
   RendererInfo,
   CameraProjection,
   RayPickOptions,
@@ -460,6 +461,10 @@ export class Sekai64Renderer implements RendererAdapter {
   private readonly pointFields = new Map<string, Sekai64PointFieldNode>()
   private lastParticleFrameTime = 0
   private runtimeProceduralCloudsActive = false
+  private runtimeEnvironmentState: RuntimeEnvironmentState | null = null
+  private environmentAmbientLight: AmbientLight | null = null
+  private environmentSunLight: DirectionalLight | null = null
+  private runtimeSkyMapKey: string | null = null
   private readonly diagnostics: RendererDiagnostic[] = []
   private readonly diagnosticListeners = new Set<(diagnostic: RendererDiagnostic) => void>()
   private readonly assetProgressListeners = new Set<(progress: RendererAssetProgress) => void>()
@@ -735,28 +740,16 @@ export class Sekai64Renderer implements RendererAdapter {
       this.reportDiagnostic({ severity: 'warning', code: 'ANYO_SEKAI64_PROCEDURAL_CLOUD_RUNTIME_UNSUPPORTED', message: 'The active Sekai64 renderer does not expose dynamic procedural clouds; the runtime cloud update was skipped.' })
       return
     }
-    if (!this.runtimeProceduralCloudsActive && environment.sky?.enabled && renderer.setEnvironmentMap) {
-      const stars = environment.sky.stars
-      const starDensity = stars && stars.enabled !== false ? stars.density ?? 0.35 : 0
-      const sky = createProceduralSky({
-        id: 'anyo-procedural-sky-runtime-base', width: environment.sky.width, height: environment.sky.height,
-        zenithColor: environment.sky.zenithColor ? colorToLinearTriplet(environment.sky.zenithColor) : undefined,
-        horizonColor: environment.sky.horizonColor ? colorToLinearTriplet(environment.sky.horizonColor) : undefined,
-        groundColor: environment.sky.groundColor ? colorToLinearTriplet(environment.sky.groundColor) : undefined,
-        sunColor: environment.sky.sunColor ? colorToLinearTriplet(environment.sky.sunColor) : undefined,
-        sunDirection: environment.sky.sunDirection, sunAngularRadius: environment.sky.sunSize, sunIntensity: environment.sky.sunIntensity, haze: environment.sky.haze,
-        cloudCoverage: 0, cloudDensity: environment.sky.cloudDensity, cloudSeed: environment.sky.seed,
-        starDensity, starIntensity: stars?.intensity, starBrightnessVariation: stars?.brightnessVariation, starSizeVariation: stars?.sizeVariation,
-        starColorTemperatureVariation: stars?.colorTemperatureVariation, starSeed: stars?.seed ?? environment.sky.seed, intensity: environment.lighting.diffuseIntensity,
-      })
-      renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: true, backgroundIntensity: 1, label: sky.label })
-      sky.dispose()
+    if (!this.runtimeProceduralCloudsActive && environment.sky?.enabled) {
       this.runtimeProceduralCloudsActive = true
+      this.runtimeSkyMapKey = null
+      this.refreshRuntimeSkyMap(this.runtimeEnvironmentState ?? this.runtimeEnvironmentFromAuthored(environment), true)
     }
+    const runtimeSky = this.runtimeEnvironmentState?.sky
     renderer.setProceduralClouds({
       ...state,
-      sunDirection: environment.sky?.sunDirection,
-      sunIntensity: environment.sky?.sunIntensity,
+      sunDirection: runtimeSky?.sunDirection ?? environment.sky?.sunDirection,
+      sunIntensity: runtimeSky?.sunIntensity ?? environment.sky?.sunIntensity,
     })
   }
 
@@ -769,22 +762,55 @@ export class Sekai64Renderer implements RendererAdapter {
     const renderer = engine.renderer as Engine['renderer'] & { setProceduralClouds?: (clouds: Record<string, unknown> | undefined) => void }
     renderer.setProceduralClouds?.(undefined)
     this.runtimeProceduralCloudsActive = false
-    if (!environment.sky?.enabled || !renderer.setEnvironmentMap) return
-    const stars = environment.sky.stars
-    const starDensity = stars && stars.enabled !== false ? stars.density ?? 0.35 : 0
-    const sky = createProceduralSky({
-      id: 'anyo-procedural-sky', width: environment.sky.width, height: environment.sky.height,
-      zenithColor: environment.sky.zenithColor ? colorToLinearTriplet(environment.sky.zenithColor) : undefined,
-      horizonColor: environment.sky.horizonColor ? colorToLinearTriplet(environment.sky.horizonColor) : undefined,
-      groundColor: environment.sky.groundColor ? colorToLinearTriplet(environment.sky.groundColor) : undefined,
-      sunColor: environment.sky.sunColor ? colorToLinearTriplet(environment.sky.sunColor) : undefined,
-      sunDirection: environment.sky.sunDirection, sunAngularRadius: environment.sky.sunSize, sunIntensity: environment.sky.sunIntensity, haze: environment.sky.haze,
-      cloudCoverage: environment.sky.cloudCoverage, cloudDensity: environment.sky.cloudDensity, cloudSeed: environment.sky.seed,
-      starDensity, starIntensity: stars?.intensity, starBrightnessVariation: stars?.brightnessVariation, starSizeVariation: stars?.sizeVariation,
-      starColorTemperatureVariation: stars?.colorTemperatureVariation, starSeed: stars?.seed ?? environment.sky.seed, intensity: environment.lighting.diffuseIntensity,
-    })
-    renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: true, backgroundIntensity: 1, label: sky.label })
-    sky.dispose()
+    this.runtimeSkyMapKey = null
+    this.refreshRuntimeSkyMap(this.runtimeEnvironmentState ?? this.runtimeEnvironmentFromAuthored(environment), true)
+  }
+
+  applyRuntimeEnvironmentState(state: RuntimeEnvironmentState): void {
+    this.assertAlive()
+    const engine = this.engine
+    const document = this.document
+    if (!engine || !document) return
+    this.runtimeEnvironmentState = state
+    engine.setClearColor(state.background)
+    if (this.environmentAmbientLight) {
+      this.environmentAmbientLight.color.set(state.ambientLight.color)
+      this.environmentAmbientLight.intensity = Math.max(0, state.ambientLight.intensity)
+    }
+    if (this.environmentSunLight) {
+      this.environmentSunLight.color.set(state.sun.color)
+      this.environmentSunLight.intensity = Math.max(0, state.sun.intensity)
+      this.environmentSunLight.setTransform({ position: state.sun.position })
+      const [x, y, z] = state.sun.position
+      const lengthSquared = x * x + y * y + z * z
+      if (Number.isFinite(lengthSquared) && lengthSquared > 1e-12) this.environmentSunLight.direction.set(-x, -y, -z).normalize()
+      else this.environmentSunLight.direction.set(0, -1, 0)
+    }
+    this.refreshRuntimeSkyMap(state)
+  }
+
+  resetRuntimeEnvironmentState(): void {
+    this.assertAlive()
+    const document = this.document
+    if (!document) return
+    const environment = normalizeEnvironmentDefinition(document.environment)
+    this.runtimeEnvironmentState = null
+    this.runtimeSkyMapKey = null
+    this.engine?.setClearColor(environment.background)
+    if (this.environmentAmbientLight) {
+      this.environmentAmbientLight.color.set(environment.ambientLight.color)
+      this.environmentAmbientLight.intensity = environment.ambientLight.intensity
+    }
+    if (this.environmentSunLight) {
+      this.environmentSunLight.color.set(environment.sun.color)
+      this.environmentSunLight.intensity = environment.sun.intensity
+      this.environmentSunLight.setTransform({ position: environment.sun.position })
+      const [x, y, z] = environment.sun.position
+      const lengthSquared = x * x + y * y + z * z
+      if (Number.isFinite(lengthSquared) && lengthSquared > 1e-12) this.environmentSunLight.direction.set(-x, -y, -z).normalize()
+      else this.environmentSunLight.direction.set(0, -1, 0)
+    }
+    this.refreshRuntimeSkyMap(this.runtimeEnvironmentFromAuthored(environment), true)
   }
 
   async updatePrimitive(primitive: CompiledPrimitive): Promise<void> {
@@ -1936,6 +1962,58 @@ export class Sekai64Renderer implements RendererAdapter {
     }
   }
 
+  private runtimeEnvironmentFromAuthored(environment: ReturnType<typeof normalizeEnvironmentDefinition>): RuntimeEnvironmentState {
+    const sky = environment.sky
+    if (!sky?.enabled) throw new Error('Runtime environment state requires an enabled procedural environment sky.')
+    return {
+      background: environment.background,
+      sky: {
+        zenithColor: sky.zenithColor ?? environment.lighting.skyColor, horizonColor: sky.horizonColor ?? environment.background, groundColor: sky.groundColor ?? environment.lighting.groundColor, sunColor: sky.sunColor ?? environment.sun.color,
+        sunDirection: sky.sunDirection ? [sky.sunDirection[0], sky.sunDirection[1], sky.sunDirection[2]] : [0.35, 0.72, -0.6],
+        sunIntensity: sky.sunIntensity ?? environment.sun.intensity, haze: sky.haze ?? 0.22,
+      },
+      ambientLight: { color: environment.ambientLight.color, intensity: environment.ambientLight.intensity },
+      sun: { color: environment.sun.color, intensity: environment.sun.intensity, position: [environment.sun.position[0], environment.sun.position[1], environment.sun.position[2]] },
+    }
+  }
+
+  private refreshRuntimeSkyMap(state: RuntimeEnvironmentState, force = false): void {
+    const engine = this.engine
+    const document = this.document
+    if (!engine || !document) return
+    const environment = normalizeEnvironmentDefinition(document.environment)
+    const renderer = engine.renderer
+    if (!environment.sky?.enabled || !renderer.setEnvironmentMap) return
+    const stars = environment.sky.stars
+    const starDensity = stars && stars.enabled !== false ? stars.density ?? 0.35 : 0
+    // The baked sky is expensive enough that a 1 Hz astronomy controller must
+    // not rebuild it for imperceptible solar-direction changes. The cache key
+    // follows visible baked inputs; sun direction only matters when the baked
+    // sun disc is enabled. Dynamic clouds receive live sun state separately.
+    const skyDirectionKey = state.sky.sunIntensity > 0.0001 ? state.sky.sunDirection.map(value => Number(value.toFixed(2))) : [0, 0, 0]
+    const key = JSON.stringify([
+      state.sky.zenithColor, state.sky.horizonColor, state.sky.groundColor, state.sky.sunColor, skyDirectionKey,
+      Number(state.sky.sunIntensity.toFixed(4)), Number(state.sky.haze.toFixed(4)), this.runtimeProceduralCloudsActive,
+      environment.sky.width, environment.sky.height, environment.sky.cloudCoverage, environment.sky.cloudDensity, environment.sky.seed,
+      starDensity, stars?.intensity, stars?.seed ?? environment.sky.seed, environment.lighting.diffuseIntensity,
+    ])
+    if (!force && key === this.runtimeSkyMapKey) return
+    this.runtimeSkyMapKey = key
+    const sky = createProceduralSky({
+      id: 'anyo-procedural-sky-runtime-environment', width: environment.sky.width, height: environment.sky.height,
+      zenithColor: colorToLinearTriplet(state.sky.zenithColor),
+      horizonColor: colorToLinearTriplet(state.sky.horizonColor),
+      groundColor: colorToLinearTriplet(state.sky.groundColor),
+      sunColor: colorToLinearTriplet(state.sky.sunColor),
+      sunDirection: state.sky.sunDirection, sunAngularRadius: environment.sky.sunSize, sunIntensity: state.sky.sunIntensity, haze: state.sky.haze,
+      cloudCoverage: this.runtimeProceduralCloudsActive ? 0 : environment.sky.cloudCoverage, cloudDensity: environment.sky.cloudDensity, cloudSeed: environment.sky.seed,
+      starDensity, starIntensity: stars?.intensity, starBrightnessVariation: stars?.brightnessVariation, starSizeVariation: stars?.sizeVariation,
+      starColorTemperatureVariation: stars?.colorTemperatureVariation, starSeed: stars?.seed ?? environment.sky.seed, intensity: environment.lighting.diffuseIntensity,
+    })
+    renderer.setEnvironmentMap({ width: sky.width, height: sky.height, pixels: sky.toLdr(), intensity: environment.lighting.specularIntensity, rotation: environment.lighting.environmentRotation, background: true, backgroundIntensity: 1, label: sky.label })
+    sky.dispose()
+  }
+
   private installEnvironment(document: NormalizedWorldDocument): void {
     if (!this.scene) return
     const environment = normalizeEnvironmentDefinition(document.environment)
@@ -1947,6 +2025,7 @@ export class Sekai64Renderer implements RendererAdapter {
       layerMask: RENDER_MASK_LIMIT,
     })
     this.scene.add(ambientLight)
+    this.environmentAmbientLight = ambientLight
     const sun = environment.sun
     const directional = new DirectionalLight({
       id: 'anyo-environment-sun',
@@ -1966,6 +2045,7 @@ export class Sekai64Renderer implements RendererAdapter {
     }
     directional.castShadow = Boolean(sun.castShadow && sun.shadow.enabled && this.capabilityState.shadows)
     this.scene.add(directional)
+    this.environmentSunLight = directional
   }
 
   private applyNodeMetadata(node: Node, primitive: CompiledPrimitive): void {
@@ -2068,6 +2148,10 @@ export class Sekai64Renderer implements RendererAdapter {
     this.particleEmitters.clear()
     this.pointFields.clear()
     this.lastParticleFrameTime = 0
+    this.runtimeEnvironmentState = null
+    this.runtimeSkyMapKey = null
+    this.environmentAmbientLight = null
+    this.environmentSunLight = null
     this.document = null
     this.compiled = null
     this.metrics.instancedBatchCount = 0

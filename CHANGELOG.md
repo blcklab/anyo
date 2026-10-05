@@ -1,3 +1,11 @@
+## 0.11.0-rc.22
+
+- Add a renderer-neutral runtime environment surface for live sky palette, ambient light, and directional-sun state without rewriting authored World JSON.
+- `World.setEnvironmentRuntimeState()` supports partial runtime updates for background/sky colors, sun direction/intensity, ambient light, and authored sun light position/color/intensity; `resetEnvironmentRuntimeState()` restores the authored presentation.
+- Runtime environment overrides survive renderer replacement/rebuild within the same loaded world and remain outside World 0.8/0.9 schemas.
+- The Sekai64 adapter updates its existing ambient/directional light nodes in place and refreshes the procedural background only when visible baked-sky inputs change; dynamic clouds consume the current runtime sun direction/intensity.
+- No SiriusX, Helios, Luna, weather, Vue, or host-package semantics were added to Anyo. Validated against Sekai64 rc.54.
+
 ## 0.11.0-rc.21
 
 - Restore procedural-sky visual backward compatibility: authored/static worlds remain on Sekai64's baked procedural-sky path even when the renderer also exposes dynamic cloud capability.

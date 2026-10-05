@@ -50,6 +50,9 @@ import type {
   RuntimePointFieldUpdate,
   RuntimeProceduralCloudStateInput,
   RuntimeProceduralCloudState,
+  RuntimeEnvironmentStateInput,
+  RuntimeEnvironmentState,
+  Vec3,
   SystemFrameDriver,
   WorldSystem,
   Matrix4Tuple,
@@ -247,6 +250,7 @@ export class World {
   private runtimeTransformQueue: Promise<void> = Promise.resolve()
   private readonly runtimePointFieldOverrides = new Map<string, RuntimePointFieldUpdate>()
   private runtimeProceduralCloudOverride: RuntimeProceduralCloudState | null = null
+  private runtimeEnvironmentOverride: RuntimeEnvironmentState | null = null
   private previewState: PreviewState | null = null
   private readonly systemScheduler: SystemScheduler
   private readonly validationOptions: WorldValidationOptions
@@ -299,6 +303,7 @@ export class World {
       const previousRuntimeTransforms = this.transforms.snapshotLayers()
       const previousRuntimePointFields = new Map(this.runtimePointFieldOverrides)
       const previousRuntimeProceduralCloudOverride = this.runtimeProceduralCloudOverride
+      const previousRuntimeEnvironmentOverride = this.runtimeEnvironmentOverride
       const resolvedGraph = await resolveWorldDocumentImports(migration.document, { sourceContext: loaded.sourceContext, documentLoader: this.documentLoader, validation: this.validationOptions })
       this.sourceDocument = migration.document
       this.sourceContext = loaded.sourceContext
@@ -306,6 +311,7 @@ export class World {
       this.runtimeData = structuredClone(migration.document.data ?? {})
       this.runtimePointFieldOverrides.clear()
       this.runtimeProceduralCloudOverride = null
+      this.runtimeEnvironmentOverride = null
       try {
         await this.rebuild({ preserveRuntime: false, resetRuntimeTransforms: true })
       } catch (error) {
@@ -317,6 +323,7 @@ export class World {
         this.runtimePointFieldOverrides.clear()
         for (const [key, update] of previousRuntimePointFields) this.runtimePointFieldOverrides.set(key, update)
         this.runtimeProceduralCloudOverride = previousRuntimeProceduralCloudOverride
+        this.runtimeEnvironmentOverride = previousRuntimeEnvironmentOverride
         if (previousSource) {
           try { await this.rebuild({ preserveRuntime: true }) }
           catch (restoreError) { this.warningHandler(`World rollback failed after load error: ${String(restoreError)}`) }
@@ -517,6 +524,104 @@ export class World {
     return true
   }
 
+  setEnvironmentRuntimeState(state: RuntimeEnvironmentStateInput): void {
+    this.assertReady()
+    const base = this.runtimeEnvironmentOverride ?? this.createAuthoredEnvironmentRuntimeState()
+    const update = this.createRuntimeEnvironmentState(state, base)
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.applyRuntimeEnvironmentState) {
+      throw new Error('The attached renderer does not support runtime environment synchronization.')
+    }
+    this.runtimeEnvironmentOverride = update
+    this.renderer.applyRuntimeEnvironmentState?.(update)
+    // Dynamic clouds derive their generic sun lighting from the current runtime
+    // environment. Reapply an active override so the renderer observes the new
+    // sun direction/intensity without mutating authored cloud state.
+    if (this.runtimeProceduralCloudOverride) this.renderer.applyRuntimeProceduralCloudState?.(this.runtimeProceduralCloudOverride)
+    this.events.emit('runtime:environment', { type: 'set', state: update })
+  }
+
+  resetEnvironmentRuntimeState(): boolean {
+    this.assertReady()
+    if (!this.runtimeEnvironmentOverride) return false
+    this.runtimeEnvironmentOverride = null
+    const update = this.createAuthoredEnvironmentRuntimeState()
+    if (!isHeadlessRenderer(this.renderer) && !this.renderer.resetRuntimeEnvironmentState && !this.renderer.applyRuntimeEnvironmentState) {
+      throw new Error('The attached renderer does not support runtime environment synchronization.')
+    }
+    if (this.renderer.resetRuntimeEnvironmentState) this.renderer.resetRuntimeEnvironmentState()
+    else this.renderer.applyRuntimeEnvironmentState?.(update)
+    if (this.runtimeProceduralCloudOverride) this.renderer.applyRuntimeProceduralCloudState?.(this.runtimeProceduralCloudOverride)
+    this.events.emit('runtime:environment', { type: 'reset', state: update })
+    return true
+  }
+
+  private createAuthoredEnvironmentRuntimeState(): RuntimeEnvironmentState {
+    const environment = this.document?.environment
+    if (!environment) throw new Error('Runtime environment state requires a loaded world environment.')
+    const sky = environment.sky
+    if (!sky?.enabled) throw new Error('Runtime environment state requires an enabled procedural environment sky.')
+    return {
+      background: environment.background,
+      sky: {
+        zenithColor: sky.zenithColor ?? environment.lighting.skyColor,
+        horizonColor: sky.horizonColor ?? environment.background,
+        groundColor: sky.groundColor ?? environment.lighting.groundColor,
+        sunColor: sky.sunColor ?? environment.sun.color,
+        sunDirection: sky.sunDirection ? [sky.sunDirection[0], sky.sunDirection[1], sky.sunDirection[2]] : [0.35, 0.72, -0.6],
+        sunIntensity: sky.sunIntensity ?? environment.sun.intensity,
+        haze: sky.haze ?? 0.22,
+      },
+      ambientLight: { color: environment.ambientLight.color, intensity: environment.ambientLight.intensity },
+      sun: { color: environment.sun.color, intensity: environment.sun.intensity, position: [environment.sun.position[0], environment.sun.position[1], environment.sun.position[2]] },
+    }
+  }
+
+  private createRuntimeEnvironmentState(input: RuntimeEnvironmentStateInput, base: RuntimeEnvironmentState): RuntimeEnvironmentState {
+    if (!input || typeof input !== 'object') throw new Error('setEnvironmentRuntimeState requires an environment state object.')
+    const color = (value: unknown, fallback: string, path: string): string => {
+      if (value === undefined) return fallback
+      if (typeof value !== 'string' || !value.trim()) throw new Error(`${path} must be a non-empty color string.`)
+      return value
+    }
+    const finiteNonNegative = (value: unknown, fallback: number, path: string): number => {
+      if (value === undefined) return fallback
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) throw new Error(`${path} must be a non-negative finite number.`)
+      return value
+    }
+    const finiteVec3 = (value: unknown, fallback: Vec3, path: string, requireNonZero = false): Vec3 => {
+      if (value === undefined) return [fallback[0], fallback[1], fallback[2]]
+      if (!Array.isArray(value) || value.length !== 3 || value.some((item) => typeof item !== 'number' || !Number.isFinite(item))) throw new Error(`${path} must be a finite vec3.`)
+      if (requireNonZero && Math.hypot(value[0], value[1], value[2]) <= 0) throw new Error(`${path} must be a non-zero finite vec3.`)
+      return [value[0], value[1], value[2]]
+    }
+    const sky = input.sky ?? {}
+    const ambient = input.ambientLight ?? {}
+    const sun = input.sun ?? {}
+    const haze = sky.haze === undefined ? base.sky.haze : sky.haze
+    if (typeof haze !== 'number' || !Number.isFinite(haze) || haze < 0 || haze > 1) throw new Error('sky.haze must be between 0 and 1.')
+    return {
+      background: color(input.background, base.background, 'background'),
+      sky: {
+        zenithColor: color(sky.zenithColor, base.sky.zenithColor, 'sky.zenithColor'),
+        horizonColor: color(sky.horizonColor, base.sky.horizonColor, 'sky.horizonColor'),
+        groundColor: color(sky.groundColor, base.sky.groundColor, 'sky.groundColor'),
+        sunColor: color(sky.sunColor, base.sky.sunColor, 'sky.sunColor'),
+        sunDirection: finiteVec3(sky.sunDirection, base.sky.sunDirection, 'sky.sunDirection', true),
+        sunIntensity: finiteNonNegative(sky.sunIntensity, base.sky.sunIntensity, 'sky.sunIntensity'),
+        haze,
+      },
+      ambientLight: {
+        color: color(ambient.color, base.ambientLight.color, 'ambientLight.color'),
+        intensity: finiteNonNegative(ambient.intensity, base.ambientLight.intensity, 'ambientLight.intensity'),
+      },
+      sun: {
+        color: color(sun.color, base.sun.color, 'sun.color'),
+        intensity: finiteNonNegative(sun.intensity, base.sun.intensity, 'sun.intensity'),
+        position: finiteVec3(sun.position, base.sun.position, 'sun.position'),
+      },
+    }
+  }
+
   private createAuthoredProceduralCloudState(): RuntimeProceduralCloudState {
     const sky = this.document?.environment?.sky
     if (!sky?.enabled) throw new Error('Runtime procedural clouds require an enabled procedural environment sky.')
@@ -609,6 +714,16 @@ export class World {
       return
     }
     if (!isHeadlessRenderer(this.renderer)) this.warningHandler('The attached renderer does not support runtime procedural-cloud synchronization; the override was retained but not applied.')
+  }
+
+  private reapplyRuntimeEnvironmentOverride(): void {
+    const update = this.runtimeEnvironmentOverride
+    if (!update) return
+    if (this.renderer.applyRuntimeEnvironmentState) {
+      this.renderer.applyRuntimeEnvironmentState(update)
+      return
+    }
+    if (!isHeadlessRenderer(this.renderer)) this.warningHandler('The attached renderer does not support runtime environment synchronization; the override was retained but not applied.')
   }
 
   private resolveRuntimePointFieldTarget(entityId: string, componentId?: string): { entity: CompiledEntityNode; component: CompiledComponent } {
@@ -1517,6 +1632,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.runtimeData = {}
     this.runtimePointFieldOverrides.clear()
     this.runtimeProceduralCloudOverride = null
+    this.runtimeEnvironmentOverride = null
     this.transforms.clearAll()
     this.transforms.updateWorld(null)
     this.query.update(null)
@@ -1804,6 +1920,7 @@ Detach the surface attachment before committing a runtime world transform.`)
     this.query.update(prepared.compiled)
     this.transforms.updateWorld(prepared.compiled)
     this.reapplyRuntimePointFieldOverrides(prepared.compiled)
+    this.reapplyRuntimeEnvironmentOverride()
     this.reapplyRuntimeProceduralCloudOverride()
     const context: PluginRuntimeContext = {
       world: this,

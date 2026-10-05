@@ -10,7 +10,7 @@ test('rc21 keeps authored procedural clouds baked until runtime opt-in', () => {
 })
 
 test('rc21 runtime opt-in removes baked clouds before enabling dynamic overlay', () => {
-  assert.match(source, /if \(!this\.runtimeProceduralCloudsActive[\s\S]*cloudCoverage: 0,[\s\S]*renderer\.setProceduralClouds\(/)
+  assert.match(source, /if \(!this\.runtimeProceduralCloudsActive[\s\S]*runtimeProceduralCloudsActive = true[\s\S]*refreshRuntimeSkyMap[\s\S]*renderer\.setProceduralClouds\(/)
 })
 
 test('rc21 reset restores authored baked cloud presentation', () => {

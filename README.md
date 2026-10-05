@@ -398,3 +398,24 @@ world.setProceduralCloudState({
 `World.setProceduralCloudState()` is the renderer-neutral runtime surface for dynamic skies. Besides coverage/density/scale/seed and macro `offset`/`evolution`, rc.20 accepts an independent `detailOffset`/`detailEvolution` channel and bounded appearance controls (`macroScale`, `detailScale`, `detailStrength`, `edgeSoftness`, `warpStrength`, `horizonVisibility`, `horizonSoftness`, `horizonExtension`, `horizonCompression`, `horizonAtmosphericFade`, lighting strengths, and cloud colors). The horizon-underlap fields let a renderer continue distant cloud banks slightly beneath the mathematical horizon while fading them before downward-looking directions; ordinary scene geometry remains independent and renders in front. These values remain runtime-only and do not rewrite authored World JSON.
 
 This contract exists so host/world data can define cloud identity and art direction while Anyo and Sekai64 remain frozen.
+
+### Runtime environment state (rc.22)
+
+Hosts may update generic sky and lighting presentation without rebuilding or rewriting the authored world:
+
+```ts
+world.setEnvironmentRuntimeState({
+  background: '#081126',
+  sky: {
+    zenithColor: '#10214a',
+    horizonColor: '#3a385b',
+    groundColor: '#0c101b',
+    sunDirection: [0.2, -0.3, -0.93],
+    sunIntensity: 0,
+  },
+  ambientLight: { intensity: 0.18 },
+  sun: { color: '#ffb078', intensity: 0.08, position: [20, -30, -90] },
+})
+```
+
+The contract is deliberately provider-neutral. Astronomy, weather, time-of-day, or game systems may produce these generic values externally; Anyo does not import or identify those providers. `resetEnvironmentRuntimeState()` restores the authored environment. Active runtime clouds are re-lit from the latest runtime sky sun direction/intensity.

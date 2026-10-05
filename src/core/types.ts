@@ -2116,6 +2116,52 @@ export interface RuntimeProceduralCloudState {
   lightColor: readonly [number, number, number]
 }
 
+/** Runtime-only generic environment state. Provider/domain semantics stay outside Anyo. */
+export interface RuntimeEnvironmentStateInput {
+  background?: string
+  sky?: {
+    zenithColor?: string
+    horizonColor?: string
+    groundColor?: string
+    sunColor?: string
+    sunDirection?: Vec3
+    sunIntensity?: number
+    haze?: number
+  }
+  ambientLight?: {
+    color?: string
+    intensity?: number
+  }
+  sun?: {
+    color?: string
+    intensity?: number
+    position?: Vec3
+  }
+}
+
+/** Fully resolved renderer-neutral environment runtime state. */
+export interface RuntimeEnvironmentState {
+  background: string
+  sky: {
+    zenithColor: string
+    horizonColor: string
+    groundColor: string
+    sunColor: string
+    sunDirection: Vec3
+    sunIntensity: number
+    haze: number
+  }
+  ambientLight: {
+    color: string
+    intensity: number
+  }
+  sun: {
+    color: string
+    intensity: number
+    position: Vec3
+  }
+}
+
 export interface RuntimeTransformStoreLike {
   set(entityId: string, transform: RuntimeTransformInput, options: RuntimeTransformWriteOptions): void
   clear(entityId: string, source?: string): boolean
@@ -2207,6 +2253,10 @@ export interface RendererAdapter {
   applyRuntimeProceduralCloudState?(state: RuntimeProceduralCloudState): void
   /** Restores the renderer's authored procedural-cloud presentation after a runtime override. */
   resetRuntimeProceduralCloudState?(): void
+  /** Synchronous hot path for host-driven generic sky/ambient/sun runtime state. */
+  applyRuntimeEnvironmentState?(state: RuntimeEnvironmentState): void
+  /** Restores authored environment presentation after a runtime override. */
+  resetRuntimeEnvironmentState?(): void
   updatePrimitive?(primitive: CompiledPrimitive): void | Promise<void>
   removePrimitive?(primitiveId: string): void | Promise<void>
   setPrimitiveVisibility?(primitiveId: string, visible: boolean): void
@@ -2442,6 +2492,10 @@ export interface WorldLike {
   setProceduralCloudState(state: RuntimeProceduralCloudStateInput): void
   /** Restores authored/default procedural cloud state. */
   resetProceduralCloudState(): boolean
+  /** Applies runtime-only generic sky/ambient/sun state without rewriting authored World JSON. */
+  setEnvironmentRuntimeState(state: RuntimeEnvironmentStateInput): void
+  /** Restores the authored environment state after a runtime override. */
+  resetEnvironmentRuntimeState(): boolean
   whenReady(): Promise<void>
   whenIdle(): Promise<void>
   getAssetProgress(): RendererAssetProgress
