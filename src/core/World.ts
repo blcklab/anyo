@@ -522,7 +522,14 @@ export class World {
     const coverage = typeof sky.cloudCoverage === 'number' && Number.isFinite(sky.cloudCoverage) ? Math.max(0, Math.min(1, sky.cloudCoverage)) : 0.18
     const density = typeof sky.cloudDensity === 'number' && Number.isFinite(sky.cloudDensity) ? Math.max(0, sky.cloudDensity) : 0.65
     const seed = typeof sky.seed === 'number' && Number.isFinite(sky.seed) ? sky.seed : 1
-    return { enabled: coverage > 0, coverage, density, scale: 3.5, seed, offset: [0, 0], evolution: 0 }
+    return {
+      enabled: coverage > 0, coverage, density, scale: 3.5, seed,
+      offset: [0, 0], evolution: 0, detailOffset: [0, 0], detailEvolution: 0,
+      macroScale: 1, detailScale: 1, detailStrength: 0.1, edgeSoftness: 0.09, warpStrength: 0.16,
+      horizonVisibility: 0.62, horizonSoftness: 0.18,
+      shadowStrength: 0.24, highlightStrength: 0.58, silverLiningStrength: 0.08,
+      ambientColor: [0.86, 0.9, 0.98], shadowColor: [0.68, 0.74, 0.86], lightColor: [1.08, 1.03, 0.96],
+    }
   }
 
   private createRuntimeProceduralCloudState(input: RuntimeProceduralCloudStateInput, base: RuntimeProceduralCloudState): RuntimeProceduralCloudState {
@@ -533,20 +540,57 @@ export class World {
     const seed = input.seed ?? base.seed
     const evolution = input.evolution ?? base.evolution
     const offset = input.offset ?? base.offset
+    const detailEvolution = input.detailEvolution ?? (input.evolution !== undefined ? evolution : base.detailEvolution)
+    const detailOffset = input.detailOffset ?? (input.offset !== undefined ? offset : base.detailOffset)
+    const macroScale = input.macroScale ?? base.macroScale
+    const detailScale = input.detailScale ?? base.detailScale
+    const detailStrength = input.detailStrength ?? base.detailStrength
+    const edgeSoftness = input.edgeSoftness ?? base.edgeSoftness
+    const warpStrength = input.warpStrength ?? base.warpStrength
+    const horizonVisibility = input.horizonVisibility ?? base.horizonVisibility
+    const horizonSoftness = input.horizonSoftness ?? base.horizonSoftness
+    const shadowStrength = input.shadowStrength ?? base.shadowStrength
+    const highlightStrength = input.highlightStrength ?? base.highlightStrength
+    const silverLiningStrength = input.silverLiningStrength ?? base.silverLiningStrength
+    const ambientColor = input.ambientColor ?? base.ambientColor
+    const shadowColor = input.shadowColor ?? base.shadowColor
+    const lightColor = input.lightColor ?? base.lightColor
+    const finiteRange = (value: number, name: string, minimum: number, maximum: number): number => {
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < minimum || value > maximum) throw new Error(`Runtime cloud ${name} must be a finite number between ${minimum} and ${maximum}.`)
+      return value
+    }
+    const finiteVec2 = (value: readonly [number, number], name: string): readonly [number, number] => {
+      if (!Array.isArray(value) || value.length !== 2 || value.some((item) => typeof item !== 'number' || !Number.isFinite(item))) throw new Error(`Runtime cloud ${name} must be a finite vec2.`)
+      return [value[0], value[1]]
+    }
+    const finiteColor = (value: readonly [number, number, number], name: string): readonly [number, number, number] => {
+      if (!Array.isArray(value) || value.length !== 3 || value.some((item) => typeof item !== 'number' || !Number.isFinite(item) || item < 0 || item > 4)) throw new Error(`Runtime cloud ${name} must be a finite non-negative vec3 with channels no greater than 4.`)
+      return [value[0], value[1], value[2]]
+    }
     if (typeof coverage !== 'number' || !Number.isFinite(coverage) || coverage < 0 || coverage > 1) throw new Error('Runtime cloud coverage must be a finite number between 0 and 1.')
     if (typeof density !== 'number' || !Number.isFinite(density) || density < 0) throw new Error('Runtime cloud density must be a non-negative finite number.')
     if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.1) throw new Error('Runtime cloud scale must be a finite number greater than or equal to 0.1.')
     if (typeof seed !== 'number' || !Number.isFinite(seed)) throw new Error('Runtime cloud seed must be finite.')
     if (typeof evolution !== 'number' || !Number.isFinite(evolution)) throw new Error('Runtime cloud evolution must be finite.')
-    if (!Array.isArray(offset) || offset.length !== 2 || offset.some((value) => typeof value !== 'number' || !Number.isFinite(value))) throw new Error('Runtime cloud offset must be a finite vec2.')
+    if (typeof detailEvolution !== 'number' || !Number.isFinite(detailEvolution)) throw new Error('Runtime cloud detailEvolution must be finite.')
     return {
       enabled: input.enabled ?? base.enabled,
-      coverage,
-      density,
-      scale,
-      seed,
-      offset: [offset[0], offset[1]],
-      evolution,
+      coverage, density, scale, seed,
+      offset: finiteVec2(offset, 'offset'), evolution,
+      detailOffset: finiteVec2(detailOffset, 'detailOffset'), detailEvolution,
+      macroScale: finiteRange(macroScale, 'macroScale', 0.2, 4),
+      detailScale: finiteRange(detailScale, 'detailScale', 0.2, 4),
+      detailStrength: finiteRange(detailStrength, 'detailStrength', 0, 0.5),
+      edgeSoftness: finiteRange(edgeSoftness, 'edgeSoftness', 0.01, 0.3),
+      warpStrength: finiteRange(warpStrength, 'warpStrength', 0, 0.6),
+      horizonVisibility: finiteRange(horizonVisibility, 'horizonVisibility', 0, 1),
+      horizonSoftness: finiteRange(horizonSoftness, 'horizonSoftness', 0.01, 0.6),
+      shadowStrength: finiteRange(shadowStrength, 'shadowStrength', 0, 1),
+      highlightStrength: finiteRange(highlightStrength, 'highlightStrength', 0, 1.5),
+      silverLiningStrength: finiteRange(silverLiningStrength, 'silverLiningStrength', 0, 0.5),
+      ambientColor: finiteColor(ambientColor, 'ambientColor'),
+      shadowColor: finiteColor(shadowColor, 'shadowColor'),
+      lightColor: finiteColor(lightColor, 'lightColor'),
     }
   }
 

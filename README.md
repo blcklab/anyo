@@ -15,7 +15,7 @@
 npm install @blcklab/anyo@next
 ```
 
-Install a renderer only when your application needs one. The official Sekai64 adapter supports `@blcklab/sekai64@0.8.0-rc.33`.
+Install a renderer only when your application needs one. The official Sekai64 adapter supports the current `@blcklab/sekai64@0.8.x` release-candidate line through the declared peer range.
 
 ```bash
 npm install @blcklab/sekai64@next
@@ -392,3 +392,9 @@ world.setProceduralCloudState({
 
 `seed` selects the deterministic cloud family. Keep the seed stable for continuous clouds; change `offset` for drift and `evolution` for gradual shape change. `resetProceduralCloudState()` restores the authored/default cloud state.
 
+
+### World-authored procedural-cloud appearance
+
+`World.setProceduralCloudState()` is the renderer-neutral runtime surface for dynamic skies. Besides coverage/density/scale/seed and macro `offset`/`evolution`, rc.19 accepts an independent `detailOffset`/`detailEvolution` channel and bounded appearance controls (`macroScale`, `detailScale`, `detailStrength`, `edgeSoftness`, `warpStrength`, `horizonVisibility`, `horizonSoftness`, lighting strengths, and cloud colors). These values remain runtime-only and do not rewrite authored World JSON.
+
+This contract exists so host/world data can define cloud identity and art direction while Anyo and Sekai64 remain frozen.

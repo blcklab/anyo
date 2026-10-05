@@ -19,6 +19,25 @@ const cloudWorld = () => ({
   entities: [],
 })
 
+
+const defaultCloudStyle = {
+  detailOffset: [0, 0],
+  detailEvolution: 0,
+  macroScale: 1,
+  detailScale: 1,
+  detailStrength: 0.1,
+  edgeSoftness: 0.09,
+  warpStrength: 0.16,
+  horizonVisibility: 0.62,
+  horizonSoftness: 0.18,
+  shadowStrength: 0.24,
+  highlightStrength: 0.58,
+  silverLiningStrength: 0.08,
+  ambientColor: [0.86, 0.9, 0.98],
+  shadowColor: [0.68, 0.74, 0.86],
+  lightColor: [1.08, 1.03, 0.96],
+}
+
 class CloudCamera {
   position = [0, 1.65, 0]
   rotation = [0, 0]
@@ -60,6 +79,9 @@ test('runtime cloud state is document-neutral, partial-update friendly, resettab
       seed: 991,
       offset: [1.25, -0.5],
       evolution: 2.75,
+      ...defaultCloudStyle,
+      detailOffset: [1.25, -0.5],
+      detailEvolution: 2.75,
     })
 
     world.setProceduralCloudState({ coverage: 0.8, density: 1.1 })
@@ -71,6 +93,9 @@ test('runtime cloud state is document-neutral, partial-update friendly, resettab
       seed: 991,
       offset: [1.25, -0.5],
       evolution: 2.75,
+      ...defaultCloudStyle,
+      detailOffset: [1.25, -0.5],
+      detailEvolution: 2.75,
     }, 'partial weather updates must preserve current motion/evolution state')
     assert.equal(world.serialize(), serializedBefore, 'runtime cloud motion/weather must not rewrite authored JSON')
 
@@ -89,6 +114,7 @@ test('runtime cloud state is document-neutral, partial-update friendly, resettab
       seed: 991,
       offset: [0, 0],
       evolution: 0,
+      ...defaultCloudStyle,
     })
     assert.equal(world.resetProceduralCloudState(), false)
   } finally {
@@ -105,6 +131,9 @@ test('runtime cloud state validates unsafe values and requires an enabled proced
     assert.throws(() => world.setProceduralCloudState({ scale: 0 }), /greater than or equal to 0.1/)
     assert.throws(() => world.setProceduralCloudState({ offset: [0, Number.NaN] }), /finite vec2/)
     assert.throws(() => world.setProceduralCloudState({ evolution: Number.POSITIVE_INFINITY }), /evolution must be finite/)
+    assert.throws(() => world.setProceduralCloudState({ detailStrength: 0.9 }), /detailStrength/)
+    assert.throws(() => world.setProceduralCloudState({ horizonVisibility: -0.1 }), /horizonVisibility/)
+    assert.throws(() => world.setProceduralCloudState({ ambientColor: [1, Number.NaN, 1] }), /ambientColor/)
   } finally {
     await world.disposeAsync()
   }
@@ -115,6 +144,42 @@ test('runtime cloud state validates unsafe values and requires an enabled proced
     assert.throws(() => noSky.setProceduralCloudState({ offset: [1, 0] }), /enabled procedural environment sky/)
   } finally {
     await noSky.disposeAsync()
+  }
+})
+
+test('runtime cloud appearance and independent detail motion remain renderer-neutral and partial-update friendly', async () => {
+  const renderer = new CloudRenderer()
+  const world = createWorld({ renderer, autoResize: false })
+  try {
+    await world.load(cloudWorld())
+    world.setProceduralCloudState({
+      offset: [0.4, 0.1],
+      evolution: 0.3,
+      detailOffset: [0.15, 0.2],
+      detailEvolution: 0.55,
+      macroScale: 0.8,
+      detailScale: 1.2,
+      detailStrength: 0.07,
+      edgeSoftness: 0.12,
+      warpStrength: 0.11,
+      horizonVisibility: 0.74,
+      horizonSoftness: 0.2,
+      shadowStrength: 0.31,
+      highlightStrength: 0.64,
+      silverLiningStrength: 0.05,
+      ambientColor: [0.9, 0.92, 1],
+      shadowColor: [0.55, 0.62, 0.75],
+      lightColor: [1.1, 1.04, 0.96],
+    })
+    const state = renderer.cloudStates.at(-1)
+    assert.deepEqual(state.detailOffset, [0.15, 0.2])
+    assert.equal(state.horizonVisibility, 0.74)
+    assert.deepEqual(state.shadowColor, [0.55, 0.62, 0.75])
+    world.setProceduralCloudState({ coverage: 0.6 })
+    assert.equal(renderer.cloudStates.at(-1).macroScale, 0.8)
+    assert.deepEqual(renderer.cloudStates.at(-1).detailOffset, [0.15, 0.2])
+  } finally {
+    await world.disposeAsync()
   }
 })
 

@@ -1,3 +1,11 @@
+## 0.11.0-rc.19
+
+- Finalize the renderer-neutral procedural-cloud authoring contract so hosts/worlds can tune appearance without changing Anyo or Sekai64.
+- Extend runtime cloud state with independent detail offset/evolution plus bounded macro/detail scale, detail amount, edge softness, warp, horizon presence/softness, lighting response, and cloud colors.
+- Old callers that only supply `offset`/`evolution` remain compatible: detail motion follows the macro channel unless explicitly overridden.
+- Runtime cloud updates remain document-neutral, survive renderer replacement, and do not change World 0.8/0.9 schemas.
+- Validated against Sekai64 rc.51, where these generic controls are realized identically by WebGL2 and WebGPU.
+
 ## 0.11.0-rc.18
 
 - Added runtime-only procedural cloud state through the existing renderer-neutral `World` runtime surface: `setProceduralCloudState()` and `resetProceduralCloudState()`.

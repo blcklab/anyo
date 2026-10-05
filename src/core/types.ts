@@ -2062,6 +2062,23 @@ export interface RuntimeProceduralCloudStateInput {
   seed?: number
   offset?: readonly [number, number]
   evolution?: number
+  /** Independent high-frequency drift; lets authored worlds avoid a single scrolling-texture feel. */
+  detailOffset?: readonly [number, number]
+  detailEvolution?: number
+  /** World-authored renderer-neutral appearance controls. */
+  macroScale?: number
+  detailScale?: number
+  detailStrength?: number
+  edgeSoftness?: number
+  warpStrength?: number
+  horizonVisibility?: number
+  horizonSoftness?: number
+  shadowStrength?: number
+  highlightStrength?: number
+  silverLiningStrength?: number
+  ambientColor?: readonly [number, number, number]
+  shadowColor?: readonly [number, number, number]
+  lightColor?: readonly [number, number, number]
 }
 
 /** Normalized renderer-neutral procedural cloud state. */
@@ -2073,6 +2090,21 @@ export interface RuntimeProceduralCloudState {
   seed: number
   offset: readonly [number, number]
   evolution: number
+  detailOffset: readonly [number, number]
+  detailEvolution: number
+  macroScale: number
+  detailScale: number
+  detailStrength: number
+  edgeSoftness: number
+  warpStrength: number
+  horizonVisibility: number
+  horizonSoftness: number
+  shadowStrength: number
+  highlightStrength: number
+  silverLiningStrength: number
+  ambientColor: readonly [number, number, number]
+  shadowColor: readonly [number, number, number]
+  lightColor: readonly [number, number, number]
 }
 
 export interface RuntimeTransformStoreLike {
