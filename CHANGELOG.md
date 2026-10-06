@@ -1,3 +1,10 @@
+## 0.11.0-rc.23
+
+- Add renderer-neutral `environment.imageQuality.preset` values: `world`, `character`, and `product`; explicitly authored image-quality fields still win over preset defaults.
+- Expose Sekai64-supported `fxaa-high` anti-aliasing and `surfaceDetail` (`off | balanced | high`) through Anyo's authoring contract and World 0.6-0.9 schemas.
+- Keep presets scoped to image quality only: lighting, tone mapping, post-processing, materials, MToon outlines, and provider semantics remain world/renderer owned.
+- Sekai64 handoff strips the semantic `preset` token after Anyo resolves it into concrete renderer-neutral quality fields. Validated against Sekai64 rc.55.
+
 ## 0.11.0-rc.22
 
 - Add a renderer-neutral runtime environment surface for live sky palette, ambient light, and directional-sun state without rewriting authored World JSON.

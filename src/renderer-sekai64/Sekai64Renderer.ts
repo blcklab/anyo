@@ -1879,8 +1879,9 @@ export class Sekai64Renderer implements RendererAdapter {
       ...environment.sun.shadow,
       ...this.options.shadows,
     })
+    const { preset: _imageQualityPreset, ...imageQuality } = environment.imageQuality
     renderer.setImageQuality?.({
-      ...environment.imageQuality,
+      ...imageQuality,
       ...this.options.imageQuality,
     })
     renderer.setAtmosphere?.({

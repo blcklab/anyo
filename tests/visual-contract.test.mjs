@@ -59,6 +59,44 @@ test('environment normalization supplies renderer-neutral color, lighting, shado
   assert.equal(environment.imageQuality.dithering, true)
 })
 
+test('image-quality presets are renderer-neutral defaults and explicit fields still win', () => {
+  const world = normalizeEnvironmentDefinition({ imageQuality: { preset: 'world' } })
+  assert.equal(world.imageQuality.preset, 'world')
+  assert.equal(world.imageQuality.renderScale, 1)
+  assert.equal(world.imageQuality.antialiasing, 'fxaa')
+  assert.equal(world.imageQuality.surfaceDetail, 'balanced')
+
+  const character = normalizeEnvironmentDefinition({
+    imageQuality: { preset: 'character', sharpen: 0.12, surfaceDetail: 'high' },
+  })
+  assert.equal(character.imageQuality.preset, 'character')
+  assert.equal(character.imageQuality.maxAnisotropy, 16)
+  assert.equal(character.imageQuality.renderScale, 1.25)
+  assert.equal(character.imageQuality.antialiasing, 'fxaa-high')
+  assert.equal(character.imageQuality.sharpen, 0.12)
+  assert.equal(character.imageQuality.surfaceDetail, 'high')
+
+  const product = normalizeEnvironmentDefinition({ imageQuality: { preset: 'product' } })
+  assert.equal(product.imageQuality.renderScale, 1.15)
+  assert.equal(product.imageQuality.surfaceDetail, 'high')
+
+  const invalidRuntimePreset = normalizeEnvironmentDefinition({ imageQuality: { preset: 'cinema' } })
+  assert.equal(invalidRuntimePreset.imageQuality.preset, 'world')
+  assert.equal(invalidRuntimePreset.imageQuality.renderScale, 1)
+})
+
+test('image-quality authoring accepts presets, fxaa-high, and surface-detail values', () => {
+  assert.doesNotThrow(() => normalizeWorldDocument(baseDocument({
+    environment: { imageQuality: { preset: 'character', antialiasing: 'fxaa-high', surfaceDetail: 'high' } },
+  })))
+
+  const invalid = inspectWorldDocument(baseDocument({
+    environment: { imageQuality: { preset: 'cinema', surfaceDetail: 'ultra' } },
+  }))
+  assert.ok(invalid.issues.some((issue) => issue.code === 'IMAGE_QUALITY_PRESET_INVALID'))
+  assert.ok(invalid.issues.some((issue) => issue.code === 'SURFACE_DETAIL_INVALID'))
+})
+
 test('world normalization applies the visual contract once before renderer adapters', () => {
   const normalized = normalizeWorldDocument(baseDocument({
     materials: {

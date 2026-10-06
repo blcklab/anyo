@@ -709,6 +709,13 @@
         "imageQuality": {
           "type": "object",
           "properties": {
+            "preset": {
+              "enum": [
+                "world",
+                "character",
+                "product"
+              ]
+            },
             "dithering": {
               "type": "boolean"
             },
@@ -735,13 +742,21 @@
             "antialiasing": {
               "enum": [
                 "none",
-                "fxaa"
+                "fxaa",
+                "fxaa-high"
               ]
             },
             "sharpen": {
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "surfaceDetail": {
+              "enum": [
+                "off",
+                "balanced",
+                "high"
+              ]
             }
           },
           "additionalProperties": true

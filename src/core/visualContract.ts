@@ -67,6 +67,7 @@ export const ANYO_VISUAL_DEFAULTS = Object.freeze({
     mipmaps: true,
     antialiasing: 'fxaa' as const,
     sharpen: 0.08,
+    surfaceDetail: 'balanced' as const,
     atmosphere: Object.freeze({
       enabled: false,
       mode: 'none' as const,
@@ -112,6 +113,39 @@ export const ANYO_VISUAL_DEFAULTS = Object.freeze({
     }),
   }),
 })
+
+const ANYO_IMAGE_QUALITY_PRESETS = Object.freeze({
+  world: Object.freeze({
+    dithering: ANYO_VISUAL_DEFAULTS.environment.dithering,
+    maxAnisotropy: ANYO_VISUAL_DEFAULTS.environment.maxAnisotropy,
+    renderScale: ANYO_VISUAL_DEFAULTS.environment.renderScale,
+    msaaSamples: ANYO_VISUAL_DEFAULTS.environment.msaaSamples,
+    mipmaps: ANYO_VISUAL_DEFAULTS.environment.mipmaps,
+    antialiasing: ANYO_VISUAL_DEFAULTS.environment.antialiasing,
+    sharpen: ANYO_VISUAL_DEFAULTS.environment.sharpen,
+    surfaceDetail: ANYO_VISUAL_DEFAULTS.environment.surfaceDetail,
+  }),
+  character: Object.freeze({
+    dithering: true,
+    maxAnisotropy: 16,
+    renderScale: 1.25,
+    msaaSamples: 4 as const,
+    mipmaps: true,
+    antialiasing: 'fxaa-high' as const,
+    sharpen: 0.045,
+    surfaceDetail: 'balanced' as const,
+  }),
+  product: Object.freeze({
+    dithering: true,
+    maxAnisotropy: 16,
+    renderScale: 1.15,
+    msaaSamples: 4 as const,
+    mipmaps: true,
+    antialiasing: 'fxaa' as const,
+    sharpen: 0.05,
+    surfaceDetail: 'high' as const,
+  }),
+} as const)
 
 export function normalizeMaterialDefinition(definition: MaterialDefinition = {}): NormalizedMaterialDefinition {
   const { detail: authoredDetail, ...definitionWithoutDetail } = definition
@@ -214,15 +248,24 @@ export function normalizeEnvironmentDefinition(definition: EnvironmentDefinition
       cascadeBlend: definition.shadows?.cascadeBlend ?? ANYO_VISUAL_DEFAULTS.environment.shadowCascadeBlend,
       distanceFade: definition.shadows?.distanceFade ?? ANYO_VISUAL_DEFAULTS.environment.shadowDistanceFade,
     },
-    imageQuality: {
-      dithering: definition.imageQuality?.dithering ?? ANYO_VISUAL_DEFAULTS.environment.dithering,
-      maxAnisotropy: definition.imageQuality?.maxAnisotropy ?? ANYO_VISUAL_DEFAULTS.environment.maxAnisotropy,
-      renderScale: definition.imageQuality?.renderScale ?? ANYO_VISUAL_DEFAULTS.environment.renderScale,
-      msaaSamples: definition.imageQuality?.msaaSamples ?? ANYO_VISUAL_DEFAULTS.environment.msaaSamples,
-      mipmaps: definition.imageQuality?.mipmaps ?? ANYO_VISUAL_DEFAULTS.environment.mipmaps,
-      antialiasing: definition.imageQuality?.antialiasing ?? ANYO_VISUAL_DEFAULTS.environment.antialiasing,
-      sharpen: definition.imageQuality?.sharpen ?? ANYO_VISUAL_DEFAULTS.environment.sharpen,
-    },
+    imageQuality: (() => {
+      const requestedPreset = definition.imageQuality?.preset ?? 'world'
+      const preset = Object.prototype.hasOwnProperty.call(ANYO_IMAGE_QUALITY_PRESETS, requestedPreset)
+        ? requestedPreset
+        : 'world'
+      const defaults = ANYO_IMAGE_QUALITY_PRESETS[preset]
+      return {
+        preset,
+        dithering: definition.imageQuality?.dithering ?? defaults.dithering,
+        maxAnisotropy: definition.imageQuality?.maxAnisotropy ?? defaults.maxAnisotropy,
+        renderScale: definition.imageQuality?.renderScale ?? defaults.renderScale,
+        msaaSamples: definition.imageQuality?.msaaSamples ?? defaults.msaaSamples,
+        mipmaps: definition.imageQuality?.mipmaps ?? defaults.mipmaps,
+        antialiasing: definition.imageQuality?.antialiasing ?? defaults.antialiasing,
+        sharpen: definition.imageQuality?.sharpen ?? defaults.sharpen,
+        surfaceDetail: definition.imageQuality?.surfaceDetail ?? defaults.surfaceDetail,
+      }
+    })(),
     atmosphere: {
       enabled: definition.atmosphere?.enabled ?? requestedAtmosphereMode !== 'none',
       mode: requestedAtmosphereMode,

@@ -136,3 +136,9 @@ import {
 ```
 
 Renderer adapters should consume the normalized world rather than re-inventing defaults. This keeps the same JSON predictable across backends.
+
+### Image-quality presets
+
+`environment.imageQuality.preset` is a renderer-neutral shorthand for a quality target. Supported values are `world`, `character`, and `product`. Explicit fields in the same `imageQuality` object always override the preset, so worlds can opt into the high-quality baseline without giving up precise control. `fxaa-high` and `surfaceDetail` (`off | balanced | high`) are also first-class authoring values.
+
+The presets affect image-quality controls only. They do not rewrite authored lighting, tone mapping, post-processing, materials, or character outlines.

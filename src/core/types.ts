@@ -101,7 +101,9 @@ export interface ShadowDefinition {
   distanceFade?: number
 }
 
-export type AntiAliasingMode = 'none' | 'fxaa'
+export type AntiAliasingMode = 'none' | 'fxaa' | 'fxaa-high'
+export type ImageQualityPreset = 'world' | 'character' | 'product'
+export type SurfaceDetailQuality = 'off' | 'balanced' | 'high'
 export type SsaoMode = 'contact' | 'gtao'
 export type OutlineMode = 'screen-space' | 'inverted-hull' | 'hybrid'
 
@@ -145,6 +147,8 @@ export interface ProceduralSkyDefinition {
 }
 
 export interface ImageQualityDefinition {
+  /** Semantic renderer-neutral quality target. Explicit fields below override the preset. */
+  preset?: ImageQualityPreset
   dithering?: boolean
   maxAnisotropy?: number
   renderScale?: number
@@ -152,6 +156,7 @@ export interface ImageQualityDefinition {
   mipmaps?: boolean
   antialiasing?: AntiAliasingMode
   sharpen?: number
+  surfaceDetail?: SurfaceDetailQuality
 }
 
 export type AtmosphereMode = 'none' | 'linear' | 'exp2'

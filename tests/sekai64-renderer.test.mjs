@@ -601,7 +601,7 @@ test('Sekai64 receives the complete normalized Anyo visual contract', async () =
   assert.equal(native.environmentLighting.specularIntensity, 0.42)
   assert.equal(native.shadowOptions.mapSize, 2048)
   assert.equal(native.shadowOptions.normalBias, 0.018)
-  assert.deepEqual(native.imageQuality, { dithering: true, maxAnisotropy: 8, renderScale: 1, msaaSamples: 4, mipmaps: true, antialiasing: 'fxaa', sharpen: 0.08 })
+  assert.deepEqual(native.imageQuality, { dithering: true, maxAnisotropy: 8, renderScale: 1, msaaSamples: 4, mipmaps: true, antialiasing: 'fxaa', sharpen: 0.08, surfaceDetail: 'balanced' })
 
   const mesh = renderer.nodes.get('visual-box')
   assert.ok(mesh instanceof Mesh)

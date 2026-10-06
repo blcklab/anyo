@@ -351,10 +351,12 @@ function validateEnvironment(document: WorldDocument, issues: ValidationIssue[])
     if (!Number.isFinite(value) || value < 0) issue(issues, 'SUN_INTENSITY_INVALID', '/environment/sun/intensity', 'Sun intensity must be finite and non-negative.')
     else if (value > 8) issue(issues, 'SUN_INTENSITY_HIGH', '/environment/sun/intensity', 'Sun intensity above 8 is likely to clip after tone mapping.', 'Use exposure for global brightness and keep the sun near 0.5–3.', 'warning')
   }
+  if (environment.imageQuality?.preset !== undefined && !['world', 'character', 'product'].includes(environment.imageQuality.preset)) issue(issues, 'IMAGE_QUALITY_PRESET_INVALID', '/environment/imageQuality/preset', 'imageQuality preset must be world, character, or product.')
   if (environment.imageQuality?.maxAnisotropy !== undefined && (!Number.isInteger(environment.imageQuality.maxAnisotropy) || environment.imageQuality.maxAnisotropy < 1 || environment.imageQuality.maxAnisotropy > 16)) issue(issues, 'ANISOTROPY_INVALID', '/environment/imageQuality/maxAnisotropy', 'maxAnisotropy must be an integer between 1 and 16.')
   if (environment.imageQuality?.dithering !== undefined && typeof environment.imageQuality.dithering !== 'boolean') issue(issues, 'DITHERING_INVALID', '/environment/imageQuality/dithering', 'dithering must be boolean.')
-  if (environment.imageQuality?.antialiasing !== undefined && !['none', 'fxaa'].includes(environment.imageQuality.antialiasing)) issue(issues, 'ANTIALIASING_INVALID', '/environment/imageQuality/antialiasing', 'antialiasing must be none or fxaa.')
+  if (environment.imageQuality?.antialiasing !== undefined && !['none', 'fxaa', 'fxaa-high'].includes(environment.imageQuality.antialiasing)) issue(issues, 'ANTIALIASING_INVALID', '/environment/imageQuality/antialiasing', 'antialiasing must be none, fxaa, or fxaa-high.')
   if (environment.imageQuality?.sharpen !== undefined && (!Number.isFinite(environment.imageQuality.sharpen) || environment.imageQuality.sharpen < 0 || environment.imageQuality.sharpen > 1)) issue(issues, 'SHARPEN_INVALID', '/environment/imageQuality/sharpen', 'sharpen must be between 0 and 1.')
+  if (environment.imageQuality?.surfaceDetail !== undefined && !['off', 'balanced', 'high'].includes(environment.imageQuality.surfaceDetail)) issue(issues, 'SURFACE_DETAIL_INVALID', '/environment/imageQuality/surfaceDetail', 'surfaceDetail must be off, balanced, or high.')
 }
 
 function validateWebSurfaceTarget(target: NonNullable<EntityDefinition['webSurface']>['target'], path: string, issues: ValidationIssue[]): void {
