@@ -3,7 +3,7 @@ import { AnyoValidationError, type ValidationIssue } from './errors.js'
 import { inspectWorldDocument, type ValidationResult } from './validate.js'
 import { inspectAnyoImportMap } from './imports.js'
 
-const OBJECT_FIELDS = new Set(['$schema', 'kind', 'version', 'metadata', 'imports', 'assets', 'materials', 'curves', 'geometries', 'compositions', 'root'])
+const OBJECT_FIELDS = new Set(['$schema', 'kind', 'version', 'metadata', 'imports', 'assets', 'materials', 'curves', 'profiles', 'geometries', 'compositions', 'root'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -65,7 +65,7 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
 
   if (raw.metadata !== undefined && !isRecord(raw.metadata)) addIssue(issues, 'ANYO_OBJECT_METADATA_INVALID', '/metadata', 'metadata must be an object when provided.')
   inspectAnyoImportMap(raw.imports, '/imports', issues)
-  for (const field of ['assets', 'materials', 'curves', 'geometries', 'compositions'] as const) {
+  for (const field of ['assets', 'materials', 'curves', 'profiles', 'geometries', 'compositions'] as const) {
     if (raw[field] !== undefined && !isRecord(raw[field])) addIssue(issues, 'ANYO_OBJECT_RESOURCE_MAP_INVALID', `/${field}`, `${field} must be an object map when provided.`)
   }
 
@@ -99,6 +99,7 @@ export function inspectAnyoObjectDocument(document: AnyoObjectDocument, options:
       assets: raw.assets as AnyoObjectDocument['assets'],
       materials: raw.materials as AnyoObjectDocument['materials'],
       curves: raw.curves as AnyoObjectDocument['curves'],
+      profiles: raw.profiles as AnyoObjectDocument['profiles'],
       geometries: raw.geometries as AnyoObjectDocument['geometries'],
       imports: raw.imports as AnyoObjectDocument['imports'],
       compositions: objectCompositions,

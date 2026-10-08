@@ -481,3 +481,26 @@ World 0.9 can declare renderer-neutral top-level `curves` and reuse them from ge
 ```
 
 `arc`, `circle`, and `helix` are analytic authoring conveniences that lower into Anyo's existing sampled-curve/frame implementation. Curves remain authoring resources rather than renderer resources; Sekai64 still receives only finalized `GeometryMesh` data.
+
+### Reusable profile resources (rc.30)
+
+World 0.9 can declare top-level `profiles` and reuse one canonical 2D contour definition across extrusion, sweep, variable-profile sweep stations, and loft sections. Inline profiles remain supported. Named references resolve to canonical contour content before geometry hashing, so the resource name itself does not affect geometry identity.
+
+```json
+{
+  "profiles": {
+    "beam-section": {
+      "points": [[-0.2,-0.1],[0.2,-0.1],[0.2,0.1],[-0.2,0.1]]
+    }
+  },
+  "geometries": {
+    "beam": {
+      "kind": "extrude",
+      "profile": "beam-section",
+      "depth": 4
+    }
+  }
+}
+```
+
+Profiles preserve the existing canonical winding, hole topology, and compatibility rules; there is no second profile engine. They are authoring resources only and never become renderer nodes. Native Object 0.1 imports namespace local profile IDs and rewrite dependent geometry references. Construction trim remains inline-only in this milestone because its architecture lowering path does not receive profile-resource context.

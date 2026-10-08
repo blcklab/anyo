@@ -8,7 +8,6 @@ import type {
 } from '../types/index.js'
 import type { GeometryKindCompiler } from '../core/GeometryCompiler.js'
 import { indexArray, parameterError, withoutQuality } from '../primitives/common.js'
-import { normalizeProfile } from '../profiles/normalizeProfile.js'
 import { contourPerimeter, PROFILE_EPSILON } from '../profiles/contourMath.js'
 import type { NormalizedProfile, ProfilePoint } from '../profiles/types.js'
 import { triangulateProfile } from '../triangulation/triangulateProfile.js'
@@ -20,7 +19,7 @@ interface MeshBuilder { positions: number[]; indices: number[]; normals: number[
 export const extrudeGeometryKind: GeometryKindCompiler = {
   kind: 'extrude',
   normalize(definition, context) {
-    const profile = normalizeProfile(definition.profile, { limits: context.limits, path: '/profile' })
+    const profile = context.resolveProfile(definition.profile, '/profile')
     const depth = finitePositive(definition.depth, '/depth', 'depth')
     const cap = definition.cap ?? true
     if (typeof cap !== 'boolean') parameterError('/cap', 'cap must be boolean.')
@@ -36,7 +35,7 @@ export const extrudeGeometryKind: GeometryKindCompiler = {
     } as unknown as GeometryDefinition
   },
   compile(definition, context) {
-    const profile = normalizeProfile(definition.profile, { limits: context.limits, path: '/profile' })
+    const profile = context.resolveProfile(definition.profile, '/profile')
     const depth = definition.depth as number
     const cap = definition.cap as boolean
     const bevel = definition.bevel as unknown as ResolvedBevel | undefined

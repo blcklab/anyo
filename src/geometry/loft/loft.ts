@@ -8,7 +8,6 @@ import type {
   GeometryUvPolicy,
 } from '../types/index.js'
 import type { GeometryKindCompiler } from '../core/GeometryCompiler.js'
-import { normalizeProfile } from '../profiles/normalizeProfile.js'
 import { contourPerimeter, PROFILE_EPSILON } from '../profiles/contourMath.js'
 import type { NormalizedProfile, ProfilePoint } from '../profiles/types.js'
 import { canonicalAngle, profileToJson, profilesHaveCompatibleTopology, transformProfile } from '../profiles/morphProfile.js'
@@ -29,7 +28,7 @@ type Vec3 = readonly [number, number, number]
 export const loftGeometryKind: GeometryKindCompiler = {
   kind: 'loft',
   normalize(definition, context) {
-    const sections = normalizeSections(definition.sections, context.limits)
+    const sections = normalizeSections(definition.sections, context.limits, context.resolveProfile)
     const cap = definition.cap ?? true
     if (typeof cap !== 'boolean') parameterError('/cap', 'cap must be boolean.')
     const base = withoutQuality(definition)
@@ -42,19 +41,23 @@ export const loftGeometryKind: GeometryKindCompiler = {
     } as unknown as GeometryDefinition
   },
   compile(definition, context) {
-    const sections = normalizeSections(definition.sections, context.limits)
+    const sections = normalizeSections(definition.sections, context.limits, context.resolveProfile)
     return buildLoft(sections, definition.cap as boolean, definition.uv, context.limits.maxGeometryVertices)
   },
 }
 
-function normalizeSections(raw: unknown, limits: GeometrySafetyLimits): LoftSection[] {
+function normalizeSections(
+  raw: unknown,
+  limits: GeometrySafetyLimits,
+  resolveProfile: (input: unknown, path?: string) => NormalizedProfile,
+): LoftSection[] {
   if (!Array.isArray(raw) || raw.length < 2) parameterError('/sections', 'loft sections must contain at least two sections.')
   if (raw.length > limits.maxCurveSegments + 1) parameterError('/sections', `loft sections may contain at most ${limits.maxCurveSegments + 1} sections.`)
   let reference: NormalizedProfile | undefined
   const sections = raw.map((entry, index) => {
     if (!isRecord(entry)) parameterError(`/sections/${index}`, 'Loft section must be a plain object.')
     const z = finiteNumber(entry.z, `/sections/${index}/z`)
-    const profile = normalizeProfile(entry.profile, { limits, path: `/sections/${index}/profile` })
+    const profile = resolveProfile(entry.profile, `/sections/${index}/profile`)
     if (!reference) reference = profile
     else if (!profilesHaveCompatibleTopology(reference, profile)) parameterError(`/sections/${index}/profile`, 'All loft section profiles must have matching outer and hole point counts.')
     return {

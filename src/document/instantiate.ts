@@ -27,7 +27,7 @@ const MATERIAL_TEXTURE_FIELDS = [
   'lightMapTexture',
 ] as const
 
-function resourceId(namespace: string, kind: 'asset' | 'material' | 'curve' | 'geometry' | 'composition', id: string): string {
+function resourceId(namespace: string, kind: 'asset' | 'material' | 'curve' | 'profile' | 'geometry' | 'composition', id: string): string {
   return `${namespace}::${kind}::${id}`
 }
 
@@ -173,6 +173,27 @@ function rewriteGeometry(definition: GeometryDefinition, node: ResolvedAnyoImpor
   if (output.kind === 'sweep' && typeof output.path === 'string') {
     output.path = localReference(node.document.curves, output.path, (id) => resourceId(node.namespace, 'curve', id)) ?? output.path
   }
+  if ((output.kind === 'extrude' || output.kind === 'sweep') && typeof output.profile === 'string') {
+    output.profile = localReference(node.document.profiles, output.profile, (id) => resourceId(node.namespace, 'profile', id)) ?? output.profile
+  }
+  const profileStations = output.profileStations
+  if (output.kind === 'sweep' && Array.isArray(profileStations)) {
+    output.profileStations = profileStations.map((station) => {
+      if (!station || typeof station !== 'object' || Array.isArray(station)) return station
+      const rewritten = structuredClone(station) as Record<string, unknown>
+      if (typeof rewritten.profile === 'string') rewritten.profile = localReference(node.document.profiles, rewritten.profile, (id) => resourceId(node.namespace, 'profile', id)) ?? rewritten.profile
+      return rewritten
+    }) as GeometryDefinition['profileStations']
+  }
+  const sections = output.sections
+  if (output.kind === 'loft' && Array.isArray(sections)) {
+    output.sections = sections.map((section) => {
+      if (!section || typeof section !== 'object' || Array.isArray(section)) return section
+      const rewritten = structuredClone(section) as Record<string, unknown>
+      if (typeof rewritten.profile === 'string') rewritten.profile = localReference(node.document.profiles, rewritten.profile, (id) => resourceId(node.namespace, 'profile', id)) ?? rewritten.profile
+      return rewritten
+    }) as GeometryDefinition['sections']
+  }
   for (const field of ['source', 'left', 'right'] as const) {
     const child = output[field]
     if (child && typeof child === 'object' && !Array.isArray(child)) output[field] = rewriteGeometry(child as GeometryDefinition, node)
@@ -220,7 +241,7 @@ function mergeGenerated<T>(target: Record<string, T>, id: string, value: T, sour
 
 function instantiateNode(
   node: ResolvedAnyoImport,
-  output: Required<Pick<WorldDocument, 'assets' | 'materials' | 'curves' | 'geometries' | 'compositions'>>,
+  output: Required<Pick<WorldDocument, 'assets' | 'materials' | 'curves' | 'profiles' | 'geometries' | 'compositions'>>,
 ): void {
   for (const alias of Object.keys(node.imports).sort()) instantiateNode(node.imports[alias] as ResolvedAnyoImport, output)
 
@@ -232,6 +253,9 @@ function instantiateNode(
   }
   for (const id of Object.keys(node.document.curves ?? {}).sort()) {
     mergeGenerated(output.curves, resourceId(node.namespace, 'curve', id), structuredClone((node.document.curves as NonNullable<AnyoObjectDocument['curves']>)[id]), node.sourceUrl)
+  }
+  for (const id of Object.keys(node.document.profiles ?? {}).sort()) {
+    mergeGenerated(output.profiles, resourceId(node.namespace, 'profile', id), structuredClone((node.document.profiles as NonNullable<AnyoObjectDocument['profiles']>)[id]), node.sourceUrl)
   }
   for (const id of Object.keys(node.document.geometries ?? {}).sort()) {
     mergeGenerated(output.geometries, resourceId(node.namespace, 'geometry', id), rewriteGeometry((node.document.geometries as NonNullable<AnyoObjectDocument['geometries']>)[id] as GeometryDefinition, node), node.sourceUrl)
@@ -306,6 +330,7 @@ export function instantiateResolvedWorldDocument(graph: ResolvedWorldDocumentGra
   output.assets = structuredClone(output.assets ?? {})
   output.materials = structuredClone(output.materials ?? {})
   output.curves = structuredClone(output.curves ?? {})
+  output.profiles = structuredClone(output.profiles ?? {})
   output.geometries = structuredClone(output.geometries ?? {})
   output.compositions = structuredClone(output.compositions ?? {})
 
@@ -313,6 +338,7 @@ export function instantiateResolvedWorldDocument(graph: ResolvedWorldDocumentGra
     assets: output.assets,
     materials: output.materials,
     curves: output.curves,
+    profiles: output.profiles,
     geometries: output.geometries,
     compositions: output.compositions,
   }

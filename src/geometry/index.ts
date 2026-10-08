@@ -12,7 +12,7 @@ export { finalizeGeometryMesh, inspectGeometryMesh } from './validation/validate
 export { BUILTIN_GEOMETRY_KINDS, BUILTIN_GEOMETRY_KIND_NAMES, GEOMETRY_QUALITY_DEFAULTS } from './primitives/index.js'
 export { BUILTIN_GEOMETRY_OPERATORS, BUILTIN_GEOMETRY_OPERATOR_NAMES } from './operators/index.js'
 export { normalizeProfile, contourPerimeter, pointInContour, signedContourArea } from './profiles/index.js'
-export type { NormalizedProfile, ProfilePoint } from './profiles/index.js'
+export type { NormalizedProfile, ProfilePoint, NormalizeProfileOptions } from './profiles/index.js'
 export { triangulateProfile } from './triangulation/index.js'
 export type { TriangulatedProfile } from './triangulation/index.js'
 export { offsetProfile } from './extrusion/index.js'

@@ -1,3 +1,16 @@
+## 0.11.0-rc.30
+
+### Universal Geometry Step 6 — reusable profile resources
+
+- Add reusable top-level World 0.9 `profiles` resources and allow generic `extrude.profile`, `sweep.profile`, `sweep.profileStations[].profile`, and `loft.sections[].profile` sites to reference them by ID while preserving inline profile authoring.
+- Resolve profile references through the existing canonical contour normalizer before dependent geometry hashing, so equivalent inline/named profiles share geometry identity and profile edits invalidate dependent geometry deterministically.
+- Preserve the established profile topology implementation, including canonical winding, holes, self-intersection checks, topology compatibility, extrusion, variable-profile sweep, and loft behavior; no second profile engine is introduced.
+- Keep profiles authoring-only: they do not become ResourceGraph runtime nodes and Sekai64 continues to receive ordinary finalized `GeometryMesh` resources only.
+- Namespace reusable profiles across native Object 0.1 imports and rewrite local extrude/sweep/station/loft references safely during instantiation.
+- Keep construction-trim profile authoring inline-only in this step because that architecture lowering path does not own profile-resource context.
+- Keep World 0.8 byte-identical, add no runtime dependencies, and leave `@blcklab/sekai64@0.8.0-rc.56` unchanged.
+- Generic scalar fields remain intentionally deferred to Universal Geometry Step 7.
+
 ## 0.11.0-rc.29
 
 ### Universal Geometry Step 5 — reusable curve resources

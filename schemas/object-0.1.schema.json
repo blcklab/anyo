@@ -51,6 +51,12 @@
         "$ref": "./world-0.9.schema.json#/$defs/geometryCurveDefinition"
       }
     },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/geometryProfile"
+      }
+    },
     "geometries": {
       "type": "object",
       "additionalProperties": {

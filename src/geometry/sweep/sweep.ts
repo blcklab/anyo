@@ -9,7 +9,6 @@ import type {
   GeometryUvPolicy,
 } from '../types/index.js'
 import type { GeometryKindCompiler } from '../core/GeometryCompiler.js'
-import { normalizeProfile } from '../profiles/normalizeProfile.js'
 import { contourPerimeter, PROFILE_EPSILON } from '../profiles/contourMath.js'
 import type { NormalizedProfile, ProfilePoint } from '../profiles/types.js'
 import { canonicalAngle, interpolateAngle, interpolateProfile, profileToJson, profilesHaveCompatibleTopology, transformProfile } from '../profiles/morphProfile.js'
@@ -33,7 +32,7 @@ interface SweepStation {
 export const sweepGeometryKind: GeometryKindCompiler = {
   kind: 'sweep',
   normalize(definition, context) {
-    const profile = normalizeProfile(definition.profile, { limits: context.limits, path: '/profile' })
+    const profile = context.resolveProfile(definition.profile, '/profile')
     const inheritedQuality = definition.quality as GeometryQualityPreset | undefined
     const pathInput = isRecord(definition.path) && definition.path.quality === undefined && inheritedQuality
       ? { ...definition.path, quality: inheritedQuality }
@@ -44,7 +43,7 @@ export const sweepGeometryKind: GeometryKindCompiler = {
     if (path.closed && cap) parameterError('/cap', 'Closed sweep paths cannot be capped.', 'Set cap to false for closed paths.')
     if (path.closed) cap = false
     const up = definition.up === undefined ? undefined : normalizeUp(definition.up)
-    const profileStations = normalizeProfileStations(definition.profileStations, profile, context.limits, !!path.closed)
+    const profileStations = normalizeProfileStations(definition.profileStations, profile, context.limits, !!path.closed, context.resolveProfile)
     const base = withoutQuality(definition)
     delete base.profileStations
     return {
@@ -58,13 +57,13 @@ export const sweepGeometryKind: GeometryKindCompiler = {
     } as unknown as GeometryDefinition
   },
   compile(definition, context) {
-    const profile = normalizeProfile(definition.profile, { limits: context.limits, path: '/profile' })
+    const profile = context.resolveProfile(definition.profile, '/profile')
     const path = context.resolveCurve(definition.path, '/path')
     const sampled = sampleCurve(path, { limits: context.limits, path: '/path' })
     const up = definition.up as unknown as readonly [number, number, number] | undefined
     const frames = computeCurveFrames(sampled, up)
     const cap = definition.cap as boolean
-    const profileStations = normalizeProfileStations(definition.profileStations, profile, context.limits, sampled.closed)
+    const profileStations = normalizeProfileStations(definition.profileStations, profile, context.limits, sampled.closed, context.resolveProfile)
     return profileStations
       ? buildVariableSweep(profileStations, frames, sampled.totalLength, sampled.closed, cap, definition.uv, context.limits.maxGeometryVertices)
       : buildSweep(profile, frames, sampled.totalLength, sampled.closed, cap, definition.uv, context.limits.maxGeometryVertices)
@@ -219,7 +218,13 @@ function appendVariableContourSweep(
   pushGroup(builder, start, name)
 }
 
-function normalizeProfileStations(raw: unknown, baseProfile: NormalizedProfile, limits: GeometrySafetyLimits, closed: boolean): SweepStation[] | undefined {
+function normalizeProfileStations(
+  raw: unknown,
+  baseProfile: NormalizedProfile,
+  limits: GeometrySafetyLimits,
+  closed: boolean,
+  resolveProfile: (input: unknown, path?: string) => NormalizedProfile,
+): SweepStation[] | undefined {
   if (raw === undefined) return undefined
   if (!Array.isArray(raw) || raw.length < 2) parameterError('/profileStations', 'profileStations must contain at least two stations.')
   if (raw.length > limits.maxCurveSegments + 1) parameterError('/profileStations', `profileStations may contain at most ${limits.maxCurveSegments + 1} stations.`)
@@ -227,7 +232,7 @@ function normalizeProfileStations(raw: unknown, baseProfile: NormalizedProfile, 
     if (!isRecord(entry)) parameterError(`/profileStations/${index}`, 'Sweep profile station must be a plain object.')
     const at = finiteNumber(entry.at, `/profileStations/${index}/at`)
     if (at < 0 || at > 1) parameterError(`/profileStations/${index}/at`, 'station at must be between 0 and 1.')
-    const profile = entry.profile === undefined ? baseProfile : normalizeProfile(entry.profile, { limits, path: `/profileStations/${index}/profile` })
+    const profile = entry.profile === undefined ? baseProfile : resolveProfile(entry.profile, `/profileStations/${index}/profile`)
     if (!profilesHaveCompatibleTopology(baseProfile, profile)) parameterError(`/profileStations/${index}/profile`, 'Station profile topology must match the base profile point and hole counts.')
     return {
       at,

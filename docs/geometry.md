@@ -636,3 +636,30 @@ Supported curve authoring kinds are `line`, `polyline`, `quadraticBezier`, `cubi
 ```
 
 Step 5 explicitly wires reusable curves into sweep compilation and path-array layout. Architecture helpers that still accept inline `CurveDefinition` values remain unchanged in this milestone.
+
+
+## Reusable profiles (rc.30)
+
+World 0.9 may move a 2D contour definition into the top-level `profiles` map. `extrude.profile`, `sweep.profile`, `sweep.profileStations[].profile`, and `loft.sections[].profile` accept either the existing inline object or a string resource ID.
+
+```json
+{
+  "profiles": {
+    "ring": {
+      "points": [[-1,-1],[1,-1],[1,1],[-1,1]],
+      "holes": [[[-0.35,-0.35],[-0.35,0.35],[0.35,0.35],[0.35,-0.35]]]
+    }
+  },
+  "geometries": {
+    "tube": {
+      "kind": "sweep",
+      "profile": "ring",
+      "path": { "kind": "line", "points": [[0,0,0],[0,0,4]] }
+    }
+  }
+}
+```
+
+A named profile is resolved through the same `normalizeProfile()` path as inline authoring. Canonical point order, winding, holes, self-intersection rules, and topology compatibility remain authoritative. Resolution happens before hashing/cache lookup, so identical profile content under different IDs produces identical dependent geometry identity.
+
+Profiles do not create ResourceGraph nodes and do not add renderer semantics. Imported Object 0.1 documents namespace local profile IDs and rewrite extrude/sweep/profile-station/loft references. Architecture `constructionTrim.profile` remains inline-only for rc.30; broadening architecture lowering to resource-aware profile context is intentionally outside Step 6.

@@ -258,6 +258,10 @@ export interface ProfileDefinition {
   holes?: [number, number][][]
 }
 
+/** Named profile resources are authoring conveniences; normalized geometry hashes profile content, not resource ids. */
+export type ProfileResourceMap = Readonly<Record<string, ProfileDefinition>>
+export type ProfileInput = ProfileDefinition | string
+
 export interface ExtrudeBevelDefinition {
   [key: string]: GeometryJsonValue | undefined
   size: number
@@ -446,7 +450,7 @@ export interface SweepProfileStationDefinition {
   /** Normalized distance along the path from 0 to 1. First/last stations must be 0/1. */
   at: number
   /** Optional replacement profile. Topology must match the base sweep profile. */
-  profile?: ProfileDefinition
+  profile?: ProfileInput
   /** Positive local profile scale. Defaults to [1, 1]. */
   scale?: [number, number]
   /** Local profile rotation in radians. */
@@ -457,7 +461,7 @@ export interface SweepProfileStationDefinition {
 
 export interface SweepGeometryDefinition extends GeometryDefinition {
   kind: 'sweep'
-  profile: ProfileDefinition
+  profile: ProfileInput
   path: CurveInput
   /** Optional profile morph/transform stations along normalized path distance. */
   profileStations?: SweepProfileStationDefinition[]
@@ -471,7 +475,7 @@ export interface LoftSectionDefinition {
   [key: string]: GeometryJsonValue | ProfileDefinition | undefined
   /** Section position along local +Z, in meters. Sections must be strictly increasing. */
   z: number
-  profile: ProfileDefinition
+  profile: ProfileInput
   /** Positive local profile scale. Defaults to [1, 1]. */
   scale?: [number, number]
   /** Rotation around local +Z, in radians. */
@@ -514,7 +518,7 @@ export interface PathArrayLayout {
 
 export interface ExtrudeGeometryDefinition extends GeometryDefinition {
   kind: 'extrude'
-  profile: ProfileDefinition
+  profile: ProfileInput
   /** Extrusion depth along local +Z/-Z, in meters. */
   depth: number
   cap?: boolean

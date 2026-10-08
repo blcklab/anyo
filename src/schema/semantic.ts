@@ -24,7 +24,7 @@ const BUILTIN_COMPONENT_TYPES = new Set([
 const MARKER_COMPONENTS = new Set(['anyo.vfx', 'anyo.map', 'anyo.mapFeature', 'anyo.animation', 'anyo.rigidBody', 'anyo.characterController', 'anyo.joint', 'anyo.billboard'])
 
 const TOP_LEVEL_FIELDS = new Set([
-  '$schema', 'version', 'revision', 'units', 'metadata', 'imports', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'curves', 'geometries',
+  '$schema', 'version', 'revision', 'units', 'metadata', 'imports', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'curves', 'profiles', 'geometries',
   'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 const ENTITY_FIELDS = new Set([
@@ -273,21 +273,49 @@ function inspectRenderer(document: WorldDocument, info: RendererInfo | undefined
 }
 
 
-function inspectGeometryCurveReferences(definition: unknown, path: string, curveIds: ReadonlySet<string>, mode: ValidationMode, issues: ValidationIssue[]): void {
+function inspectGeometryResourceReferences(
+  definition: unknown,
+  path: string,
+  curveIds: ReadonlySet<string>,
+  profileIds: ReadonlySet<string>,
+  mode: ValidationMode,
+  issues: ValidationIssue[],
+): void {
   if (!definition || typeof definition !== 'object' || Array.isArray(definition)) return
   const geometry = definition as GeometryDefinition
   if (geometry.kind === 'sweep' && typeof geometry.path === 'string' && !curveIds.has(geometry.path)) {
     add(issues, severity(mode, true), 'ANYO_CURVE_NOT_FOUND', `${path}/path`, `Curve resource "${geometry.path}" does not exist.`)
   }
+  if ((geometry.kind === 'extrude' || geometry.kind === 'sweep') && typeof geometry.profile === 'string' && !profileIds.has(geometry.profile)) {
+    add(issues, severity(mode, true), 'ANYO_PROFILE_NOT_FOUND', `${path}/profile`, `Profile resource "${geometry.profile}" does not exist.`)
+  }
+  if (geometry.kind === 'sweep' && Array.isArray(geometry.profileStations)) {
+    geometry.profileStations.forEach((station, index) => {
+      if (!station || typeof station !== 'object' || Array.isArray(station)) return
+      const stationProfile = (station as Record<string, unknown>).profile
+      if (typeof stationProfile === 'string' && !profileIds.has(stationProfile)) {
+        add(issues, severity(mode, true), 'ANYO_PROFILE_NOT_FOUND', `${path}/profileStations/${index}/profile`, `Profile resource "${stationProfile}" does not exist.`)
+      }
+    })
+  }
+  if (geometry.kind === 'loft' && Array.isArray(geometry.sections)) {
+    geometry.sections.forEach((section, index) => {
+      if (!section || typeof section !== 'object' || Array.isArray(section)) return
+      const sectionProfile = (section as Record<string, unknown>).profile
+      if (typeof sectionProfile === 'string' && !profileIds.has(sectionProfile)) {
+        add(issues, severity(mode, true), 'ANYO_PROFILE_NOT_FOUND', `${path}/sections/${index}/profile`, `Profile resource "${sectionProfile}" does not exist.`)
+      }
+    })
+  }
   for (const field of ['source', 'left', 'right'] as const) {
     const child = geometry[field]
-    if (child && typeof child === 'object' && !Array.isArray(child)) inspectGeometryCurveReferences(child, `${path}/${field}`, curveIds, mode, issues)
+    if (child && typeof child === 'object' && !Array.isArray(child)) inspectGeometryResourceReferences(child, `${path}/${field}`, curveIds, profileIds, mode, issues)
   }
 }
 
-function inspectEntityCurveReferences(entity: EntityDefinition, path: string, curveIds: ReadonlySet<string>, mode: ValidationMode, issues: ValidationIssue[]): void {
-  if (entity.geometry && typeof entity.geometry === 'object' && !Array.isArray(entity.geometry)) inspectGeometryCurveReferences(entity.geometry, `${path}/geometry`, curveIds, mode, issues)
-  entity.children?.forEach((child, index) => inspectEntityCurveReferences(child, `${path}/children/${index}`, curveIds, mode, issues))
+function inspectEntityGeometryResourceReferences(entity: EntityDefinition, path: string, curveIds: ReadonlySet<string>, profileIds: ReadonlySet<string>, mode: ValidationMode, issues: ValidationIssue[]): void {
+  if (entity.geometry && typeof entity.geometry === 'object' && !Array.isArray(entity.geometry)) inspectGeometryResourceReferences(entity.geometry, `${path}/geometry`, curveIds, profileIds, mode, issues)
+  entity.children?.forEach((child, index) => inspectEntityGeometryResourceReferences(child, `${path}/children/${index}`, curveIds, profileIds, mode, issues))
 }
 
 export function inspectWorldSemantics(document: WorldDocument, options: WorldValidationOptions = {}): ValidationIssue[] {
@@ -305,12 +333,13 @@ export function inspectWorldSemantics(document: WorldDocument, options: WorldVal
   const assetIds = new Set(Object.keys(document.assets ?? {}))
   const geometryIds = new Set(Object.keys(document.geometries ?? {}))
   const curveIds = new Set(Object.keys(document.curves ?? {}))
+  const profileIds = new Set(Object.keys(document.profiles ?? {}))
 
-  for (const [id, geometry] of Object.entries(document.geometries ?? {})) inspectGeometryCurveReferences(geometry, `/geometries/${id}`, curveIds, mode, issues)
-  document.entities?.forEach((entity, index) => inspectEntityCurveReferences(entity, `/entities/${index}`, curveIds, mode, issues))
-  for (const [floorIndex, floor] of floors.entries()) for (const [roomIndex, room] of floor.rooms.entries()) room.entities?.forEach((entity, index) => inspectEntityCurveReferences(entity, `/building/floors/${floorIndex}/rooms/${roomIndex}/entities/${index}`, curveIds, mode, issues))
-  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) inspectEntityCurveReferences(prefab as EntityDefinition, `/prefabs/${name}`, curveIds, mode, issues)
-  for (const [name, composition] of Object.entries(document.compositions ?? {})) inspectEntityCurveReferences(composition as EntityDefinition, `/compositions/${name}`, curveIds, mode, issues)
+  for (const [id, geometry] of Object.entries(document.geometries ?? {})) inspectGeometryResourceReferences(geometry, `/geometries/${id}`, curveIds, profileIds, mode, issues)
+  document.entities?.forEach((entity, index) => inspectEntityGeometryResourceReferences(entity, `/entities/${index}`, curveIds, profileIds, mode, issues))
+  for (const [floorIndex, floor] of floors.entries()) for (const [roomIndex, room] of floor.rooms.entries()) room.entities?.forEach((entity, index) => inspectEntityGeometryResourceReferences(entity, `/building/floors/${floorIndex}/rooms/${roomIndex}/entities/${index}`, curveIds, profileIds, mode, issues))
+  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) inspectEntityGeometryResourceReferences(prefab as EntityDefinition, `/prefabs/${name}`, curveIds, profileIds, mode, issues)
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) inspectEntityGeometryResourceReferences(composition as EntityDefinition, `/compositions/${name}`, curveIds, profileIds, mode, issues)
 
   const environmentMap = document.environment?.lighting?.environmentMap
   if (environmentMap && !assetIds.has(environmentMap)) add(issues, severity(mode, true), 'ANYO_ENVIRONMENT_MAP_ASSET_NOT_FOUND', '/environment/lighting/environmentMap', `Environment-map asset "${environmentMap}" does not exist.`)

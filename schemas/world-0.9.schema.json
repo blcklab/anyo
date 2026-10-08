@@ -129,6 +129,13 @@
         "$ref": "#/$defs/geometryCurveDefinition"
       }
     },
+    "profiles": {
+      "type": "object",
+      "description": "Named reusable renderer-neutral 2D profile resources. Geometry consumers may reference these ids instead of repeating inline profile definitions.",
+      "additionalProperties": {
+        "$ref": "#/$defs/geometryProfile"
+      }
+    },
     "geometries": {
       "type": "object",
       "additionalProperties": {
@@ -5563,6 +5570,17 @@
       },
       "additionalProperties": false
     },
+    "geometryProfileInput": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "$ref": "#/$defs/geometryProfile"
+        }
+      ]
+    },
     "latheProfile": {
       "type": "array",
       "minItems": 2,
@@ -6476,7 +6494,7 @@
           "$ref": "#/$defs/geometryVertexColor"
         },
         "profile": {
-          "$ref": "#/$defs/geometryProfile"
+          "$ref": "#/$defs/geometryProfileInput"
         },
         "depth": {
           "type": "number",
@@ -6525,7 +6543,7 @@
           "$ref": "#/$defs/geometryVertexColor"
         },
         "profile": {
-          "$ref": "#/$defs/geometryProfile"
+          "$ref": "#/$defs/geometryProfileInput"
         },
         "path": {
           "$ref": "#/$defs/geometryCurve"
@@ -7518,7 +7536,7 @@
           "maximum": 1
         },
         "profile": {
-          "$ref": "#/$defs/geometryProfile"
+          "$ref": "#/$defs/geometryProfileInput"
         },
         "scale": {
           "type": "array",
@@ -7555,7 +7573,7 @@
           "type": "number"
         },
         "profile": {
-          "$ref": "#/$defs/geometryProfile"
+          "$ref": "#/$defs/geometryProfileInput"
         },
         "scale": {
           "type": "array",

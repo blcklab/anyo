@@ -1,5 +1,6 @@
 import type {
   CurveResourceMap,
+  ProfileResourceMap,
   GeometryDefinition,
   GeometryMesh,
   GeometryMeshDraft,
@@ -18,6 +19,7 @@ import { BUILTIN_GEOMETRY_OPERATORS } from '../operators/index.js'
 import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfacePolicy.js'
 import { applyVertexColorPolicy, normalizeVertexColorPolicy } from '../attributes/vertexColor.js'
 import { normalizeCurve } from '../curves/normalizeCurve.js'
+import { normalizeProfile } from '../profiles/normalizeProfile.js'
 import type { NormalizedCurveDefinition } from '../curves/types.js'
 
 export interface GeometryOperatorContext {
@@ -41,6 +43,8 @@ export interface GeometryBuildContext {
   readonly booleanDepth: number
   /** Resolve an inline or named curve resource into the canonical evaluator vocabulary. */
   resolveCurve(input: unknown, path?: string): NormalizedCurveDefinition
+  /** Resolve an inline or named profile resource into canonical winding/topology. */
+  resolveProfile(input: unknown, path?: string): import('../profiles/types.js').NormalizedProfile
   /** Compile a nested legacy modifier child and count the nesting boundary. */
   normalizeChild(definition: unknown, modifierKind: string): GeometryDefinition
   compileChild(definition: unknown, modifierKind: string): GeometryMesh
@@ -81,6 +85,8 @@ export interface GeometryCompilerOptions {
   limits?: Partial<GeometrySafetyLimits>
   /** Optional named reusable curve resources available to geometry consumers such as sweep. */
   curves?: CurveResourceMap
+  /** Optional named reusable profile resources available to extrude/sweep/loft. */
+  profiles?: ProfileResourceMap
 }
 
 export class GeometryCompiler {
@@ -89,11 +95,16 @@ export class GeometryCompiler {
   readonly #cache?: GeometryCache
   readonly #limits: GeometrySafetyLimits
   readonly #curves: CurveResourceMap
+  readonly #profiles: ProfileResourceMap
 
   constructor(options: GeometryCompilerOptions = {}) {
     this.#limits = resolveGeometrySafetyLimits(options.limits)
     this.#curves = Object.freeze(Object.fromEntries(Object.entries(options.curves ?? {}).map(([id, definition]) => {
       if (!id.trim()) throw new Error('Geometry curve resource ids must be non-empty strings.')
+      return [id, structuredClone(definition)]
+    })))
+    this.#profiles = Object.freeze(Object.fromEntries(Object.entries(options.profiles ?? {}).map(([id, definition]) => {
+      if (!id.trim()) throw new Error('Geometry profile resource ids must be non-empty strings.')
       return [id, structuredClone(definition)]
     })))
     this.#cache = options.cache === false ? undefined : (options.cache ?? new GeometryCache({ limits: this.#limits }))
@@ -200,6 +211,7 @@ export class GeometryCompiler {
       limits: this.#limits,
       modifierDepth,
       resolveCurve: (input, path = '/path') => normalizeCurve(input, { limits: this.#limits, path, curves: this.#curves }),
+      resolveProfile: (input, path = '/profile') => normalizeProfile(input, { limits: this.#limits, path, profiles: this.#profiles }),
       booleanDepth,
       normalizeChild: (definition, modifierKind) => this.#normalizeInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),
       compileChild: (definition, modifierKind) => this.#compileInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),

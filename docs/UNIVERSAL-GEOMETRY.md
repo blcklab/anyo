@@ -185,3 +185,32 @@ The reusable authoring vocabulary includes the established `line`, `polyline`, `
 Curve references are resolved and normalized before dependent geometry is hashed. Therefore two names with identical normalized curve content can produce the same dependent geometry key, while changing the curve content changes that key. Curves themselves are not ResourceGraph nodes. ResourceGraph and Sekai64 still see only the ordinary geometry resources produced from them.
 
 Native Object 0.1 imports namespace reusable curves and rewrite local sweep references during instantiation so imported objects do not collide with world-local curve IDs. World 0.8 remains unchanged. Reusable profiles are deferred to Step 6.
+
+
+## Step 6 — reusable profile resources
+
+rc.30 makes the existing canonical 2D profile language reusable without creating another topology subsystem. World 0.9 gains a top-level `profiles` map. Generic extrusion, sweep, variable-profile sweep stations, and loft sections may reference those resources by ID or continue authoring profiles inline.
+
+```json
+{
+  "profiles": {
+    "section": { "points": [[-0.5,-0.25],[0.5,-0.25],[0.5,0.25],[-0.5,0.25]] }
+  },
+  "geometries": {
+    "column": { "kind": "extrude", "profile": "section", "depth": 3 },
+    "rail": {
+      "kind": "sweep",
+      "profile": "section",
+      "path": { "kind": "line", "points": [[0,0,0],[0,0,5]] }
+    }
+  }
+}
+```
+
+### Identity and runtime boundary
+
+Profile references resolve to normalized contour content before geometry hashing. Resource IDs therefore remain authoring conveniences rather than identity inputs. Two profile IDs with equivalent normalized points/holes can deduplicate dependent geometry; changing resource content changes dependent geometry identity.
+
+Profiles themselves are not ResourceGraph or renderer resources. Sekai64 continues to receive only finalized `GeometryMesh` data. Native Object 0.1 imports namespace profiles and rewrite every Step 6 profile-reference site. World 0.8 remains unchanged.
+
+Construction trim remains inline-profile-only in Step 6 because the architecture lowering boundary does not carry reusable-profile context. Step 7 owns generic scalar fields; it must build on the rc.30 canonical geometry/resource contracts rather than expanding Step 6 into field/displacement semantics.

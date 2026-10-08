@@ -1,4 +1,4 @@
-import type { GeometryIssue, GeometrySafetyLimits } from '../types/index.js'
+import type { GeometryIssue, GeometrySafetyLimits, ProfileResourceMap } from '../types/index.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
 import {
@@ -12,13 +12,26 @@ import {
 } from './contourMath.js'
 import type { NormalizedProfile, ProfileDefinition, ProfilePoint } from './types.js'
 
+export interface NormalizeProfileOptions {
+  limits?: Partial<GeometrySafetyLimits>
+  path?: string
+  profiles?: ProfileResourceMap
+}
+
 export function normalizeProfile(
   input: unknown,
-  options: { limits?: Partial<GeometrySafetyLimits>; path?: string } = {},
+  options: NormalizeProfileOptions = {},
 ): NormalizedProfile {
   const limits = resolveGeometrySafetyLimits(options.limits)
   const path = options.path ?? '/profile'
-  if (!isPlainRecord(input)) profileError('PROFILE_INVALID', path, 'Profile must be a plain object with points and optional holes.')
+  if (typeof input === 'string') {
+    const id = input.trim()
+    if (!id) profileError('PROFILE_INVALID', path, 'Profile resource references must be non-empty strings.')
+    const resource = options.profiles?.[id]
+    if (!resource) profileError('PROFILE_INVALID', path, `Profile resource "${id}" was not found.`, 'Define the profile in the world profiles map or inline the profile definition.')
+    return normalizeProfile(resource, { ...options, path })
+  }
+  if (!isPlainRecord(input)) profileError('PROFILE_INVALID', path, 'Profile must be a plain object with points and optional holes, or a named profile resource reference.')
   const outer = normalizeContour(input.points, `${path}/points`, limits.maxProfilePoints, 'ccw')
   const rawHoles = input.holes ?? []
   if (!Array.isArray(rawHoles)) profileError('PROFILE_INVALID', `${path}/holes`, 'Profile holes must be an array of contours.')

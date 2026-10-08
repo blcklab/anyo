@@ -942,6 +942,23 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
     }
   }
 
+  if (!version.startsWith('0.9') && document.profiles !== undefined) {
+    issue(issues, 'PROFILES_REQUIRE_0_9', '/profiles', 'Top-level reusable profile resources require Anyo world schema 0.9 or newer.')
+  }
+  if (version.startsWith('0.9')) {
+    for (const [profileId, profile] of Object.entries(document.profiles ?? {})) {
+      const path = `/profiles/${profileId}`
+      if (!profileId.trim()) issue(issues, 'PROFILE_ID_REQUIRED', path, 'Profile ids must be non-empty strings.')
+      try {
+        normalizeProfile(profile, { path })
+      } catch (error) {
+        const profileIssues = (error as { issues?: Array<{ code?: string; path?: string; message?: string; suggestion?: string }> }).issues ?? []
+        if (profileIssues.length === 0) issue(issues, 'PROFILE_INVALID', path, String(error))
+        else for (const profileIssue of profileIssues) issue(issues, profileIssue.code ?? 'PROFILE_INVALID', profileIssue.path ?? path, profileIssue.message ?? 'Invalid profile definition.', profileIssue.suggestion)
+      }
+    }
+  }
+
   if (!version.startsWith('0.8') && !version.startsWith('0.9') && document.geometries !== undefined) {
     issue(issues, 'GEOMETRIES_REQUIRE_0_8', '/geometries', 'Top-level procedural geometries require Anyo world schema 0.8 or newer.')
   }
