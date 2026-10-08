@@ -19,6 +19,8 @@ Public documentation for package consumers.
 - [World schema](world-schema.md)
 - [Production guidance](production.md)
 - [Performance](performance.md)
+- [Universal geometry](UNIVERSAL-GEOMETRY.md)
+- [Geometry long-term freeze](GEOMETRY-LONG-TERM-FREEZE.md)
 - [VR/XR development](vr-development.md)
 - [VR/XR production checklist](vr-production-checklist.md)
 - [Compatibility](quality/STABILITY.md)

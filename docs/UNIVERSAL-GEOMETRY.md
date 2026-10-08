@@ -316,3 +316,12 @@ The universal geometry stack is exercised by `examples/universal-geometry-showca
 The scene combines reusable curves/profiles/fields, sweep, loft, extrusion, raw indexed mesh, CSG subtraction, field displacement, mirror, twist/taper/bend, arrays, and ordinary compositions. Every authored geometry compiles deterministically with zero Step 10 diagnostics and remains within a lightweight aggregate mesh budget. ResourceGraph contains geometry nodes only; curves, profiles, fields, and semantic object names remain authoring concerns.
 
 Step 11 is intentionally proof-only. No new core geometry capability, World schema field, runtime dependency, or Sekai64 feature is introduced. If a future showcase needs a genuinely new algorithm, the Step 12 freeze policy requires trying composition, generic operators, arbitrary mesh, or a trusted namespaced extension before reopening Core.
+
+
+## Step 12 — long-term geometry freeze
+
+rc.36 closes the universal-geometry feature series. No new geometry runtime vocabulary is added in this step. The authoritative policy is [`GEOMETRY-LONG-TERM-FREEZE.md`](GEOMETRY-LONG-TERM-FREEZE.md), backed by the machine-readable [`geometry-freeze-contract.json`](geometry-freeze-contract.json) and `npm run verify:geometry-freeze`.
+
+The frozen decision order is: compose existing geometry -> use operators -> use arbitrary indexed mesh -> use a trusted namespaced extension -> reopen Core only for a genuinely fundamental missing capability that blocks a class of forms. SDF/implicit modeling, marching cubes, surface nets, voxels, advanced remeshing, sculpting, GPU procedural meshing, and CAD-level modeling remain explicit post-freeze subsystems rather than hidden follow-up work.
+
+Step 11 proved the generic language without exposing a missing Core capability, so rc.36 intentionally changes policy/verification/docs rather than geometry/compiler/renderer semantics. `GEOMETRY_BUILD_ABI` remains `anyo.geometry/1`, World 0.8/0.9 geometry checkpoints remain unchanged, and Sekai64 requires no change.

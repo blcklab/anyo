@@ -1,0 +1,101 @@
+{
+  "contractVersion": 1,
+  "baselineVersion": "0.11.0-rc.36",
+  "geometryBuildAbi": "anyo.geometry/1",
+  "rendererBoundary": "GeometryMesh",
+  "builtInGeometryKinds": [
+    "mesh",
+    "box",
+    "roundedBox",
+    "plane",
+    "sphere",
+    "cylinder",
+    "cone",
+    "capsule",
+    "disc",
+    "torus",
+    "polygon",
+    "lathe",
+    "extrude",
+    "sweep",
+    "loft",
+    "pipeline",
+    "transform",
+    "mirror",
+    "noise",
+    "bend",
+    "twist",
+    "taper",
+    "union",
+    "subtract",
+    "intersect"
+  ],
+  "builtInOperators": [
+    "transform",
+    "taper",
+    "twist",
+    "bend",
+    "mirror",
+    "noise",
+    "array",
+    "weld",
+    "displace"
+  ],
+  "curveKinds": [
+    "line",
+    "polyline",
+    "quadraticBezier",
+    "cubicBezier",
+    "catmullRom",
+    "arc",
+    "circle",
+    "helix"
+  ],
+  "scalarFieldKinds": [
+    "constant",
+    "gradient",
+    "distance",
+    "radial",
+    "noise",
+    "add",
+    "multiply",
+    "min",
+    "max",
+    "invert",
+    "clamp"
+  ],
+  "authoringResources": [
+    "curves",
+    "profiles",
+    "fields"
+  ],
+  "escapeHatches": [
+    "mesh",
+    "namespaced-extension"
+  ],
+  "coreReopenOrder": [
+    "compose-existing",
+    "operator-stack",
+    "arbitrary-mesh",
+    "trusted-extension",
+    "core-only-if-fundamental"
+  ],
+  "deferredSubsystems": [
+    "sdf-implicit-modeling",
+    "marching-cubes",
+    "surface-nets",
+    "voxel-geometry",
+    "advanced-remeshing",
+    "sculpting",
+    "gpu-procedural-meshing",
+    "cad-level-modeling"
+  ],
+  "schemaCheckpoints": {
+    "schemas/world-0.8.schema.json": "999be6e14e9d0976c933596b2b63645aebbf0deadd47d98483e0bf6f165e9fad",
+    "schemas/world-0.9.schema.json": "030c17363f02d2891b45a03860f5829ee127e2576a89d2151547efb65b1f9388"
+  },
+  "showcaseCheckpoint": {
+    "path": "examples/universal-geometry-showcase/world.anyo.json",
+    "sha256": "8eaf4fe721b1d59e5a0d2e896fd8d7ad38203de27333a76b119d550a5f16f05c"
+  }
+}

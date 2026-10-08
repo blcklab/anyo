@@ -1,5 +1,8 @@
 # Anyo Final Portfolio Freeze
 
+
+> **Superseded geometry policy:** rc.24 was the portfolio modeling freeze candidate. The authoritative long-term geometry freeze after the universal-geometry series is rc.36; see [`GEOMETRY-LONG-TERM-FREEZE.md`](GEOMETRY-LONG-TERM-FREEZE.md).
+
 `@blcklab/anyo@0.11.0-rc.24` is the final modeling-completeness candidate before the project moves to a world-first freeze.
 
 ## Purpose

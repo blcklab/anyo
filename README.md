@@ -567,3 +567,7 @@ New safety guards bound semantic groups and optional attribute values in additio
 `0.11.0-rc.35` is the Step 11 proof milestone for the universal geometry architecture. `examples/universal-geometry-showcase/world.anyo.json` builds a spiral tower, curved bridge, procedural tree-like form, twisted sculpture, arched doorway, rocky formation, cable network, and pavilion using only generic World 0.9 geometry composition.
 
 The showcase intentionally introduces no `tree`, `bridge`, `tower`, `rock`, or pavilion-specific geometry kinds. It combines reusable curves, profiles, scalar fields, arbitrary indexed mesh, sweep/loft/extrude, CSG, ordered modifiers, mirroring, baked arrays, and deterministic `g2` identity through the ordinary renderer-neutral ResourceGraph path. Sekai64 receives normal geometry resources only.
+
+### Universal geometry long-term freeze
+
+`0.11.0-rc.36` closes the rc.25–rc.35 universal-geometry series. The default policy is now to build worlds/tooling/extensions rather than add Core geometry vocabulary. See [`docs/GEOMETRY-LONG-TERM-FREEZE.md`](docs/GEOMETRY-LONG-TERM-FREEZE.md) for the decision order and [`docs/geometry-freeze-contract.json`](docs/geometry-freeze-contract.json) for the CI-enforced snapshot.

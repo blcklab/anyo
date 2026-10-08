@@ -1,3 +1,14 @@
+## 0.11.0-rc.36
+
+### Universal Geometry Step 12 — long-term freeze contract
+
+- Close the rc.25–rc.35 universal-geometry feature series without adding new geometry/compiler/renderer semantics.
+- Add the authoritative long-term geometry freeze contract and a machine-readable snapshot covering `anyo.geometry/1`, built-in kinds/operators, curve/field vocabularies, World 0.8/0.9 schema checkpoints, and the Step 11 showcase proof.
+- Add `npm run verify:geometry-freeze` and include it in `npm run check` so accidental Core vocabulary, ABI, schema-checkpoint, or showcase drift fails release validation.
+- Freeze the decision order: compose existing geometry -> operators -> arbitrary indexed mesh -> trusted namespaced extension -> Core only for a fundamental missing capability.
+- Explicitly defer SDF/implicit modeling, marching cubes, surface nets, voxel geometry, advanced remeshing, sculpting, GPU procedural meshing, and CAD-level modeling to separate post-freeze architecture milestones.
+- Preserve World 0.8/0.9 schemas, `anyo.geometry/1`, zero runtime dependencies, and Sekai64 `0.8.0-rc.56` unchanged.
+
 ## 0.11.0-rc.35
 
 ### Universal Geometry Step 11 — showcase / torture proof
