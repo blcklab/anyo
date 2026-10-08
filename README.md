@@ -571,3 +571,7 @@ The showcase intentionally introduces no `tree`, `bridge`, `tower`, `rock`, or p
 ### Universal geometry long-term freeze
 
 `0.11.0-rc.36` closes the rc.25–rc.35 universal-geometry series. The default policy is now to build worlds/tooling/extensions rather than add Core geometry vocabulary. See [`docs/GEOMETRY-LONG-TERM-FREEZE.md`](docs/GEOMETRY-LONG-TERM-FREEZE.md) for the decision order and [`docs/geometry-freeze-contract.json`](docs/geometry-freeze-contract.json) for the CI-enforced snapshot.
+
+### Post-freeze extension integration (rc.37)
+
+`0.11.0-rc.37` is the first post-freeze proof milestone. It does not reopen Geometry Core. `examples/geometry-extension-provider/` is a private reference package that is copied outside the repository during release verification and loaded only through public Anyo APIs. It demonstrates a provider kind that composes built-in geometry plus a provider kind that generates custom indexed topology, with ordinary modifier composition, `g2` provenance, ResourceGraph mesh baking, and procedural collision. See [`docs/GEOMETRY-EXTENSION-AUTHORING.md`](docs/GEOMETRY-EXTENSION-AUTHORING.md).

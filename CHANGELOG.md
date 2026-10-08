@@ -1,3 +1,14 @@
+## 0.11.0-rc.37
+
+### Post-freeze Step 13 — external geometry-provider integration proof
+
+- Keep the rc.36 long-term geometry freeze intact: no `src/geometry` runtime semantics, geometry ABI, built-in vocabulary, or World 0.8/0.9 schema change.
+- Add `examples/geometry-extension-provider/`, a private external-package reference with `blcklab.reference:twisted-spire` (generic Core composition) and `blcklab.reference:stellated-prism` (custom indexed topology lowered through `mesh`).
+- Add a standalone strict World 0.9 example using both provider kinds, normal ordered modifiers, and procedural collision.
+- Add public provider-authoring documentation covering trust boundaries, versioned `g2` provenance, generic-lowering guidance, ResourceGraph mesh baking, collision, and when an extension is preferable to reopening Core.
+- Add `verify:geometry-extension-example` to the normal release gate. The verifier copies the reference provider outside the repository and proves it works against built public Anyo APIs without private source/build imports.
+- Add focused post-freeze tests for missing-provider failure, external-copy isolation, deterministic provider identity, renderer-neutral graph baking, and normal World/collision integration.
+
 ## 0.11.0-rc.36
 
 ### Universal Geometry Step 12 — long-term freeze contract

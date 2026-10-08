@@ -1,0 +1,52 @@
+{
+  "version": "0.9",
+  "geometries": {
+    "spire": {
+      "kind": "blcklab.reference:twisted-spire",
+      "params": {
+        "radius": 0.7,
+        "height": 4.8,
+        "segments": 28,
+        "twist": 5.4,
+        "topScale": 0.22
+      }
+    },
+    "crown": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "blcklab.reference:stellated-prism",
+        "params": {
+          "outerRadius": 1.15,
+          "innerRadius": 0.48,
+          "height": 0.42,
+          "points": 8
+        }
+      },
+      "modifiers": [
+        {
+          "kind": "twist",
+          "axis": "y",
+          "angle": 0.18
+        },
+        {
+          "kind": "transform",
+          "position": [3.2, 0.5, 0]
+        }
+      ]
+    }
+  },
+  "entities": [
+    {
+      "id": "reference-spire",
+      "type": "geometry",
+      "geometry": "spire",
+      "collision": true
+    },
+    {
+      "id": "reference-crown",
+      "type": "geometry",
+      "geometry": "crown",
+      "collision": true
+    }
+  ]
+}

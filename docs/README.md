@@ -21,6 +21,7 @@ Public documentation for package consumers.
 - [Performance](performance.md)
 - [Universal geometry](UNIVERSAL-GEOMETRY.md)
 - [Geometry long-term freeze](GEOMETRY-LONG-TERM-FREEZE.md)
+- [Geometry extension authoring](GEOMETRY-EXTENSION-AUTHORING.md)
 - [VR/XR development](vr-development.md)
 - [VR/XR production checklist](vr-production-checklist.md)
 - [Compatibility](quality/STABILITY.md)

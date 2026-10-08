@@ -1,0 +1,10 @@
+{
+  "name": "@blcklab/anyo-geometry-extension-reference",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference trusted geometry-extension provider for Anyo's post-freeze extension contract.",
+  "peerDependencies": {
+    "@blcklab/anyo": ">=0.11.0-rc.36 <0.12.0"
+  }
+}

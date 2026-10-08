@@ -50,6 +50,7 @@ try {
     'docs/geometry.md',
     'docs/UNIVERSAL-GEOMETRY.md',
     'docs/GEOMETRY-LONG-TERM-FREEZE.md',
+    'docs/GEOMETRY-EXTENSION-AUTHORING.md',
     'docs/geometry-freeze-contract.json',
     'docs/resources.md',
     'docs/sekai64.md',
