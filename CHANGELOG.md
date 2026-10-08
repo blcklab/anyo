@@ -1,3 +1,14 @@
+## 0.11.0-rc.35
+
+### Universal Geometry Step 11 — showcase / torture proof
+
+- Add `examples/universal-geometry-showcase/world.anyo.json`, a strict World 0.9 acceptance scene that builds eight semantically different forms using only generic geometry composition.
+- Prove a spiral tower, curved bridge, tree-like form, twisted sculpture, arched doorway, rocky formation, pipe/cable network, and procedural pavilion without adding semantic geometry kinds to Anyo Core.
+- Exercise reusable curves/profiles/fields, sweep, loft, extrusion, CSG subtraction, raw indexed mesh, mirror, twist/taper/bend, array, and field displacement in one deterministic scene.
+- Add automated showcase acceptance covering strict schema validation, deterministic g2 identities, zero geometry diagnostics, bounded total mesh size, renderer-neutral ResourceGraph realization, and full headless World loading.
+- Keep the milestone proof-only: no new geometry algorithm, no World schema change, no runtime dependency, and no Sekai64 source change.
+- Automated package validation remains renderer-adapter covered; real-hardware WebGPU/WebGL2 visual acceptance remains a final manual presentation check before the Step 12 long-term freeze.
+
 ## 0.11.0-rc.34
 
 ### Universal Geometry Step 10 — validation and hardening

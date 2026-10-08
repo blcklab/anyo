@@ -1,0 +1,1208 @@
+{
+  "$schema": "https://anyo.blcklab.dev/schemas/world-0.9.schema.json",
+  "version": "0.9",
+  "revision": 0,
+  "metadata": {
+    "id": "universal-geometry-showcase",
+    "title": "Universal Geometry Showcase",
+    "description": "Step 11 torture-test world built only from generic Anyo geometry composition."
+  },
+  "curves": {
+    "tower-helix": {
+      "kind": "helix",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "radial": [
+        1,
+        0,
+        0
+      ],
+      "radius": 1.45,
+      "height": 7.2,
+      "turns": 2.4,
+      "segments": 72
+    },
+    "bridge-arc": {
+      "kind": "arc",
+      "center": [
+        0,
+        0,
+        0
+      ],
+      "normal": [
+        0,
+        1,
+        0
+      ],
+      "radial": [
+        1,
+        0,
+        0
+      ],
+      "radius": 5.5,
+      "startAngle": -1.08,
+      "endAngle": 1.08,
+      "segments": 36
+    },
+    "bridge-rail-inner": {
+      "kind": "arc",
+      "center": [
+        0,
+        0.72,
+        0
+      ],
+      "normal": [
+        0,
+        1,
+        0
+      ],
+      "radial": [
+        1,
+        0,
+        0
+      ],
+      "radius": 4.45,
+      "startAngle": -1.08,
+      "endAngle": 1.08,
+      "segments": 36
+    },
+    "bridge-rail-outer": {
+      "kind": "arc",
+      "center": [
+        0,
+        0.72,
+        0
+      ],
+      "normal": [
+        0,
+        1,
+        0
+      ],
+      "radial": [
+        1,
+        0,
+        0
+      ],
+      "radius": 6.55,
+      "startAngle": -1.08,
+      "endAngle": 1.08,
+      "segments": 36
+    },
+    "tree-branch": {
+      "kind": "cubicBezier",
+      "points": [
+        [
+          0,
+          3.1,
+          0
+        ],
+        [
+          0.7,
+          3.7,
+          0.2
+        ],
+        [
+          1.25,
+          4.2,
+          0.55
+        ],
+        [
+          2.0,
+          4.55,
+          0.8
+        ]
+      ],
+      "segments": 18
+    },
+    "cable-a": {
+      "kind": "cubicBezier",
+      "points": [
+        [
+          -2,
+          0,
+          0
+        ],
+        [
+          -1.2,
+          1.4,
+          1.2
+        ],
+        [
+          0.8,
+          -0.5,
+          2.2
+        ],
+        [
+          2,
+          1.1,
+          3.4
+        ]
+      ],
+      "segments": 28
+    },
+    "cable-b": {
+      "kind": "catmullRom",
+      "points": [
+        [
+          -2,
+          0.5,
+          0.8
+        ],
+        [
+          -0.8,
+          1.6,
+          1.4
+        ],
+        [
+          0.6,
+          0.2,
+          2.4
+        ],
+        [
+          1.8,
+          1.4,
+          3.6
+        ]
+      ],
+      "segments": 24
+    },
+    "cable-c": {
+      "kind": "quadraticBezier",
+      "points": [
+        [
+          -1.8,
+          1.1,
+          -0.5
+        ],
+        [
+          0,
+          2.2,
+          1.8
+        ],
+        [
+          1.9,
+          0.5,
+          3.8
+        ]
+      ],
+      "segments": 28
+    }
+  },
+  "profiles": {
+    "tower-ribbon": {
+      "points": [
+        [
+          -0.18,
+          -0.28
+        ],
+        [
+          0.18,
+          -0.28
+        ],
+        [
+          0.18,
+          0.28
+        ],
+        [
+          -0.18,
+          0.28
+        ]
+      ]
+    },
+    "bridge-deck": {
+      "points": [
+        [
+          -1.15,
+          -0.16
+        ],
+        [
+          1.15,
+          -0.16
+        ],
+        [
+          1.15,
+          0.16
+        ],
+        [
+          -1.15,
+          0.16
+        ]
+      ]
+    },
+    "tube-small": {
+      "points": [
+        [
+          0.09,
+          0.0
+        ],
+        [
+          0.06364,
+          0.06364
+        ],
+        [
+          0.0,
+          0.09
+        ],
+        [
+          -0.06364,
+          0.06364
+        ],
+        [
+          -0.09,
+          0.0
+        ],
+        [
+          -0.06364,
+          -0.06364
+        ],
+        [
+          -0.0,
+          -0.09
+        ],
+        [
+          0.06364,
+          -0.06364
+        ]
+      ]
+    },
+    "branch": {
+      "points": [
+        [
+          0.17099999999999999,
+          0.0
+        ],
+        [
+          0.120916,
+          0.120916
+        ],
+        [
+          0.0,
+          0.17099999999999999
+        ],
+        [
+          -0.120916,
+          0.120916
+        ],
+        [
+          -0.17099999999999999,
+          0.0
+        ],
+        [
+          -0.120916,
+          -0.120916
+        ],
+        [
+          -0.0,
+          -0.17099999999999999
+        ],
+        [
+          0.120916,
+          -0.120916
+        ]
+      ]
+    },
+    "trunk-base": {
+      "points": [
+        [
+          0.52,
+          0.0
+        ],
+        [
+          0.367696,
+          0.296985
+        ],
+        [
+          0.0,
+          0.42
+        ],
+        [
+          -0.367696,
+          0.296985
+        ],
+        [
+          -0.52,
+          0.0
+        ],
+        [
+          -0.367696,
+          -0.296985
+        ],
+        [
+          -0.0,
+          -0.42
+        ],
+        [
+          0.367696,
+          -0.296985
+        ]
+      ]
+    },
+    "trunk-mid": {
+      "points": [
+        [
+          0.38,
+          0.0
+        ],
+        [
+          0.268701,
+          0.226274
+        ],
+        [
+          0.0,
+          0.32
+        ],
+        [
+          -0.268701,
+          0.226274
+        ],
+        [
+          -0.38,
+          0.0
+        ],
+        [
+          -0.268701,
+          -0.226274
+        ],
+        [
+          -0.0,
+          -0.32
+        ],
+        [
+          0.268701,
+          -0.226274
+        ]
+      ]
+    },
+    "trunk-top": {
+      "points": [
+        [
+          0.18,
+          0.0
+        ],
+        [
+          0.127279,
+          0.113137
+        ],
+        [
+          0.0,
+          0.16
+        ],
+        [
+          -0.127279,
+          0.113137
+        ],
+        [
+          -0.18,
+          0.0
+        ],
+        [
+          -0.127279,
+          -0.113137
+        ],
+        [
+          -0.0,
+          -0.16
+        ],
+        [
+          0.127279,
+          -0.113137
+        ]
+      ]
+    },
+    "sculpture-star": {
+      "points": [
+        [
+          0.0,
+          -0.8
+        ],
+        [
+          0.211603,
+          -0.291246
+        ],
+        [
+          0.760845,
+          -0.247214
+        ],
+        [
+          0.34238,
+          0.111246
+        ],
+        [
+          0.470228,
+          0.647214
+        ],
+        [
+          0.0,
+          0.36
+        ],
+        [
+          -0.470228,
+          0.647214
+        ],
+        [
+          -0.34238,
+          0.111246
+        ],
+        [
+          -0.760845,
+          -0.247214
+        ],
+        [
+          -0.211603,
+          -0.291246
+        ]
+      ]
+    },
+    "door-arch-cutout": {
+      "points": [
+        [
+          -1.0,
+          -2.6
+        ],
+        [
+          1.0,
+          -2.6
+        ],
+        [
+          1.0,
+          0.45
+        ],
+        [
+          0.92388,
+          0.832683
+        ],
+        [
+          0.707107,
+          1.157107
+        ],
+        [
+          0.382683,
+          1.37388
+        ],
+        [
+          0.0,
+          1.45
+        ],
+        [
+          -0.382683,
+          1.37388
+        ],
+        [
+          -0.707107,
+          1.157107
+        ],
+        [
+          -0.92388,
+          0.832683
+        ],
+        [
+          -1.0,
+          0.45
+        ]
+      ]
+    },
+    "pavilion-base": {
+      "points": [
+        [
+          -3.4,
+          -2.6
+        ],
+        [
+          3.4,
+          -2.6
+        ],
+        [
+          3.4,
+          2.6
+        ],
+        [
+          -3.4,
+          2.6
+        ]
+      ]
+    },
+    "pavilion-top": {
+      "points": [
+        [
+          -0.45,
+          -0.35
+        ],
+        [
+          0.45,
+          -0.35
+        ],
+        [
+          0.45,
+          0.35
+        ],
+        [
+          -0.45,
+          0.35
+        ]
+      ]
+    }
+  },
+  "fields": {
+    "rock-noise": {
+      "kind": "multiply",
+      "fields": [
+        {
+          "kind": "noise",
+          "seed": 1107,
+          "frequency": 1.65,
+          "octaves": 4,
+          "lacunarity": 2.05,
+          "persistence": 0.48,
+          "offset": [
+            0.2,
+            0.4,
+            -0.3
+          ]
+        },
+        {
+          "kind": "constant",
+          "value": 0.9
+        }
+      ]
+    }
+  },
+  "geometries": {
+    "tower-core": {
+      "kind": "cylinder",
+      "radius": 0.48,
+      "height": 7.4,
+      "segments": 24
+    },
+    "tower-ribbon": {
+      "kind": "sweep",
+      "profile": "tower-ribbon",
+      "path": "tower-helix",
+      "cap": true,
+      "profileStations": [
+        {
+          "at": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        {
+          "at": 0.55,
+          "scale": [
+            0.86,
+            0.92
+          ],
+          "rotation": 0.12
+        },
+        {
+          "at": 1,
+          "scale": [
+            0.58,
+            0.7
+          ],
+          "rotation": 0.3
+        }
+      ]
+    },
+    "bridge-deck": {
+      "kind": "sweep",
+      "profile": "bridge-deck",
+      "path": "bridge-arc",
+      "cap": true
+    },
+    "bridge-rail-inner": {
+      "kind": "sweep",
+      "profile": "tube-small",
+      "path": "bridge-rail-inner",
+      "cap": true
+    },
+    "bridge-rail-outer": {
+      "kind": "sweep",
+      "profile": "tube-small",
+      "path": "bridge-rail-outer",
+      "cap": true
+    },
+    "tree-trunk": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "loft",
+        "sections": [
+          {
+            "z": 0,
+            "profile": "trunk-base"
+          },
+          {
+            "z": 2.4,
+            "profile": "trunk-mid",
+            "rotation": 0.05,
+            "offset": [
+              0.08,
+              0
+            ]
+          },
+          {
+            "z": 4.8,
+            "profile": "trunk-top",
+            "rotation": 0.12,
+            "offset": [
+              0.18,
+              0.04
+            ]
+          }
+        ],
+        "cap": true
+      },
+      "modifiers": [
+        {
+          "kind": "transform",
+          "rotation": [
+            -1.570796327,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "tree-branches": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "sweep",
+        "profile": "branch",
+        "path": "tree-branch",
+        "cap": true,
+        "profileStations": [
+          {
+            "at": 0
+          },
+          {
+            "at": 1,
+            "scale": [
+              0.22,
+              0.22
+            ]
+          }
+        ]
+      },
+      "modifiers": [
+        {
+          "kind": "mirror",
+          "axis": "x",
+          "offset": 0,
+          "includeOriginal": true
+        }
+      ]
+    },
+    "twisted-sculpture": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "extrude",
+        "profile": "sculpture-star",
+        "depth": 5.2,
+        "cap": true,
+        "bevel": {
+          "size": 0.04,
+          "segments": 2
+        }
+      },
+      "modifiers": [
+        {
+          "kind": "twist",
+          "axis": "z",
+          "angle": 3.8
+        },
+        {
+          "kind": "taper",
+          "axis": "z",
+          "startScale": 1.0,
+          "endScale": 0.42
+        },
+        {
+          "kind": "bend",
+          "axis": "z",
+          "direction": "x",
+          "angle": 0.42
+        },
+        {
+          "kind": "transform",
+          "rotation": [
+            -1.570796327,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "arched-doorway": {
+      "kind": "subtract",
+      "left": {
+        "kind": "box",
+        "size": [
+          3.4,
+          4.6,
+          0.62
+        ]
+      },
+      "right": {
+        "kind": "extrude",
+        "profile": "door-arch-cutout",
+        "depth": 1.0,
+        "cap": true
+      }
+    },
+    "door-keystone": {
+      "kind": "mesh",
+      "positions": [
+        -0.32,
+        -0.22,
+        -0.16,
+        0.32,
+        -0.22,
+        -0.16,
+        0.24,
+        0.28,
+        -0.16,
+        -0.24,
+        0.28,
+        -0.16,
+        -0.32,
+        -0.22,
+        0.16,
+        0.32,
+        -0.22,
+        0.16,
+        0.24,
+        0.28,
+        0.16,
+        -0.24,
+        0.28,
+        0.16
+      ],
+      "indices": [
+        0,
+        1,
+        2,
+        0,
+        2,
+        3,
+        4,
+        6,
+        5,
+        4,
+        7,
+        6,
+        0,
+        4,
+        5,
+        0,
+        5,
+        1,
+        1,
+        5,
+        6,
+        1,
+        6,
+        2,
+        2,
+        6,
+        7,
+        2,
+        7,
+        3,
+        3,
+        7,
+        4,
+        3,
+        4,
+        0
+      ],
+      "normals": {
+        "mode": "flat"
+      }
+    },
+    "rocky-formation": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "sphere",
+        "radius": 1.35,
+        "segments": 32,
+        "rings": 16
+      },
+      "modifiers": [
+        {
+          "kind": "displace",
+          "field": "rock-noise",
+          "strength": 0.28,
+          "direction": "normal"
+        },
+        {
+          "kind": "transform",
+          "scale": [
+            1.55,
+            1.15,
+            1.35
+          ],
+          "rotation": [
+            0.08,
+            0.3,
+            -0.05
+          ]
+        }
+      ]
+    },
+    "cable-a": {
+      "kind": "sweep",
+      "profile": "tube-small",
+      "path": "cable-a",
+      "cap": true
+    },
+    "cable-b": {
+      "kind": "sweep",
+      "profile": "tube-small",
+      "path": "cable-b",
+      "cap": true
+    },
+    "cable-c": {
+      "kind": "sweep",
+      "profile": "tube-small",
+      "path": "cable-c",
+      "cap": true
+    },
+    "pavilion-column-row": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "cylinder",
+        "radius": 0.13,
+        "height": 3.0,
+        "segments": 16
+      },
+      "modifiers": [
+        {
+          "kind": "array",
+          "count": 4,
+          "offset": [
+            2.0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "pavilion-roof": {
+      "kind": "pipeline",
+      "source": {
+        "kind": "loft",
+        "sections": [
+          {
+            "z": 0,
+            "profile": "pavilion-base"
+          },
+          {
+            "z": 1.35,
+            "profile": "pavilion-top",
+            "rotation": 0.06
+          }
+        ],
+        "cap": true
+      },
+      "modifiers": [
+        {
+          "kind": "transform",
+          "rotation": [
+            -1.570796327,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "materials": {
+    "stone": {
+      "baseColor": "#8f949b",
+      "roughness": 0.82,
+      "metalness": 0
+    },
+    "metal": {
+      "baseColor": "#29323b",
+      "roughness": 0.28,
+      "metalness": 0.85
+    },
+    "wood": {
+      "baseColor": "#6f4d34",
+      "roughness": 0.72,
+      "metalness": 0
+    },
+    "bronze": {
+      "baseColor": "#8a5b35",
+      "roughness": 0.34,
+      "metalness": 0.72
+    },
+    "rock": {
+      "baseColor": "#646b70",
+      "roughness": 0.92,
+      "metalness": 0
+    },
+    "cable": {
+      "baseColor": "#31424c",
+      "roughness": 0.38,
+      "metalness": 0.65
+    },
+    "roof": {
+      "baseColor": "#2f4354",
+      "roughness": 0.48,
+      "metalness": 0.35
+    },
+    "ground": {
+      "baseColor": "#6f7d65",
+      "roughness": 0.96,
+      "metalness": 0
+    }
+  },
+  "compositions": {
+    "spiral-tower": {
+      "children": [
+        {
+          "id": "core",
+          "type": "geometry",
+          "geometry": "tower-core",
+          "material": "stone",
+          "position": [
+            0,
+            3.7,
+            0
+          ]
+        },
+        {
+          "id": "ribbon",
+          "type": "geometry",
+          "geometry": "tower-ribbon",
+          "material": "metal"
+        }
+      ]
+    },
+    "curved-bridge": {
+      "children": [
+        {
+          "id": "deck",
+          "type": "geometry",
+          "geometry": "bridge-deck",
+          "material": "stone"
+        },
+        {
+          "id": "inner-rail",
+          "type": "geometry",
+          "geometry": "bridge-rail-inner",
+          "material": "metal"
+        },
+        {
+          "id": "outer-rail",
+          "type": "geometry",
+          "geometry": "bridge-rail-outer",
+          "material": "metal"
+        }
+      ]
+    },
+    "tree-like-form": {
+      "children": [
+        {
+          "id": "trunk",
+          "type": "geometry",
+          "geometry": "tree-trunk",
+          "material": "wood"
+        },
+        {
+          "id": "branches",
+          "type": "geometry",
+          "geometry": "tree-branches",
+          "material": "wood"
+        }
+      ]
+    },
+    "arched-doorway-form": {
+      "children": [
+        {
+          "id": "frame",
+          "type": "geometry",
+          "geometry": "arched-doorway",
+          "material": "stone",
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "keystone",
+          "type": "geometry",
+          "geometry": "door-keystone",
+          "material": "bronze",
+          "position": [
+            0,
+            1.95,
+            0.34
+          ]
+        }
+      ]
+    },
+    "pipe-cable-network": {
+      "children": [
+        {
+          "id": "a",
+          "type": "geometry",
+          "geometry": "cable-a",
+          "material": "cable"
+        },
+        {
+          "id": "b",
+          "type": "geometry",
+          "geometry": "cable-b",
+          "material": "cable"
+        },
+        {
+          "id": "c",
+          "type": "geometry",
+          "geometry": "cable-c",
+          "material": "cable"
+        }
+      ]
+    },
+    "procedural-pavilion": {
+      "children": [
+        {
+          "id": "row-front",
+          "type": "geometry",
+          "geometry": "pavilion-column-row",
+          "material": "stone",
+          "position": [
+            -3,
+            1.5,
+            -2
+          ]
+        },
+        {
+          "id": "row-back",
+          "type": "geometry",
+          "geometry": "pavilion-column-row",
+          "material": "stone",
+          "position": [
+            -3,
+            1.5,
+            2
+          ]
+        },
+        {
+          "id": "roof",
+          "type": "geometry",
+          "geometry": "pavilion-roof",
+          "material": "roof",
+          "position": [
+            0,
+            3.05,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "entities": [
+    {
+      "id": "ground",
+      "type": "box",
+      "size": [
+        42,
+        0.3,
+        34
+      ],
+      "position": [
+        0,
+        -0.2,
+        0
+      ],
+      "material": "ground"
+    },
+    {
+      "id": "spiral-tower",
+      "composition": "spiral-tower",
+      "position": [
+        -12,
+        0,
+        -8
+      ]
+    },
+    {
+      "id": "curved-bridge",
+      "composition": "curved-bridge",
+      "position": [
+        0,
+        0.6,
+        -10
+      ]
+    },
+    {
+      "id": "tree-like-form",
+      "composition": "tree-like-form",
+      "position": [
+        12,
+        0,
+        -8
+      ]
+    },
+    {
+      "id": "twisted-sculpture",
+      "type": "geometry",
+      "geometry": "twisted-sculpture",
+      "material": "bronze",
+      "position": [
+        -12,
+        0,
+        5
+      ]
+    },
+    {
+      "id": "arched-doorway",
+      "composition": "arched-doorway-form",
+      "position": [
+        -4,
+        2.3,
+        5
+      ]
+    },
+    {
+      "id": "rocky-formation",
+      "type": "geometry",
+      "geometry": "rocky-formation",
+      "material": "rock",
+      "position": [
+        4,
+        1.25,
+        5
+      ]
+    },
+    {
+      "id": "pipe-cable-network",
+      "composition": "pipe-cable-network",
+      "position": [
+        11,
+        1,
+        5
+      ]
+    },
+    {
+      "id": "procedural-pavilion",
+      "composition": "procedural-pavilion",
+      "position": [
+        0,
+        0,
+        11
+      ]
+    }
+  ]
+}

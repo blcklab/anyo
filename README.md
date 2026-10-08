@@ -560,3 +560,10 @@ Geometry now has two intentionally different identities. `hashGeometryDefinition
 `0.11.0-rc.34` hardens the renderer-neutral mesh boundary without making unusual geometry illegal. `inspectGeometryMesh()` now reports non-fatal diagnostics for degenerate triangles, shared-edge winding conflicts, malformed normal/tangent vectors, overlapping groups, and stale supplied bounds. Final bounds are always recomputed canonically from positions. Strict callers can promote selected diagnostics to errors through `GeometryCompiler({ validation: ... })`, while `onDiagnostic` receives structured warnings with geometry/operator context when available.
 
 New safety guards bound semantic groups and optional attribute values in addition to the established vertex/index/depth/instance limits. Validation policy remains outside `g2` build identity because it decides whether a build is accepted, not what accepted canonical geometry means. World 0.8/0.9 authoring syntax and Sekai64 remain unchanged.
+
+
+### Universal geometry showcase (rc.35)
+
+`0.11.0-rc.35` is the Step 11 proof milestone for the universal geometry architecture. `examples/universal-geometry-showcase/world.anyo.json` builds a spiral tower, curved bridge, procedural tree-like form, twisted sculpture, arched doorway, rocky formation, cable network, and pavilion using only generic World 0.9 geometry composition.
+
+The showcase intentionally introduces no `tree`, `bridge`, `tower`, `rock`, or pavilion-specific geometry kinds. It combines reusable curves, profiles, scalar fields, arbitrary indexed mesh, sweep/loft/extrude, CSG, ordered modifiers, mirroring, baked arrays, and deterministic `g2` identity through the ordinary renderer-neutral ResourceGraph path. Sekai64 receives normal geometry resources only.

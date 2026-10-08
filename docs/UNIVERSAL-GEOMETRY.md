@@ -307,3 +307,12 @@ The final mesh boundary now distinguishes **fatal structural errors** from **non
 `GeometryMeshValidationOptions` lets strict hosts promote those diagnostic classes to errors, cap diagnostic accumulation, and cap the memory-heavier winding scan. Canonical bounds are recomputed from final vertex positions; stale provided bounds are repaired by default or rejected in strict mode. `GeometryCompiler` can forward diagnostics through `onDiagnostic`, and structured issue context identifies the canonical geometry kind/key plus operator kind/index when known.
 
 Two additional safety limits protect generated and raw meshes: `maxGeometryGroups` and `maxGeometryAttributeValues`. Raw `mesh` authoring enforces them before typed-array allocation; generated/custom geometry is checked again at finalization. These validation/safety policies do **not** participate in `g2` geometry identity.
+
+
+## Step 11 — universal showcase / torture proof (rc.35)
+
+The universal geometry stack is exercised by `examples/universal-geometry-showcase/world.anyo.json`. The acceptance scene deliberately builds eight unrelated forms without adding semantic geometry kinds: spiral tower, curved bridge, tree-like form, twisted sculpture, arched doorway, rocky formation, pipe/cable network, and procedural pavilion.
+
+The scene combines reusable curves/profiles/fields, sweep, loft, extrusion, raw indexed mesh, CSG subtraction, field displacement, mirror, twist/taper/bend, arrays, and ordinary compositions. Every authored geometry compiles deterministically with zero Step 10 diagnostics and remains within a lightweight aggregate mesh budget. ResourceGraph contains geometry nodes only; curves, profiles, fields, and semantic object names remain authoring concerns.
+
+Step 11 is intentionally proof-only. No new core geometry capability, World schema field, runtime dependency, or Sekai64 feature is introduced. If a future showcase needs a genuinely new algorithm, the Step 12 freeze policy requires trying composition, generic operators, arbitrary mesh, or a trusted namespaced extension before reopening Core.
