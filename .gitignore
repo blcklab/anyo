@@ -6,6 +6,7 @@ coverage/
 .vscode/
 .idea/
 *.log
+.internal/
 .release/
 .env
 .env.*
