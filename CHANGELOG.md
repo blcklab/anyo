@@ -1,3 +1,15 @@
+## 0.11.0-rc.32
+
+### Universal Geometry Step 8 — namespaced geometry extension contract
+
+- Add a trusted-host `GeometryExtensionRegistry` and namespaced provider contract (`namespace:name`) so new geometry algorithms can live outside Anyo Core without teaching renderers semantic object kinds.
+- Keep extension authoring code-free: World 0.9 accepts only a strict generic extension envelope (`kind`, optional JSON `params`, and existing surface policies); world JSON never imports packages or executes provider code.
+- Add explicit provider register/resolve/unregister lifecycle, namespace/kind ownership checks, clean missing-provider diagnostics, and preserve the low-level non-namespaced custom-kind API for backward compatibility.
+- Allow `GeometryCompiler`, `ResourceGraphBuilder`, and `createWorld()` to receive trusted providers. Extension kinds compile through the existing canonical geometry context and can compose with ordinary operators.
+- Bake every extension-containing ResourceGraph expression to the built-in indexed `mesh` contract before renderer realization, so Sekai64 and other adapters remain extension-agnostic. Procedural collision uses the same host compiler.
+- Keep provider identity/version available for diagnostics; deterministic provider provenance/cache identity is intentionally finalized in Universal Geometry Step 9.
+- Keep World 0.8 byte-identical, add no runtime dependencies, and leave `@blcklab/sekai64@0.8.0-rc.56` unchanged.
+
 ## 0.11.0-rc.31
 
 ### Universal Geometry Step 7 — generic scalar fields

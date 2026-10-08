@@ -2,7 +2,7 @@ import type { GeometryDefinition, GeometryInspectionResult, GeometryIssue, Geome
 import { GeometryValidationError } from '../validation/errors.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
 
-const KIND_PATTERN = /^[A-Za-z][A-Za-z0-9._-]*$/
+const KIND_PATTERN = /^(?:[A-Za-z][A-Za-z0-9._-]*|[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*:[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*)$/
 const QUALITY = new Set(['low', 'medium', 'high', 'ultra'])
 
 function pointer(path: string, key: string | number): string {
@@ -78,7 +78,7 @@ export function inspectGeometryDefinition(
   const record = normalized as { [key: string]: GeometryJsonValue | undefined }
   const kind = record.kind
   if (typeof kind !== 'string' || !KIND_PATTERN.test(kind)) {
-    issues.push({ code: 'GEOMETRY_KIND_INVALID', path: '/kind', message: 'Geometry kind must match /^[A-Za-z][A-Za-z0-9._-]*$/.' })
+    issues.push({ code: 'GEOMETRY_KIND_INVALID', path: '/kind', message: 'Geometry kind must be a built-in identifier or a lowercase namespaced extension kind (namespace:name).' })
   }
   const quality = record.quality
   if (quality !== undefined && (typeof quality !== 'string' || !QUALITY.has(quality))) {

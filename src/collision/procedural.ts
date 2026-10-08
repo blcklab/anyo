@@ -20,8 +20,6 @@ import { composeTransforms, createTransform, finalizeTransform } from '../math/t
 
 export type ProceduralCollisionPolicy = 'none' | 'bounds' | 'semantic' | 'parts'
 
-const compiler = new GeometryCompiler()
-
 function flattenEntities(roots: readonly NormalizedEntityDefinition[]): NormalizedEntityDefinition[] {
   const result: NormalizedEntityDefinition[] = []
   const visit = (entity: NormalizedEntityDefinition): void => {
@@ -80,7 +78,7 @@ function transformedBounds(bounds: GeometryBounds, transform: TransformDefinitio
   return { min, max }
 }
 
-function boundsFor(definition: GeometryDefinition, transform: TransformDefinition): Aabb {
+function boundsFor(definition: GeometryDefinition, transform: TransformDefinition, compiler: GeometryCompiler): Aabb {
   return transformedBounds(compiler.compile(definition).bounds, transform)
 }
 
@@ -102,8 +100,9 @@ function addGeometryBoundsCollider(
   output: CompileAccumulator,
   entity: NormalizedEntityDefinition,
   node: CompiledEntityNode,
+  compiler: GeometryCompiler,
 ): void {
-  const bounds = boundsFor(geometryDefinition(document, entity), node.transform)
+  const bounds = boundsFor(geometryDefinition(document, entity), node.transform, compiler)
   addCollider(output, node, {
     id: `procedural:${entity.id}:bounds`,
     bounds,
@@ -117,16 +116,17 @@ function addGeometryBoundsCollider(
 function constructionBounds(
   definition: ArchitectureDefinition,
   node: CompiledEntityNode,
+  compiler: GeometryCompiler,
 ): Aabb | undefined {
   const assembly = lowerArchitecture(definition)
   let result: Aabb | undefined
   for (const part of assembly.parts) {
-    const bounds = boundsFor(part.geometry, composeTransform(node.transform, part.transform))
+    const bounds = boundsFor(part.geometry, composeTransform(node.transform, part.transform), compiler)
     result = result ? mergeAabb(result, bounds) : bounds
   }
   for (const group of assembly.instanceGroups) {
     for (const placement of group.placements) {
-      const bounds = boundsFor(group.geometry, composeTransform(node.transform, placement))
+      const bounds = boundsFor(group.geometry, composeTransform(node.transform, placement), compiler)
       result = result ? mergeAabb(result, bounds) : bounds
     }
   }
@@ -138,8 +138,9 @@ function addConstructionBoundsCollider(
   entity: NormalizedEntityDefinition,
   node: CompiledEntityNode,
   definition: ArchitectureDefinition,
+  compiler: GeometryCompiler,
 ): void {
-  const bounds = constructionBounds(definition, node)
+  const bounds = constructionBounds(definition, node, compiler)
   if (!bounds) return
   addCollider(output, node, {
     id: `procedural:${entity.id}:bounds`,
@@ -156,6 +157,7 @@ function addRailingSegmentColliders(
   entity: NormalizedEntityDefinition,
   node: CompiledEntityNode,
   definition: Extract<ArchitectureDefinition, { type: 'railing' }>,
+  compiler: GeometryCompiler,
 ): void {
   const assembly = lowerArchitecture(definition)
   const prefix = `procedural:${entity.id}`
@@ -164,7 +166,7 @@ function addRailingSegmentColliders(
     if (part.role !== 'railing:rail' || part.geometry.kind !== 'sweep') {
       addCollider(output, node, {
         id: `${prefix}:part:${part.id}:collider`,
-        bounds: boundsFor(part.geometry, composeTransform(node.transform, part.transform)),
+        bounds: boundsFor(part.geometry, composeTransform(node.transform, part.transform), compiler),
         roomId: node.roomId,
         entityId: entity.id,
         enabled: true,
@@ -193,7 +195,7 @@ function addRailingSegmentColliders(
       } as GeometryDefinition
       addCollider(output, node, {
         id: `${prefix}:part:${part.id}:segment:${index}:collider`,
-        bounds: boundsFor(segment, composeTransform(node.transform, part.transform)),
+        bounds: boundsFor(segment, composeTransform(node.transform, part.transform), compiler),
         roomId: node.roomId,
         entityId: entity.id,
         enabled: true,
@@ -206,7 +208,7 @@ function addRailingSegmentColliders(
     for (const placement of group.placements) {
       addCollider(output, node, {
         id: `${prefix}:group:${group.id}:${placement.index}:collider`,
-        bounds: boundsFor(group.geometry, composeTransform(node.transform, placement)),
+        bounds: boundsFor(group.geometry, composeTransform(node.transform, placement), compiler),
         roomId: node.roomId,
         entityId: entity.id,
         enabled: true,
@@ -221,13 +223,14 @@ function addConstructionPartColliders(
   entity: NormalizedEntityDefinition,
   node: CompiledEntityNode,
   definition: ArchitectureDefinition,
+  compiler: GeometryCompiler,
 ): void {
   const assembly = lowerArchitecture(definition)
   const prefix = `procedural:${entity.id}`
   for (const part of assembly.parts) {
     addCollider(output, node, {
       id: `${prefix}:part:${part.id}:collider`,
-      bounds: boundsFor(part.geometry, composeTransform(node.transform, part.transform)),
+      bounds: boundsFor(part.geometry, composeTransform(node.transform, part.transform), compiler),
       roomId: node.roomId,
       entityId: entity.id,
       enabled: true,
@@ -238,7 +241,7 @@ function addConstructionPartColliders(
     for (const placement of group.placements) {
       addCollider(output, node, {
         id: `${prefix}:group:${group.id}:${placement.index}:collider`,
-        bounds: boundsFor(group.geometry, composeTransform(node.transform, placement)),
+        bounds: boundsFor(group.geometry, composeTransform(node.transform, placement), compiler),
         roomId: node.roomId,
         entityId: entity.id,
         enabled: true,
@@ -255,8 +258,9 @@ function addConstructionPartColliders(
  * entities currently support coarse bounds collision. Semantic/parts policies are
  * reserved for S7 construction where the lowerer can preserve openings and stair parts.
  */
-export function compileProceduralColliders(document: NormalizedWorldDocument, output: CompileAccumulator): void {
+export function compileProceduralColliders(document: NormalizedWorldDocument, output: CompileAccumulator, options: { geometryCompiler?: GeometryCompiler } = {}): void {
   if (!String(document.version).startsWith('0.8') && !String(document.version).startsWith('0.9')) return
+  const compiler = options.geometryCompiler ?? new GeometryCompiler({ curves: document.curves, profiles: document.profiles, fields: document.fields })
   const nodeById = new Map(output.entities.map((node) => [node.id, node]))
 
   for (const entity of flattenEntities(document.entities)) {
@@ -270,13 +274,13 @@ export function compileProceduralColliders(document: NormalizedWorldDocument, ou
       if (policy !== 'bounds') {
         throw new Error(`ANYO_PROCEDURAL_COLLISION_POLICY_UNSUPPORTED\nEntity: ${entity.id}\nPolicy: ${policy}\nGeometry entities currently support collisionPolicy "bounds" only.`)
       }
-      addGeometryBoundsCollider(document, output, entity, node)
+      addGeometryBoundsCollider(document, output, entity, node, compiler)
       continue
     }
 
     if (!entity.construction) throw new Error(`ANYO_PROCEDURAL_CONSTRUCTION_REQUIRED\nEntity: ${entity.id}`)
-    if (policy === 'bounds') addConstructionBoundsCollider(output, entity, node, entity.construction)
-    else if (entity.construction.type === 'railing') addRailingSegmentColliders(output, entity, node, entity.construction)
-    else addConstructionPartColliders(output, entity, node, entity.construction)
+    if (policy === 'bounds') addConstructionBoundsCollider(output, entity, node, entity.construction, compiler)
+    else if (entity.construction.type === 'railing') addRailingSegmentColliders(output, entity, node, entity.construction, compiler)
+    else addConstructionPartColliders(output, entity, node, entity.construction, compiler)
   }
 }

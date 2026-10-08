@@ -3,6 +3,7 @@ import { composeTransforms, createTransform, finalizeTransform } from '../math/t
 import { lowerArchitecture } from '../geometry/architecture/index.js'
 import type { GeometryDefinition } from '../geometry/types/index.js'
 import { createResourceGraphBuilder } from './builder.js'
+import type { GeometryCompiler } from '../geometry/core/GeometryCompiler.js'
 import type { ResourceGraph } from './graph.js'
 import type { ResourceId, ResourceTransform } from './types.js'
 import { resourceGraphModelAsset } from '../core/resourceAssetPolicy.js'
@@ -41,7 +42,7 @@ function namedGeometry(document: NormalizedWorldDocument, value: string | Geomet
 }
 
 /** S14: compile schema-0.8/0.9 procedural authoring into the existing S9-S13 ResourceGraph. */
-export function compileWorldResourceGraph(document: NormalizedWorldDocument, compiled: CompiledWorld): ResourceGraph | undefined {
+export function compileWorldResourceGraph(document: NormalizedWorldDocument, compiled: CompiledWorld, options: { geometryCompiler?: GeometryCompiler } = {}): ResourceGraph | undefined {
   if (!String(document.version).startsWith('0.8') && !String(document.version).startsWith('0.9')) return undefined
   const entities = [...document.entities]
   for (let index = 0; index < entities.length; index += 1) {
@@ -56,7 +57,7 @@ export function compileWorldResourceGraph(document: NormalizedWorldDocument, com
   )
   if (!resourceBacked) return undefined
 
-  const builder = createResourceGraphBuilder({ curves: document.curves, profiles: document.profiles, fields: document.fields })
+  const builder = createResourceGraphBuilder({ curves: document.curves, profiles: document.profiles, fields: document.fields, geometryCompiler: options.geometryCompiler })
   const assetIds = new Map<string, ResourceId>()
   const materialIds = new Map<string, ResourceId>()
 

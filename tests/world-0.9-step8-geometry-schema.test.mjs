@@ -95,20 +95,24 @@ function schemaErrors(value, definition, path = '$', depth = 0) {
   return errors
 }
 
-test('World 0.9 geometry schema discriminates the exact 25 built-in geometry kinds including the generic operator pipeline', () => {
+test('World 0.9 geometry schema discriminates the exact 25 built-in geometry kinds plus the generic namespaced extension envelope', () => {
   assert.deepEqual([...BUILTIN_GEOMETRY_KIND_NAMES], expectedKinds)
   assert.deepEqual(Object.keys(valid), expectedKinds)
   assert.deepEqual(Object.keys(invalid), expectedKinds)
 
   const refs = schema.$defs.geometryDefinition.oneOf.map((entry) => entry.$ref)
-  assert.equal(refs.length, expectedKinds.length)
-  const kinds = refs.map((entry) => localRef(entry).properties.kind.const)
-  assert.deepEqual(kinds, expectedKinds)
+  assert.equal(refs.length, expectedKinds.length + 1)
+  const builtInKinds = refs
+    .map((entry) => localRef(entry).properties.kind?.const)
+    .filter((kind) => typeof kind === 'string')
+  assert.deepEqual(builtInKinds, expectedKinds)
+  assert.ok(refs.includes('#/$defs/geometryExtension'))
 })
 
 test('every built-in geometry variant is strict and carries the shared surface authoring contract', () => {
   for (const entry of schema.$defs.geometryDefinition.oneOf) {
     const definition = localRef(entry.$ref)
+    if (!definition.properties.kind?.const) continue
     assert.equal(definition.type, 'object')
     assert.equal(definition.additionalProperties, false, `${definition.properties.kind.const} must reject unknown parameters`)
     assert.equal(definition.required.includes('kind'), true)

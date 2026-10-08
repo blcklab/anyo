@@ -74,6 +74,8 @@ import { validateWorldRuntimeSnapshot } from '../snapshots/index.js'
 import { prepareFastEntityMutation, type FastEntityMutation } from './fastEntityMutation.js'
 import { compileWorldResourceGraph } from '../resources/world.js'
 import { compileProceduralColliders } from '../collision/procedural.js'
+import { GeometryCompiler } from '../geometry/core/GeometryCompiler.js'
+import { GeometryExtensionRegistry } from '../geometry/extensions/GeometryExtensionRegistry.js'
 
 export type ChangeClassification = 'data' | 'entity' | 'structure' | 'document' | 'history'
 
@@ -221,6 +223,8 @@ export class World {
   readonly query: WorldQuery
   readonly exploration: WorldExplorationController
   readonly xr: WorldXRController
+  /** Trusted namespaced geometry providers available to this world. Register before loading dependent JSON. */
+  readonly geometryExtensions: GeometryExtensionRegistry
 
   document: NormalizedWorldDocument | null = null
   compiled: CompiledWorld | null = null
@@ -267,6 +271,9 @@ export class World {
     this.history = new DocumentHistory(options.historyLimit ?? 100)
     this.validationOptions = options.validation ?? {}
     this.documentLoader = options.documentLoader ?? createFetchAnyoDocumentLoader()
+    this.geometryExtensions = options.geometryExtensions instanceof GeometryExtensionRegistry
+      ? options.geometryExtensions
+      : new GeometryExtensionRegistry(options.geometryExtensions ?? [])
     this.query = new WorldQuery()
     this.transforms = new RuntimeTransformStore()
     this.systemScheduler = new SystemScheduler(this.systems, options.systemOptions, this.transforms, this.warningHandler)
@@ -1763,9 +1770,15 @@ Detach the surface attachment before committing a runtime world transform.`)
     output.activeCameraId = cameras.activeCameraId
     output.revision = document.revision
     for (const plugin of this.plugins) plugin.compile?.({ document, output, warn: this.warningHandler })
-    compileProceduralColliders(document, output)
+    const geometryCompiler = new GeometryCompiler({
+      curves: document.curves,
+      profiles: document.profiles,
+      fields: document.fields,
+      extensions: this.geometryExtensions,
+    })
+    compileProceduralColliders(document, output, { geometryCompiler })
     const compiled = finalizeCompiledWorld(output)
-    compiled.resourceGraph = compileWorldResourceGraph(document, compiled)
+    compiled.resourceGraph = compileWorldResourceGraph(document, compiled, { geometryCompiler })
     const graphStart = typeof performance === 'undefined' ? Date.now() : performance.now()
     this.dependencyGraph = buildCompilerDependencyGraph(document)
     const graphEnd = typeof performance === 'undefined' ? Date.now() : performance.now()

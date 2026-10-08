@@ -12,6 +12,8 @@ import type { ValidationIssue } from './errors.js'
 import { getDataPath } from './bindings.js'
 import { resolveCompositionParameterDefinitions } from './compositionParameters.js'
 import type { GeometryDefinition } from '../geometry/types/index.js'
+import { normalizeGeometryDefinition } from '../geometry/core/normalizeGeometry.js'
+import { assertGeometryExtensionDefinition, isNamespacedGeometryKind } from '../geometry/extensions/GeometryExtensionRegistry.js'
 
 const BUILTIN_ENTITY_TYPES = new Set([
   'box', 'plane', 'cylinder', 'disc', 'cone', 'sphere', 'text', 'image', 'model', 'light', 'group',
@@ -302,7 +304,19 @@ function inspectGeometryResourceReferences(
   issues: ValidationIssue[],
 ): void {
   if (!definition || typeof definition !== 'object' || Array.isArray(definition)) return
-  const geometry = definition as GeometryDefinition
+  let geometry: GeometryDefinition
+  try {
+    geometry = normalizeGeometryDefinition(definition)
+    if (isNamespacedGeometryKind(geometry.kind)) assertGeometryExtensionDefinition(geometry)
+  } catch (error) {
+    const geometryIssues = (error as { issues?: Array<{ code?: string; path?: string; message?: string; suggestion?: string }> }).issues ?? []
+    if (geometryIssues.length === 0) add(issues, severity(mode, true), 'GEOMETRY_DEFINITION_INVALID', path, String(error))
+    else for (const geometryIssue of geometryIssues) {
+      const suffix = geometryIssue.path ?? ''
+      add(issues, severity(mode, true), geometryIssue.code ?? 'GEOMETRY_DEFINITION_INVALID', `${path}${suffix}`, geometryIssue.message ?? 'Invalid geometry definition.', geometryIssue.suggestion)
+    }
+    return
+  }
   if (geometry.kind === 'sweep' && typeof geometry.path === 'string' && !curveIds.has(geometry.path)) {
     add(issues, severity(mode, true), 'ANYO_CURVE_NOT_FOUND', `${path}/path`, `Curve resource "${geometry.path}" does not exist.`)
   }

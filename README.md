@@ -532,3 +532,18 @@ World 0.9 can declare reusable renderer-neutral scalar fields and use them to dr
 ```
 
 The field vocabulary is deliberately small and composable: `constant`, `gradient`, `distance`, `radial`, deterministic `noise`, `add`, `multiply`, `min`, `max`, `invert`, and `clamp`. Named references resolve to canonical content before geometry hashing, so resource names are not geometry identity. Fields remain authoring-only and do not create ResourceGraph or renderer nodes. Native Object 0.1 imports namespace field IDs and nested references automatically.
+
+### Namespaced geometry extensions (rc.32)
+
+Trusted host code can register geometry providers without adding semantic shape kinds to Anyo Core. Extension kinds use lowercase namespaced identifiers such as `blcklab.architecture:spiral-stair` and receive provider-specific JSON under `params`.
+
+```ts
+import { GeometryExtensionRegistry, createGeometryCompiler } from '@blcklab/anyo/geometry'
+
+const extensions = new GeometryExtensionRegistry([myTrustedProvider])
+const compiler = createGeometryCompiler({ extensions })
+```
+
+World JSON may reference a registered kind, but it cannot install or execute a provider. The strict authoring envelope allows only `kind`, `params`, and the existing geometry surface policies. During ResourceGraph creation, extension-containing expressions are compiled and baked to the built-in indexed `mesh` source before renderer realization, so Sekai64 and other adapters remain completely unaware of extension packages.
+
+Provider namespace/version metadata is exposed for diagnostics in rc.32. Step 9 owns deterministic provider provenance and cache identity.

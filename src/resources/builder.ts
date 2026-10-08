@@ -5,6 +5,9 @@ import { lowerArchitecture } from '../geometry/architecture/index.js'
 import { layoutGeometryArray } from '../geometry/modifiers/index.js'
 import { layoutPathArray } from '../geometry/path-array/index.js'
 import type { CurveResourceMap, ProfileResourceMap, ScalarFieldResourceMap, GeometryArrayDefinition, GeometryDefinition, PathArrayDefinition } from '../geometry/types/index.js'
+import { containsGeometryExtension, geometryMeshToDefinition } from '../geometry/extensions/lower.js'
+import type { GeometryExtensionProvider } from '../geometry/extensions/types.js'
+import { GeometryExtensionRegistry } from '../geometry/extensions/GeometryExtensionRegistry.js'
 import { hashGeometryDefinition } from '../geometry/core/hashGeometry.js'
 import { hashResourceValue } from './hash.js'
 import { ResourceGraph } from './graph.js'
@@ -46,6 +49,8 @@ export interface ResourceGraphBuilderOptions {
   curves?: CurveResourceMap
   profiles?: ProfileResourceMap
   fields?: ScalarFieldResourceMap
+  /** Trusted host geometry extensions. Extension-containing expressions are baked to built-in mesh resources. */
+  extensions?: GeometryExtensionRegistry | Iterable<GeometryExtensionProvider>
 }
 
 export class ResourceGraphBuilder {
@@ -62,7 +67,7 @@ export class ResourceGraphBuilder {
     this.#curves = options.curves ?? Object.freeze({})
     this.#profiles = options.profiles ?? Object.freeze({})
     this.#fields = options.fields ?? Object.freeze({})
-    this.#geometryCompiler = options.geometryCompiler ?? new GeometryCompiler({ curves: this.#curves, profiles: this.#profiles, fields: this.#fields })
+    this.#geometryCompiler = options.geometryCompiler ?? new GeometryCompiler({ curves: this.#curves, profiles: this.#profiles, fields: this.#fields, extensions: options.extensions })
   }
 
   get size(): number { return this.#nodes.size }
@@ -88,13 +93,21 @@ export class ResourceGraphBuilder {
 
   addGeometry(definition: unknown): ResourceId {
     const normalized = this.#geometryCompiler.normalize(definition)
-    const childIds = geometryChildren(normalized).map((child) => this.addGeometry(child.definition))
-    const key = hashGeometryDefinition(normalized)
+    // Extension providers are an authoring/build concern only. Bake any expression
+    // containing a namespaced kind into the ordinary built-in indexed-mesh contract
+    // before it enters ResourceGraph so every renderer remains extension-agnostic.
+    const resourceDefinition = containsGeometryExtension(normalized)
+      ? this.#geometryCompiler.normalize(geometryMeshToDefinition(this.#geometryCompiler.compile(normalized)))
+      : normalized
+    const childIds = containsGeometryExtension(normalized)
+      ? []
+      : geometryChildren(resourceDefinition).map((child) => this.addGeometry(child.definition))
+    const key = hashGeometryDefinition(resourceDefinition)
     const id = `geometry:${key}`
     const resource: GeometryResource = Object.freeze({
       id, kind: 'geometry', key,
       dependencies: freezeDependencies(childIds),
-      definition: normalized,
+      definition: resourceDefinition,
     })
     return this.#add(resource)
   }

@@ -24,6 +24,8 @@ import { normalizeProfile } from '../profiles/normalizeProfile.js'
 import { normalizeScalarField } from '../fields/normalizeField.js'
 import type { NormalizedScalarFieldDefinition } from '../fields/types.js'
 import type { NormalizedCurveDefinition } from '../curves/types.js'
+import { GeometryExtensionRegistry, assertGeometryExtensionDefinition, isNamespacedGeometryKind, splitNamespacedGeometryKind } from '../extensions/GeometryExtensionRegistry.js'
+import type { GeometryExtensionProvider } from '../extensions/types.js'
 
 export interface GeometryOperatorContext {
   readonly limits: GeometrySafetyLimits
@@ -96,6 +98,8 @@ export interface GeometryCompilerOptions {
   profiles?: ProfileResourceMap
   /** Optional named reusable scalar-field resources available to geometry operators. */
   fields?: ScalarFieldResourceMap
+  /** Trusted host-registered namespaced geometry providers. World JSON never installs providers. */
+  extensions?: GeometryExtensionRegistry | Iterable<GeometryExtensionProvider>
 }
 
 export class GeometryCompiler {
@@ -106,6 +110,7 @@ export class GeometryCompiler {
   readonly #curves: CurveResourceMap
   readonly #profiles: ProfileResourceMap
   readonly #fields: ScalarFieldResourceMap
+  readonly #extensions: GeometryExtensionRegistry
 
   constructor(options: GeometryCompilerOptions = {}) {
     this.#limits = resolveGeometrySafetyLimits(options.limits)
@@ -121,6 +126,9 @@ export class GeometryCompiler {
       if (!id.trim()) throw new Error('Geometry scalar-field resource ids must be non-empty strings.')
       return [id, structuredClone(definition)]
     })))
+    this.#extensions = options.extensions instanceof GeometryExtensionRegistry
+      ? options.extensions
+      : new GeometryExtensionRegistry(options.extensions ?? [])
     this.#cache = options.cache === false ? undefined : (options.cache ?? new GeometryCache({ limits: this.#limits }))
     for (const kind of BUILTIN_GEOMETRY_KINDS) this.register(kind)
     for (const kind of options.kinds ?? []) this.register(kind)
@@ -130,9 +138,26 @@ export class GeometryCompiler {
 
   register(kindCompiler: GeometryKindCompiler): this {
     const kind = kindCompiler.kind.trim()
-    if (!kind || this.#kinds.has(kind)) throw new Error(`Geometry compiler kind "${kind}" is invalid or already registered.`)
+    if (!kind || isNamespacedGeometryKind(kind) || this.#kinds.has(kind)) {
+      throw new Error(`Geometry compiler kind "${kind}" is invalid or already registered. Namespaced kinds must use registerExtension().`)
+    }
     this.#kinds.set(kind, kindCompiler)
     return this
+  }
+
+  /** Register a trusted namespaced provider. This is a host action, never a JSON side effect. */
+  registerExtension(provider: GeometryExtensionProvider): this {
+    this.#extensions.register(provider)
+    return this
+  }
+
+  /** Remove one trusted provider namespace. Existing JSON then fails cleanly on the next compile. */
+  unregisterExtension(namespace: string): boolean {
+    return this.#extensions.unregister(namespace)
+  }
+
+  get extensionRegistry(): GeometryExtensionRegistry {
+    return this.#extensions
   }
 
   registerOperator(operatorCompiler: GeometryOperatorCompiler): this {
@@ -148,9 +173,38 @@ export class GeometryCompiler {
 
   #normalizeInternal(definition: unknown, modifierDepth: number, booleanDepth: number): GeometryDefinition {
     const base = normalizeGeometryDefinition(definition, { limits: this.#limits })
+    const context = this.#contextFor(modifierDepth, booleanDepth)
+    if (isNamespacedGeometryKind(base.kind)) {
+      assertGeometryExtensionDefinition(base)
+      const resolved = this.#extensions.resolve(base.kind)
+      if (!resolved) {
+        const parts = splitNamespacedGeometryKind(base.kind)!
+        const namespaceRegistered = this.#extensions.has(parts[0])
+        throw new GeometryValidationError([{
+          code: namespaceRegistered ? 'GEOMETRY_EXTENSION_KIND_UNREGISTERED' : 'GEOMETRY_EXTENSION_UNREGISTERED',
+          path: '/kind',
+          message: namespaceRegistered
+            ? `Geometry extension kind "${base.kind}" is not registered by provider "${parts[0]}".`
+            : `Geometry extension provider "${parts[0]}" is not registered for kind "${base.kind}".`,
+          suggestion: 'Register the trusted provider in host code before compiling or loading this geometry.',
+        }])
+      }
+      const kindNormalized = resolved.compiler.normalize
+        ? resolved.compiler.normalize(base, context)
+        : base
+      const normalizedExtension = normalizeGeometryDefinition(kindNormalized, { limits: this.#limits })
+      assertGeometryExtensionDefinition(normalizedExtension)
+      if (normalizedExtension.kind !== base.kind) {
+        throw new GeometryValidationError([{
+          code: 'GEOMETRY_EXTENSION_KIND_MISMATCH',
+          path: '/kind',
+          message: `Geometry extension normalizer for "${base.kind}" may not change the namespaced kind.`,
+        }])
+      }
+      return normalizeGeometryDefinition(normalizeVertexColorPolicy(normalizeSurfacePolicy(normalizedExtension)), { limits: this.#limits })
+    }
     const kindCompiler = this.#kinds.get(base.kind)
     if (!kindCompiler) throw new GeometryValidationError([{ code: 'GEOMETRY_KIND_UNSUPPORTED', path: '/kind', message: `Unsupported geometry kind "${base.kind}".` }])
-    const context = this.#contextFor(modifierDepth, booleanDepth)
     const kindNormalized = kindCompiler.normalize ? kindCompiler.normalize(base, context) : base
     return normalizeGeometryDefinition(normalizeVertexColorPolicy(normalizeSurfacePolicy(kindNormalized)), { limits: this.#limits })
   }
@@ -205,8 +259,10 @@ export class GeometryCompiler {
     const key = hashGeometryDefinition(source, { limits: this.#limits })
     const cached = this.#cache?.get(source)
     if (cached) return { source, key, mesh: cached }
-    const kindCompiler = this.#kinds.get(source.kind)!
-    const compiled = kindCompiler.compile(source, this.#contextFor(modifierDepth, booleanDepth))
+    const context = this.#contextFor(modifierDepth, booleanDepth)
+    const compiled = isNamespacedGeometryKind(source.kind)
+      ? this.#extensions.resolve(source.kind)!.compiler.compile(source as import('../extensions/types.js').GeometryExtensionDefinition, context)
+      : this.#kinds.get(source.kind)!.compile(source, context)
     const colored = applyVertexColorPolicy(compiled, source)
     const finalized = finalizeGeometryMesh(applySurfacePolicy(colored, source), { limits: this.#limits })
     const mesh = this.#cache ? this.#cache.set(source, finalized) : finalized

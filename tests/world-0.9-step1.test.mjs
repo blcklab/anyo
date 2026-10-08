@@ -119,7 +119,7 @@ test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring add
         delete definition.allOf
       }
       for (const name of [
-        'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'geometryProfileInput', 'geometryScalarFieldDefinition', 'geometryScalarFieldInput', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurveDefinition', 'geometryCurve', 'geometryMeshAttributes', 'geometryMeshGroup', 'geometryMesh',
+        'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'geometryProfileInput', 'geometryScalarFieldDefinition', 'geometryScalarFieldInput', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurveDefinition', 'geometryCurve', 'geometryExtension', 'geometryMeshAttributes', 'geometryMeshGroup', 'geometryMesh',
         'geometryBox', 'geometryRoundedBox', 'geometryPlane', 'geometrySphere', 'geometryCylinder', 'geometryCone', 'geometryCapsule', 'geometryDisc',
         'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryOperatorBend', 'geometryOperatorMirror', 'geometryOperatorNoise', 'geometryOperatorDisplace', 'geometryOperatorArray', 'geometryOperatorWeld', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
         'geometryBend', 'geometryTwist', 'geometryTaper', 'geometryUnion', 'geometrySubtract', 'geometryIntersect',

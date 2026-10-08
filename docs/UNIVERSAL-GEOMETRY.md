@@ -256,3 +256,30 @@ Named and nested field references resolve to canonical field content before depe
 Fields themselves are authoring resources, not ResourceGraph nodes. Sekai64 has no field concept. Native Object 0.1 imports namespace field IDs and rewrite both nested field references and `displace.field` use-sites. World 0.8 remains unchanged.
 
 Step 8 owns namespaced geometry-extension/provider contracts. It must consume the canonical geometry/field contracts rather than making arbitrary world JSON execute code.
+
+## Step 8 — namespaced geometry extension providers
+
+rc.32 establishes the trusted extension boundary for geometry algorithms that should not become Anyo Core primitives. A provider owns one lowercase namespace and explicitly registers one or more local kind names. The authored full kind is `namespace:name`.
+
+```json
+{
+  "kind": "blcklab.architecture:spiral-stair",
+  "params": { "radius": 2, "height": 4, "steps": 24 }
+}
+```
+
+World JSON never loads packages, evaluates expressions, or executes source. The host must register the provider before compiling/loading dependent geometry. Provider-specific authoring data lives under `params`; the extension root remains strict and may also use the ordinary quality/normal/UV/tangent/vertex-color policies.
+
+### Provider lifecycle
+
+`GeometryExtensionRegistry` owns namespace registration, resolution, diagnostics, and explicit unregister. `GeometryCompiler` accepts a registry or provider iterable and exposes `registerExtension()` / `unregisterExtension()` for trusted host code. Existing low-level custom geometry-kind registration remains available for non-namespaced compatibility, but namespaced kinds must go through the provider contract.
+
+### Renderer boundary
+
+Providers compile through the normal `GeometryBuildContext` and return the ordinary renderer-neutral mesh draft. If a ResourceGraph expression contains an extension kind anywhere in its source/operator tree, Anyo bakes the completed expression to the built-in `mesh` authoring contract before the graph reaches renderer realization. Therefore renderers do not need provider packages, namespace dispatch, or semantic knowledge. The same registered compiler is used for procedural collision bounds.
+
+### Identity boundary
+
+rc.32 records provider namespace/version for registry diagnostics but does not yet make provider provenance part of canonical geometry identity. Universal Geometry Step 9 owns deterministic extension/provider provenance, cache identity, and related hashing rules.
+
+World 0.8 remains byte-identical, no runtime dependency is added, and Sekai64 remains unchanged.

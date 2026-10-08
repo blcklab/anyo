@@ -4643,6 +4643,9 @@
           "$ref": "#/$defs/geometryMesh"
         },
         {
+          "$ref": "#/$defs/geometryExtension"
+        },
+        {
           "$ref": "#/$defs/geometryBox"
         },
         {
@@ -6031,6 +6034,40 @@
           "$ref": "#/$defs/geometryCurveDefinition"
         }
       ]
+    },
+    "geometryExtension": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*:[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "description": "Trusted host-registered namespaced geometry kind. JSON never installs or executes a provider."
+        },
+        "params": {
+          "type": "object",
+          "description": "Provider-specific JSON-only parameters.",
+          "additionalProperties": true
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        }
+      },
+      "additionalProperties": false
     },
     "geometryMeshAttributes": {
       "type": "object",

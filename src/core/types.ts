@@ -1,4 +1,6 @@
 import type { CurveDefinition, GeometryDefinition, ProfileDefinition, ScalarFieldDefinition } from '../geometry/types/index.js'
+import type { GeometryExtensionRegistry } from '../geometry/extensions/GeometryExtensionRegistry.js'
+import type { GeometryExtensionProvider } from '../geometry/extensions/types.js'
 import type { ArchitectureDefinition } from '../geometry/architecture/types.js'
 import type { ResourceGraph } from '../resources/graph.js'
 export type Vec2 = readonly [number, number]
@@ -2594,6 +2596,8 @@ export interface CreateWorldOptions {
   onWarning?: (message: string) => void
   historyLimit?: number
   validation?: WorldValidationOptions
+  /** Trusted host-registered geometry extensions. World JSON cannot install providers. */
+  geometryExtensions?: GeometryExtensionRegistry | Iterable<GeometryExtensionProvider>
   /** Platform-neutral loader used for root URL input and World 0.9 object imports. */
   documentLoader?: AnyoDocumentLoader
 }
