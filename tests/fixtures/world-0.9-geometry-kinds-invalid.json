@@ -1,4 +1,22 @@
 {
+  "mesh": {
+    "kind": "mesh",
+    "positions": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "indices": [
+      0,
+      1
+    ]
+  },
   "box": {
     "kind": "box",
     "widht": 1

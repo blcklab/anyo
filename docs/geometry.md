@@ -598,3 +598,9 @@ Loft intentionally follows the same local-Z construction convention as extrusion
 ### Freeze boundary
 
 These operations are the final generic modeling additions for the portfolio freeze. They do not add `TreeSystem`, `RockSystem`, `FlowerSystem`, or other object-specific engines. A future Anyo change should reopen the geometry contract only when a missing capability blocks an entire class of forms and cannot reasonably be solved by composition, materials, imported assets, or world authoring.
+
+## Universal arbitrary mesh source (rc.28)
+
+The universal-composition series adds `mesh` as the renderer-neutral escape hatch for geometry that does not need a dedicated procedural kind. Author flat xyz `positions`, triangle-list `indices`, optional raw per-vertex `attributes` (`normals`, `uvs`, `tangents`, `colors`), and optional draw `groups`. Raw normals are nested under `attributes.normals`; the established top-level `normals` field remains the normal-generation policy.
+
+Mesh sources are normalized, hashed, bounded by the existing geometry safety limits, converted to the ordinary typed-array `GeometryMesh` contract, and finalized through the same validation/cache path. Missing channels are not guessed: authors may explicitly request the existing `normals`, `uv`, and `tangents` surface policies where derivation is appropriate. A `mesh` source can be used directly inside the generic `pipeline`, so Sekai64 does not need a separate arbitrary-mesh authoring path.

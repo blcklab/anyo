@@ -1,4 +1,63 @@
 {
+  "mesh": {
+    "kind": "mesh",
+    "positions": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0
+    ],
+    "indices": [
+      0,
+      1,
+      2,
+      0,
+      2,
+      3
+    ],
+    "attributes": {
+      "normals": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1
+      ],
+      "uvs": [
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1
+      ]
+    },
+    "groups": [
+      {
+        "start": 0,
+        "count": 6,
+        "materialIndex": 0,
+        "name": "surface"
+      }
+    ]
+  },
   "box": {
     "kind": "box",
     "size": [

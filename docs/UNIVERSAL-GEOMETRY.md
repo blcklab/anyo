@@ -123,3 +123,29 @@ The `noise` operator reuses Anyo's existing deterministic fBm displacement. Seed
 ### Freeze boundary
 
 Step 3 does not add tree, road, building, stair, cloud, or other semantic geometry. It also does not add arbitrary mesh authoring yet. Step 4 owns the indexed-mesh escape hatch.
+
+
+## Step 4 — arbitrary indexed mesh escape hatch
+
+rc.28 adds a single universal `mesh` source so geometry that does not fit a built-in procedural generator can still enter Anyo without changing Anyo Core or Sekai64.
+
+```json
+{
+  "kind": "mesh",
+  "positions": [0, 0, 0, 1, 0, 0, 0, 1, 0],
+  "indices": [0, 1, 2],
+  "attributes": {
+    "normals": [0, 0, 1, 0, 0, 1, 0, 0, 1],
+    "uvs": [0, 0, 1, 0, 0, 1]
+  },
+  "groups": [
+    { "start": 0, "count": 3, "materialIndex": 0, "name": "surface" }
+  ]
+}
+```
+
+Raw vertex channels are nested under `attributes`. This is deliberate: top-level `normals` is already the stable renderer-neutral normal-generation policy used by every geometry kind. A mesh can therefore omit raw normals/UVs/tangents and explicitly request the existing surface policies instead.
+
+The source is normalized and hashed like every other geometry definition, checked against the existing geometry limits before typed-array allocation, converted to Float32 vertex channels plus Uint16/Uint32 indices, finalized as an ordinary `GeometryMesh`, and can then flow through `pipeline.modifiers`. No renderer branch exists for authored meshes.
+
+The escape hatch is still triangle-list geometry, not an embedded scripting or shader system. SDFs, voxels, remeshing, sculpting, GPU procedural meshing, and object-specific primitives remain outside this step.

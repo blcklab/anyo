@@ -1,3 +1,15 @@
+## 0.11.0-rc.28
+
+### Universal Geometry Step 4 — arbitrary indexed-mesh escape hatch
+
+- Add built-in renderer-neutral `mesh` geometry for arbitrary JSON-authored indexed triangle lists, so unsupported shapes can enter the same canonical Anyo geometry pipeline without a new core primitive or Sekai64 feature.
+- Author raw positions/indices directly and optional per-vertex `attributes` (`normals`, `uvs`, `tangents`, `colors`) plus semantic/material `groups`. Top-level `normals` remains the established normal-generation policy, avoiding an API collision with raw vertex normals.
+- Validate topology, index ranges, attribute widths, groups, and global vertex/index safety limits before typed-array allocation; automatically choose Uint16 or Uint32 indices from vertex count.
+- Reuse existing surface policies so missing normals/UVs/tangents can be generated explicitly, and reuse the rc.26/rc.27 operator pipeline unchanged so arbitrary meshes can be transformed/deformed/composed like every other geometry source.
+- Extend strict World 0.9 geometry schema with the universal mesh form while keeping World 0.8 byte-identical.
+- Preserve renderer neutrality and zero runtime dependencies; Sekai64 remains unchanged at rc.56.
+- Step 5 owns reusable curve resources; this step does not introduce SDF/voxel/remeshing or semantic object geometry.
+
 ## 0.11.0-rc.27
 
 ### Universal Geometry Step 3 — core universal modifier set

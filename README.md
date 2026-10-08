@@ -448,3 +448,8 @@ The built-in Step 2 operator set is intentionally small: `transform`, `taper`, a
 The generic pipeline now supports `transform`, `taper`, `twist`, `bend`, `mirror`, deterministic `noise`, baked-mesh `array`, and conservative `weld`. Existing nested bend/mirror/noise authoring remains compatible and shares the same implementation as the operator path.
 
 Use the `array` operator when repeated copies need to become one mesh for later deformation or welding. For large ordinary repetition, keep using Anyo's instance-array/resource path so geometry is shared instead of duplicated. `weld` preserves UV/normal/tangent/color seams by merging only attribute-identical vertices within tolerance.
+
+
+### Arbitrary indexed mesh escape hatch (rc.28)
+
+World 0.9 may author a generic `mesh` source with flat `positions` and triangle-list `indices`, plus optional raw `attributes` and semantic/material `groups`. Raw vertex normals live at `attributes.normals`; the existing top-level `normals` field remains the normal-generation policy. The source compiles to the same validated `GeometryMesh` contract as procedural geometry and can be fed directly into the universal operator pipeline. Sekai64 requires no special mesh-authoring semantics.

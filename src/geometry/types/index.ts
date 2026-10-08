@@ -152,6 +152,34 @@ export interface GeometryWeldOperator extends GeometryOperator {
   tolerance?: number
 }
 
+export interface GeometryMeshAttributesDefinition {
+  [key: string]: GeometryJsonValue | undefined
+  normals?: number[]
+  uvs?: number[]
+  tangents?: number[]
+  colors?: number[]
+}
+
+export interface GeometryMeshGroupDefinition {
+  [key: string]: GeometryJsonValue | undefined
+  start: number
+  count: number
+  materialIndex: number
+  name?: string
+}
+
+/** Universal indexed triangle-list escape hatch for JSON-authored geometry. */
+export interface MeshGeometryDefinition extends GeometryDefinition {
+  kind: 'mesh'
+  /** Flat xyz vertex positions. */
+  positions: number[]
+  /** Flat triangle-list indices. */
+  indices: number[]
+  /** Optional raw per-vertex attributes. Surface policies stay at the geometry root. */
+  attributes?: GeometryMeshAttributesDefinition
+  groups?: GeometryMeshGroupDefinition[]
+}
+
 export interface BoxGeometryDefinition extends GeometryDefinition {
   kind: 'box'
   size?: [number, number, number]
@@ -467,6 +495,7 @@ export interface ExtrudeGeometryDefinition extends GeometryDefinition {
 }
 
 export type BuiltinGeometryDefinition =
+  | MeshGeometryDefinition
   | BoxGeometryDefinition
   | RoundedBoxGeometryDefinition
   | PlaneGeometryDefinition

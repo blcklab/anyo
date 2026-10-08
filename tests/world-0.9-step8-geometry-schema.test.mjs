@@ -12,7 +12,7 @@ const valid = JSON.parse(readFileSync(new URL('./fixtures/world-0.9-geometry-kin
 const invalid = JSON.parse(readFileSync(new URL('./fixtures/world-0.9-geometry-kinds-invalid.json', import.meta.url), 'utf8'))
 
 const expectedKinds = [
-  'box', 'roundedBox', 'plane', 'sphere', 'cylinder', 'cone', 'capsule', 'disc', 'torus', 'polygon', 'lathe',
+  'mesh', 'box', 'roundedBox', 'plane', 'sphere', 'cylinder', 'cone', 'capsule', 'disc', 'torus', 'polygon', 'lathe',
   'extrude', 'sweep', 'loft', 'pipeline', 'transform', 'mirror', 'noise', 'bend', 'twist', 'taper', 'union', 'subtract', 'intersect',
 ]
 
@@ -95,7 +95,7 @@ function schemaErrors(value, definition, path = '$', depth = 0) {
   return errors
 }
 
-test('World 0.9 geometry schema discriminates the exact 24 built-in geometry kinds including the generic operator pipeline', () => {
+test('World 0.9 geometry schema discriminates the exact 25 built-in geometry kinds including the generic operator pipeline', () => {
   assert.deepEqual([...BUILTIN_GEOMETRY_KIND_NAMES], expectedKinds)
   assert.deepEqual(Object.keys(valid), expectedKinds)
   assert.deepEqual(Object.keys(invalid), expectedKinds)

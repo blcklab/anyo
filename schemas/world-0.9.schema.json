@@ -4619,6 +4619,9 @@
     "geometryDefinition": {
       "oneOf": [
         {
+          "$ref": "#/$defs/geometryMesh"
+        },
+        {
           "$ref": "#/$defs/geometryBox"
         },
         {
@@ -5758,6 +5761,126 @@
           "additionalProperties": false
         }
       ]
+    },
+    "geometryMeshAttributes": {
+      "type": "object",
+      "properties": {
+        "normals": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 1500000
+        },
+        "uvs": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 1000000
+        },
+        "tangents": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 2000000
+        },
+        "colors": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 2000000
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryMeshGroup": {
+      "type": "object",
+      "required": [
+        "start",
+        "count",
+        "materialIndex"
+      ],
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "materialIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryMesh": {
+      "type": "object",
+      "required": [
+        "kind",
+        "positions",
+        "indices"
+      ],
+      "properties": {
+        "kind": {
+          "const": "mesh"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 9,
+          "maxItems": 1500000
+        },
+        "indices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "minItems": 3,
+          "maxItems": 1500000
+        },
+        "attributes": {
+          "$ref": "#/$defs/geometryMeshAttributes"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/geometryMeshGroup"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "geometryBox": {
       "type": "object",

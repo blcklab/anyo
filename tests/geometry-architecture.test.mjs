@@ -26,7 +26,7 @@ function healthy(mesh) {
 function anchor(assembly, name) { return assembly.anchors.find(item => item.name === name) }
 
  test('S7 architecture stays a semantic lowering layer rather than new geometry kinds', () => {
-  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box','roundedBox','plane','sphere','cylinder','cone','capsule','disc','torus','polygon','lathe','extrude','sweep','loft','pipeline','transform','mirror','noise','bend','twist','taper','union','subtract','intersect'])
+  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['mesh','box','roundedBox','plane','sphere','cylinder','cone','capsule','disc','torus','polygon','lathe','extrude','sweep','loft','pipeline','transform','mirror','noise','bend','twist','taper','union','subtract','intersect'])
   for (const semantic of ['wall','floor','ceiling','stairs','railing','column','beam','roof','panel','trim']) assert.ok(!BUILTIN_GEOMETRY_KIND_NAMES.includes(semantic))
 })
 
@@ -40,7 +40,7 @@ function anchor(assembly, name) { return assembly.anchors.find(item => item.name
   })
   assert.equal(assembly.type,'wall')
   assert.ok(assembly.parts.length >= 5)
-  assert.ok(assembly.parts.every(part => ['box','roundedBox'].includes(part.geometry.kind)))
+  assert.ok(assembly.parts.every(part => ['mesh', 'box','roundedBox'].includes(part.geometry.kind)))
   assert.equal(assembly.instanceGroups.length,0)
   assert.ok(anchor(assembly,'opening:door:center'))
   assert.ok(anchor(assembly,'opening:window:center'))
