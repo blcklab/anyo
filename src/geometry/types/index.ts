@@ -628,6 +628,10 @@ export type GeometryMeshDraft = Omit<GeometryMesh, 'bounds'> & { bounds?: Geomet
 export interface GeometrySafetyLimits {
   maxGeometryVertices: number
   maxGeometryIndices: number
+  /** Maximum semantic/material groups retained on one finalized mesh. */
+  maxGeometryGroups: number
+  /** Maximum optional per-vertex attribute scalar values retained on one mesh. */
+  maxGeometryAttributeValues: number
   maxCurveSegments: number
   maxProfilePoints: number
   maxModifierDepth: number
@@ -661,6 +665,13 @@ export type GeometryIssueCode =
   | 'GEOMETRY_INDEX_OUT_OF_RANGE'
   | 'GEOMETRY_ATTRIBUTE_LENGTH_INVALID'
   | 'GEOMETRY_GROUP_INVALID'
+  | 'GEOMETRY_DEGENERATE_TRIANGLE'
+  | 'GEOMETRY_WINDING_INCONSISTENT'
+  | 'GEOMETRY_BOUNDS_INVALID'
+  | 'GEOMETRY_BOUNDS_MISMATCH'
+  | 'GEOMETRY_NORMAL_INVALID'
+  | 'GEOMETRY_TANGENT_INVALID'
+  | 'GEOMETRY_GROUP_OVERLAP'
   | 'PROFILE_INVALID'
   | 'PROFILE_SELF_INTERSECTION'
   | 'PROFILE_HOLE_OUTSIDE'
@@ -682,10 +693,27 @@ export type GeometryIssueCode =
   | 'CSG_NUMERICAL_FAILURE'
   | 'CSG_DEPTH_LIMIT'
 
+export type GeometryIssueSeverity = 'warning' | 'error'
+
+export interface GeometryIssueContext {
+  /** Canonical root geometry kind when known. */
+  geometryKind?: string
+  /** Deterministic g2 build key when known. */
+  geometryKey?: string
+  /** Source-free operator kind when the issue originated during an operator pass. */
+  operatorKind?: string
+  /** Zero-based operator position when the issue originated inside a pipeline. */
+  operatorIndex?: number
+}
+
 export interface GeometryIssue {
   code: GeometryIssueCode
   path: string
   message: string
+  /** Warnings are non-fatal diagnostics; omitted severity preserves existing error semantics. */
+  severity?: GeometryIssueSeverity
+  /** Optional structured compiler context for developer tooling. */
+  context?: GeometryIssueContext
   /** Optional deterministic recovery hint for AI/human authoring tools. */
   suggestion?: string
 }
@@ -693,5 +721,32 @@ export interface GeometryIssue {
 export interface GeometryInspectionResult<T> {
   valid: boolean
   value?: T
+  /** Fatal validation issues. */
   issues: readonly GeometryIssue[]
+  /** Non-fatal diagnostics emitted while preserving valid unusual geometry. */
+  diagnostics?: readonly GeometryIssue[]
+}
+
+export type GeometryValidationLevel = 'ignore' | 'warn' | 'error'
+
+export interface GeometryMeshValidationOptions {
+  limits?: Partial<GeometrySafetyLimits>
+  /** Degenerate indexed triangles are warnings by default, but strict callers may promote them to errors. */
+  degenerateTriangles?: GeometryValidationLevel
+  /** Zero-length/malformed normal and tangent vectors are warnings by default. */
+  vectorAttributes?: GeometryValidationLevel
+  /** Overlapping material groups are legal but suspicious, so they warn by default. */
+  groupOverlaps?: GeometryValidationLevel
+  /** Shared-edge winding conflicts warn by default for meshes below windingTriangleLimit. */
+  winding?: GeometryValidationLevel
+  /** Supplied stale/invalid bounds are repaired by default or may be promoted to errors. */
+  bounds?: 'repair' | 'error'
+  /** Bound diagnostic accumulation to keep malformed generated geometry from flooding tooling. */
+  maxDiagnostics?: number
+  /** Skip the memory-heavier shared-edge winding scan above this triangle count. */
+  windingTriangleLimit?: number
+  /** Optional structured compiler context copied onto emitted issues/diagnostics. */
+  context?: GeometryIssueContext
+  /** Optional sink for non-fatal diagnostics. */
+  onDiagnostic?: (diagnostic: GeometryIssue) => void
 }

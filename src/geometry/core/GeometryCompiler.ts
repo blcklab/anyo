@@ -3,14 +3,17 @@ import type {
   ProfileResourceMap,
   ScalarFieldResourceMap,
   GeometryDefinition,
+  GeometryIssue,
+  GeometryIssueContext,
   GeometryMesh,
   GeometryMeshDraft,
+  GeometryMeshValidationOptions,
   GeometryOperator,
   GeometrySafetyLimits,
   GeometrySource,
 } from '../types/index.js'
 import { GeometryCache } from '../cache/GeometryCache.js'
-import { GeometryValidationError } from '../validation/errors.js'
+import { GeometryValidationError, withGeometryValidationContext } from '../validation/errors.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
 import { finalizeGeometryMesh } from '../validation/validateMesh.js'
 import { normalizeGeometryDefinition } from './normalizeGeometry.js'
@@ -103,6 +106,10 @@ export interface GeometryCompilerOptions {
   fields?: ScalarFieldResourceMap
   /** Trusted host-registered namespaced geometry providers. World JSON never installs providers. */
   extensions?: GeometryExtensionRegistry | Iterable<GeometryExtensionProvider>
+  /** Mesh hardening policy. Safety limits remain separate and never participate in geometry identity. */
+  validation?: Omit<GeometryMeshValidationOptions, 'limits' | 'context' | 'onDiagnostic'>
+  /** Receives non-fatal mesh diagnostics such as degenerate faces, repaired bounds, or winding conflicts. */
+  onDiagnostic?: (diagnostic: GeometryIssue) => void
 }
 
 export class GeometryCompiler {
@@ -114,9 +121,13 @@ export class GeometryCompiler {
   readonly #profiles: ProfileResourceMap
   readonly #fields: ScalarFieldResourceMap
   readonly #extensions: GeometryExtensionRegistry
+  readonly #validation: Omit<GeometryMeshValidationOptions, 'limits' | 'context' | 'onDiagnostic'>
+  readonly #onDiagnostic?: (diagnostic: GeometryIssue) => void
 
   constructor(options: GeometryCompilerOptions = {}) {
     this.#limits = resolveGeometrySafetyLimits(options.limits)
+    this.#validation = Object.freeze({ ...(options.validation ?? {}) })
+    this.#onDiagnostic = options.onDiagnostic
     this.#curves = Object.freeze(Object.fromEntries(Object.entries(options.curves ?? {}).map(([id, definition]) => {
       if (!id.trim()) throw new Error('Geometry curve resource ids must be non-empty strings.')
       return [id, structuredClone(definition)]
@@ -255,7 +266,7 @@ export class GeometryCompiler {
 
   /** Apply one normalized/normalizable source-free operator to a finalized mesh. */
   applyOperator(mesh: GeometryMesh, operator: unknown): GeometryMesh {
-    return this.#applyOperatorInternal(mesh, operator, 1)
+    return this.#applyOperatorInternal(mesh, operator, 1, 0)
   }
 
   #compileInternal(definition: unknown, modifierDepth: number, booleanDepth: number): GeometryMesh {
@@ -268,24 +279,51 @@ export class GeometryCompiler {
     const key = hashGeometryBuildIdentity(identity)
     const cached = this.#cache?.getByKey(key)
     if (cached) return { source, identity, key, mesh: cached }
-    const context = this.#contextFor(modifierDepth, booleanDepth)
-    const compiled = isNamespacedGeometryKind(source.kind)
-      ? this.#extensions.resolve(source.kind)!.compiler.compile(source as import('../extensions/types.js').GeometryExtensionDefinition, context)
-      : this.#kinds.get(source.kind)!.compile(source, context)
-    const colored = applyVertexColorPolicy(compiled, source)
-    const finalized = finalizeGeometryMesh(applySurfacePolicy(colored, source), { limits: this.#limits })
-    const mesh = this.#cache ? this.#cache.setByKey(key, finalized) : finalized
-    return { source, identity, key, mesh }
+    const issueContext: GeometryIssueContext = { geometryKind: source.kind, geometryKey: key }
+    try {
+      const context = this.#contextFor(modifierDepth, booleanDepth, issueContext)
+      const compiled = isNamespacedGeometryKind(source.kind)
+        ? this.#extensions.resolve(source.kind)!.compiler.compile(source as import('../extensions/types.js').GeometryExtensionDefinition, context)
+        : this.#kinds.get(source.kind)!.compile(source, context)
+      const colored = applyVertexColorPolicy(compiled, source)
+      const finalized = this.#finalizeDraft(applySurfacePolicy(colored, source), issueContext)
+      const mesh = this.#cache ? this.#cache.setByKey(key, finalized) : finalized
+      return { source, identity, key, mesh }
+    } catch (error) {
+      return withGeometryValidationContext(error, issueContext)
+    }
   }
 
-  #applyOperatorInternal(mesh: GeometryMesh, operator: unknown, modifierDepth: number): GeometryMesh {
-    const normalized = this.#normalizeOperatorInternal(operator, modifierDepth)
-    const operatorCompiler = this.#operators.get(normalized.kind)!
-    const applied = operatorCompiler.apply(mesh, normalized, this.#operatorContextFor(modifierDepth))
-    return finalizeGeometryMesh(applied, { limits: this.#limits })
+  #applyOperatorInternal(mesh: GeometryMesh, operator: unknown, modifierDepth: number, operatorIndex = 0): GeometryMesh {
+    const rawKind = operator && typeof operator === 'object' && !Array.isArray(operator) && typeof (operator as { kind?: unknown }).kind === 'string'
+      ? (operator as { kind: string }).kind
+      : 'operator'
+    const issueContext: GeometryIssueContext = { operatorKind: rawKind, operatorIndex }
+    try {
+      const normalized = this.#normalizeOperatorInternal(operator, modifierDepth)
+      issueContext.operatorKind = normalized.kind
+      const operatorCompiler = this.#operators.get(normalized.kind)!
+      const applied = operatorCompiler.apply(mesh, normalized, this.#operatorContextFor(modifierDepth, issueContext))
+      return this.#finalizeDraft(applied, issueContext)
+    } catch (error) {
+      return withGeometryValidationContext(error, issueContext)
+    }
   }
 
-  #contextFor(modifierDepth: number, booleanDepth: number): GeometryBuildContext {
+  #validationOptions(context?: GeometryIssueContext): GeometryMeshValidationOptions {
+    return {
+      ...this.#validation,
+      limits: this.#limits,
+      ...(context ? { context } : {}),
+      ...(this.#onDiagnostic ? { onDiagnostic: this.#onDiagnostic } : {}),
+    }
+  }
+
+  #finalizeDraft(mesh: GeometryMeshDraft, context?: GeometryIssueContext): GeometryMesh {
+    return finalizeGeometryMesh(mesh, this.#validationOptions(context))
+  }
+
+  #contextFor(modifierDepth: number, booleanDepth: number, issueContext?: GeometryIssueContext): GeometryBuildContext {
     return {
       limits: this.#limits,
       modifierDepth,
@@ -298,19 +336,19 @@ export class GeometryCompiler {
       normalizeSource: (definition) => this.#normalizeInternal(definition, modifierDepth, booleanDepth),
       compileSource: (definition) => this.#compileInternal(definition, modifierDepth, booleanDepth),
       normalizeOperator: (operator, index = 0) => this.#normalizeOperatorInternal(operator, this.#operatorDepth(modifierDepth, index, operator)),
-      applyOperator: (mesh, operator, index = 0) => this.#applyOperatorInternal(mesh, operator, this.#operatorDepth(modifierDepth, index, operator)),
+      applyOperator: (mesh, operator, index = 0) => this.#applyOperatorInternal(mesh, operator, this.#operatorDepth(modifierDepth, index, operator), index),
       normalizeBooleanChild: (definition, booleanKind) => this.#normalizeInternal(definition, modifierDepth, this.#nextBooleanDepth(booleanDepth, booleanKind)),
       compileBooleanChild: (definition, booleanKind) => this.#compileInternal(definition, modifierDepth, this.#nextBooleanDepth(booleanDepth, booleanKind)),
-      finalizeDraft: (mesh) => finalizeGeometryMesh(mesh, { limits: this.#limits }),
+      finalizeDraft: (mesh) => this.#finalizeDraft(mesh, issueContext),
     }
   }
 
-  #operatorContextFor(modifierDepth: number): GeometryOperatorContext {
+  #operatorContextFor(modifierDepth: number, issueContext?: GeometryIssueContext): GeometryOperatorContext {
     return {
       limits: this.#limits,
       modifierDepth,
       resolveField: (input, path = '/field') => normalizeScalarField(input, { limits: this.#limits, path, fields: this.#fields }),
-      finalizeDraft: (mesh) => finalizeGeometryMesh(mesh, { limits: this.#limits }),
+      finalizeDraft: (mesh) => this.#finalizeDraft(mesh, issueContext),
     }
   }
 

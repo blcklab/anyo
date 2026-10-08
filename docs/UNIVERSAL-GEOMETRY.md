@@ -298,3 +298,12 @@ The build identity contains:
 `GeometryBuildResult.identity` and `GeometryCompiler.identityFor()` expose this data for diagnostics. The compiler uses the `g2` key directly in `GeometryCache`, so a cache shared across compilers cannot accidentally reuse geometry built by a different provider version. ResourceGraph geometry ids also use `g2`; extension expressions are still baked to built-in mesh definitions before renderer realization, so provenance affects lifecycle invalidation without leaking executable extension semantics into Sekai64.
 
 Safety limits are deliberately excluded from build identity because they validate whether a build is allowed rather than changing successful mesh semantics. When Anyo intentionally changes the meaning/output of unchanged canonical geometry, the geometry ABI must be bumped. Extension authors must similarly change provider `version` whenever provider code changes geometry semantics.
+
+
+## Step 10 — validation and hardening (rc.34)
+
+The final mesh boundary now distinguishes **fatal structural errors** from **non-fatal quality diagnostics**. Out-of-range indices, non-finite data, malformed attribute widths, invalid groups, and safety-limit violations still fail immediately. Degenerate triangles, shared-edge winding conflicts, suspicious normal/tangent vectors, overlapping groups, and stale supplied bounds warn by default so unusual but intentional geometry is not rejected unnecessarily.
+
+`GeometryMeshValidationOptions` lets strict hosts promote those diagnostic classes to errors, cap diagnostic accumulation, and cap the memory-heavier winding scan. Canonical bounds are recomputed from final vertex positions; stale provided bounds are repaired by default or rejected in strict mode. `GeometryCompiler` can forward diagnostics through `onDiagnostic`, and structured issue context identifies the canonical geometry kind/key plus operator kind/index when known.
+
+Two additional safety limits protect generated and raw meshes: `maxGeometryGroups` and `maxGeometryAttributeValues`. Raw `mesh` authoring enforces them before typed-array allocation; generated/custom geometry is checked again at finalization. These validation/safety policies do **not** participate in `g2` geometry identity.

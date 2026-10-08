@@ -23,8 +23,8 @@ export const meshGeometryKind: GeometryKindCompiler = {
     if (vertexCount > context.limits.maxGeometryVertices) meshError('GEOMETRY_MESH_LIMIT', '/positions', `mesh exceeds maxGeometryVertices ${context.limits.maxGeometryVertices}.`)
 
     const indices = indexList(definition.indices, vertexCount, context.limits.maxGeometryIndices)
-    const attributes = normalizeAttributes(definition.attributes, vertexCount)
-    const groups = normalizeGroups(definition.groups, indices.length)
+    const attributes = normalizeAttributes(definition.attributes, vertexCount, context.limits.maxGeometryAttributeValues)
+    const groups = normalizeGroups(definition.groups, indices.length, context.limits.maxGeometryGroups)
 
     const output: GeometryDefinition = {
       ...withoutQuality(definition),
@@ -80,24 +80,28 @@ function indexList(input: unknown, vertexCount: number, maximum: number): number
   return output
 }
 
-function normalizeAttributes(input: unknown, vertexCount: number): GeometryMeshAttributesDefinition | undefined {
+function normalizeAttributes(input: unknown, vertexCount: number, maximumValues: number): GeometryMeshAttributesDefinition | undefined {
   if (input === undefined) return undefined
   if (!isPlainRecord(input)) meshError('GEOMETRY_MESH_INVALID', '/attributes', 'mesh attributes must be a plain object.')
   const unknown = Object.keys(input).filter(key => !(key in ATTRIBUTE_WIDTHS))
   if (unknown.length > 0) meshError('GEOMETRY_PARAMETER_INVALID', `/attributes/${unknown[0]}`, `Unsupported mesh attribute "${unknown[0]}".`)
   const output: GeometryMeshAttributesDefinition = Object.create(null) as GeometryMeshAttributesDefinition
+  let totalValues = 0
   for (const [name, width] of Object.entries(ATTRIBUTE_WIDTHS) as [AttributeName, number][]) {
     if (input[name] === undefined) continue
     const values = numberArray(input[name], `/attributes/${name}`)
     if (values.length !== vertexCount * width) meshError('GEOMETRY_ATTRIBUTE_LENGTH_INVALID', `/attributes/${name}`, `mesh ${name} must contain exactly ${width} values per vertex (${vertexCount * width} values).`)
+    totalValues += values.length
+    if (totalValues > maximumValues) meshError('GEOMETRY_MESH_LIMIT', '/attributes', `mesh exceeds maxGeometryAttributeValues ${maximumValues}.`)
     output[name] = values
   }
   return Object.keys(output).length > 0 ? output : undefined
 }
 
-function normalizeGroups(input: unknown, indexCount: number): GeometryMeshGroupDefinition[] | undefined {
+function normalizeGroups(input: unknown, indexCount: number, maximumGroups: number): GeometryMeshGroupDefinition[] | undefined {
   if (input === undefined) return undefined
   if (!Array.isArray(input)) meshError('GEOMETRY_GROUP_INVALID', '/groups', 'mesh groups must be an array.')
+  if (input.length > maximumGroups) meshError('GEOMETRY_MESH_LIMIT', '/groups', `mesh exceeds maxGeometryGroups ${maximumGroups}.`)
   const output: GeometryMeshGroupDefinition[] = []
   for (let index = 0; index < input.length; index += 1) {
     const raw = input[index]

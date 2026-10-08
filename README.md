@@ -553,3 +553,10 @@ Provider namespace/version metadata now participates in rc.33 canonical build id
 Geometry now has two intentionally different identities. `hashGeometryDefinition()` remains the compatibility-safe `g1` hash of canonical source JSON only. Compilation and ResourceGraph geometry use `g2`, produced from `GeometryBuildIdentity`: the normalized source, `anyo.geometry/1` build ABI, and sorted namespaced extension provider namespace/version/kind provenance. Reusable curves, profiles, and fields are resolved to canonical content before the identity is built, and ordered operators already live inside that normalized source.
 
 `GeometryCompiler.identityFor()` exposes the exact identity object used by `keyFor()`/cache. Versioned extension providers must bump their provider version when executable geometry semantics change; unversioned providers are represented explicitly with `version: null` and therefore cannot provide cross-release implementation invalidation guarantees.
+
+
+### Geometry validation & hardening (rc.34)
+
+`0.11.0-rc.34` hardens the renderer-neutral mesh boundary without making unusual geometry illegal. `inspectGeometryMesh()` now reports non-fatal diagnostics for degenerate triangles, shared-edge winding conflicts, malformed normal/tangent vectors, overlapping groups, and stale supplied bounds. Final bounds are always recomputed canonically from positions. Strict callers can promote selected diagnostics to errors through `GeometryCompiler({ validation: ... })`, while `onDiagnostic` receives structured warnings with geometry/operator context when available.
+
+New safety guards bound semantic groups and optional attribute values in addition to the established vertex/index/depth/instance limits. Validation policy remains outside `g2` build identity because it decides whether a build is accepted, not what accepted canonical geometry means. World 0.8/0.9 authoring syntax and Sekai64 remain unchanged.

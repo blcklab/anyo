@@ -1,3 +1,16 @@
+## 0.11.0-rc.34
+
+### Universal Geometry Step 10 — validation and hardening
+
+- Harden `inspectGeometryMesh()` against malformed runtime objects, non-finite attributes, invalid indices/groups, and runaway diagnostic volume while preserving structured `GeometryValidationError` behavior.
+- Add non-fatal diagnostics for degenerate triangles, shared-edge winding conflicts, zero-length/malformed normal/tangent vectors, overlapping groups, and stale/invalid supplied bounds. Unusual but valid meshes remain accepted by default.
+- Add configurable strict promotion (`ignore` / `warn` / `error`) for degenerates, vector attributes, group overlaps, and winding; supplied bounds default to deterministic repair but can be rejected with `bounds: "error"`.
+- Recompute canonical final bounds from vertex positions instead of trusting stale generated bounds. Diagnostics include recovery suggestions and structured geometry/operator context when available.
+- Add explicit `maxGeometryGroups` and `maxGeometryAttributeValues` safety limits, enforce them before typed-array allocation for raw `mesh` authoring, and retain the existing vertex/index/depth/instance limits.
+- Bound warning accumulation with `maxDiagnostics` and bound the memory-heavier winding scan with `windingTriangleLimit`.
+- Add compiler `onDiagnostic` and `validation` options without changing geometry identity: validation policy and safety limits remain excluded from `g2` build keys.
+- Preserve World 0.8/0.9 schemas, renderer behavior, zero runtime dependencies, and `@blcklab/sekai64@0.8.0-rc.56`.
+
 ## 0.11.0-rc.33
 
 ### Universal Geometry Step 9 — deterministic build identity, provenance, and cacheability

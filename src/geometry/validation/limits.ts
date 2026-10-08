@@ -3,6 +3,8 @@ import type { GeometrySafetyLimits } from '../types/index.js'
 export const DEFAULT_GEOMETRY_SAFETY_LIMITS: Readonly<GeometrySafetyLimits> = Object.freeze({
   maxGeometryVertices: 500_000,
   maxGeometryIndices: 1_500_000,
+  maxGeometryGroups: 50_000,
+  maxGeometryAttributeValues: 8_000_000,
   maxCurveSegments: 4_096,
   maxProfilePoints: 16_384,
   maxModifierDepth: 32,
