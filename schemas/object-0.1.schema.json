@@ -45,6 +45,12 @@
         "$ref": "./world-0.9.schema.json#/$defs/material"
       }
     },
+    "curves": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./world-0.9.schema.json#/$defs/geometryCurveDefinition"
+      }
+    },
     "geometries": {
       "type": "object",
       "additionalProperties": {

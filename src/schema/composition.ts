@@ -17,6 +17,7 @@ function clone<T>(value: T): T { return structuredClone(value) }
 
 function defaultBaseSchema(version: '0.7' | '0.8' | '0.9' = '0.7'): Record<string, JsonValue> {
   const procedural = version === '0.8' || version === '0.9'
+  const reusableCurves = version === '0.9'
   return {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     $id: `https://anyo.blcklab.dev/schemas/world-${version}.schema.json`,
@@ -26,12 +27,14 @@ function defaultBaseSchema(version: '0.7' | '0.8' | '0.9' = '0.7'): Record<strin
     properties: {
       version: { type: 'string', pattern: `^${version.replace('.', '\\.')}(?:\\.|$)` },
       extensions: { type: 'object', additionalProperties: true },
+      ...(reusableCurves ? { curves: { type: 'object', additionalProperties: { $ref: '#/$defs/curveDefinition' } } } : {}),
       ...(procedural ? { geometries: { type: 'object', additionalProperties: { $ref: '#/$defs/geometryDefinition' } } } : {}),
       entities: { type: 'array', items: { $ref: '#/$defs/entity' } },
     },
     additionalProperties: false,
     $defs: {
       component: { type: 'object', required: ['type'], properties: { type: { type: 'string' } }, additionalProperties: true },
+      ...(reusableCurves ? { curveDefinition: { type: 'object', required: ['kind'], properties: { kind: { type: 'string' } }, additionalProperties: true } } : {}),
       ...(procedural ? { geometryDefinition: { type: 'object', required: ['kind'], properties: { kind: { type: 'string' } }, additionalProperties: true } } : {}),
       entity: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, ...(procedural ? { geometry: { oneOf: [{ type: 'string' }, { $ref: '#/$defs/geometryDefinition' }] }, construction: { type: 'object' }, materialBindings: { type: 'object', additionalProperties: { type: 'string' } }, collisionPolicy: { enum: ['none', 'bounds', 'semantic', 'parts'] } } : {}), components: { type: 'array', items: { $ref: '#/$defs/component' } } }, additionalProperties: true },
     },

@@ -1,16 +1,16 @@
-import type { GeometryIssue, GeometrySafetyLimits, PathArrayDefinition, PathArrayLayout, PathArrayPlacement } from '../types/index.js'
+import type { CurveResourceMap, GeometryIssue, GeometrySafetyLimits, PathArrayDefinition, PathArrayLayout, PathArrayPlacement } from '../types/index.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { normalizeCurve } from '../curves/normalizeCurve.js'
 import { sampleCurve, sampleCurveAtDistance } from '../curves/sampleCurve.js'
 import { computeCurveFrames, interpolateCurveFrame } from '../curves/frames.js'
 
-export interface PathArrayOptions { limits?: Partial<GeometrySafetyLimits> }
+export interface PathArrayOptions { limits?: Partial<GeometrySafetyLimits>; curves?: CurveResourceMap }
 
 export function layoutPathArray(definition: PathArrayDefinition, options: PathArrayOptions = {}): PathArrayLayout {
   if (!definition || typeof definition !== 'object' || Array.isArray(definition)) error('GEOMETRY_PARAMETER_INVALID', '/', 'Path array definition must be an object.')
   const limits = resolveGeometrySafetyLimits(options.limits)
-  const path = normalizeCurve(definition.path, { limits, path: '/path' })
+  const path = normalizeCurve(definition.path, { limits, path: '/path', curves: options.curves })
   const spacing = definition.spacing
   if (typeof spacing !== 'number' || !Number.isFinite(spacing) || spacing <= 0) error('GEOMETRY_PARAMETER_INVALID', '/spacing', 'spacing must be a finite number greater than zero.')
   const offset = definition.offset ?? 0

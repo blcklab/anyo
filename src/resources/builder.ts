@@ -4,7 +4,7 @@ import type { ArchitectureDefinition, ArchitectureAssembly, ArchitectureTransfor
 import { lowerArchitecture } from '../geometry/architecture/index.js'
 import { layoutGeometryArray } from '../geometry/modifiers/index.js'
 import { layoutPathArray } from '../geometry/path-array/index.js'
-import type { GeometryArrayDefinition, GeometryDefinition, PathArrayDefinition } from '../geometry/types/index.js'
+import type { CurveResourceMap, GeometryArrayDefinition, GeometryDefinition, PathArrayDefinition } from '../geometry/types/index.js'
 import { hashGeometryDefinition } from '../geometry/core/hashGeometry.js'
 import { hashResourceValue } from './hash.js'
 import { ResourceGraph } from './graph.js'
@@ -43,17 +43,20 @@ function geometryChildren(definition: GeometryDefinition): readonly { field: str
 export interface ResourceGraphBuilderOptions {
   limits?: Partial<ResourceGraphLimits>
   geometryCompiler?: GeometryCompiler
+  curves?: CurveResourceMap
 }
 
 export class ResourceGraphBuilder {
   readonly #nodes = new Map<ResourceId, ResourceNode>()
   readonly #limits: ResourceGraphLimits
   readonly #geometryCompiler: GeometryCompiler
+  readonly #curves: CurveResourceMap
   #instanceCount = 0
 
   constructor(options: ResourceGraphBuilderOptions = {}) {
     this.#limits = resolveResourceGraphLimits(options.limits)
-    this.#geometryCompiler = options.geometryCompiler ?? new GeometryCompiler()
+    this.#curves = options.curves ?? Object.freeze({})
+    this.#geometryCompiler = options.geometryCompiler ?? new GeometryCompiler({ curves: this.#curves })
   }
 
   get size(): number { return this.#nodes.size }
@@ -153,7 +156,7 @@ export class ResourceGraphBuilder {
   }
 
   addPathArray(sourceDefinition: GeometryDefinition, definition: PathArrayDefinition, options: { idPrefix: string; materials?: readonly ResourceId[]; materialBindings?: InstanceResourceInput['materialBindings']; scale?: readonly [number, number, number] }): readonly ResourceId[] {
-    const layout = layoutPathArray(definition)
+    const layout = layoutPathArray(definition, { curves: this.#curves })
     const source = this.addGeometry(sourceDefinition)
     return Object.freeze(layout.placements.map((placement, index) => this.addInstance({
       id: `${options.idPrefix}/${index}`,

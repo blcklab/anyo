@@ -62,5 +62,10 @@ function circleProfile(radius: number, segments: number): ProfileDefinition {
   return { points }
 }
 function shiftedPath(path: CurveDefinition, y: number): CurveDefinition {
-  return { ...path, points: path.points.map(point => [point[0], point[1] + y, point[2]] as [number, number, number]) }
+  return {
+    ...path,
+    ...(path.points ? { points: path.points.map(point => [point[0], point[1] + y, point[2]] as [number, number, number]) } : {}),
+    ...(path.center ? { center: [path.center[0], path.center[1] + y, path.center[2]] as [number, number, number] } : {}),
+    ...(path.origin ? { origin: [path.origin[0], path.origin[1] + y, path.origin[2]] as [number, number, number] } : {}),
+  }
 }

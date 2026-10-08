@@ -265,12 +265,35 @@ export interface ExtrudeBevelDefinition {
 }
 
 
-export type CurveKind = 'line' | 'polyline' | 'quadraticBezier' | 'cubicBezier' | 'catmullRom'
+export type CurveKind = 'line' | 'polyline' | 'quadraticBezier' | 'cubicBezier' | 'catmullRom' | 'arc' | 'circle' | 'helix'
 
+/**
+ * Renderer-neutral curve authoring. Point-based and analytic kinds normalize into
+ * the same deterministic sampled-curve pipeline before geometry consumers run.
+ */
 export interface CurveDefinition {
   [key: string]: GeometryJsonValue | undefined
   kind: CurveKind
-  points: [number, number, number][]
+  /** Control points for line/polyline/Bezier/Catmull-Rom curves. */
+  points?: [number, number, number][]
+  /** Arc/circle center. */
+  center?: [number, number, number]
+  /** Helix center at t=0 before the radial offset is applied. */
+  origin?: [number, number, number]
+  radius?: number
+  /** Arc start/end radians around normal; helix starting phase uses startAngle. */
+  startAngle?: number
+  endAngle?: number
+  /** Arc/circle plane normal. Defaults to +Y. */
+  normal?: [number, number, number]
+  /** Helix axis. Defaults to +Y. */
+  axis?: [number, number, number]
+  /** Preferred zero-angle radial direction. It is projected perpendicular to normal/axis. */
+  radial?: [number, number, number]
+  /** Helix axial height from start to end. */
+  height?: number
+  /** Signed helix turn count; sign controls handedness. */
+  turns?: number
   /** Deterministic sampled segment count. Explicit values override quality defaults. */
   segments?: number
   /** Supported by polyline and catmullRom. Closed samples include a seam duplicate internally. */
@@ -279,6 +302,10 @@ export interface CurveDefinition {
   tension?: number
   quality?: GeometryQualityPreset
 }
+
+/** Named curve resources are authoring conveniences; normalized geometry hashes curve content, not resource ids. */
+export type CurveResourceMap = Readonly<Record<string, CurveDefinition>>
+export type CurveInput = CurveDefinition | string
 
 
 
@@ -431,7 +458,7 @@ export interface SweepProfileStationDefinition {
 export interface SweepGeometryDefinition extends GeometryDefinition {
   kind: 'sweep'
   profile: ProfileDefinition
-  path: CurveDefinition
+  path: CurveInput
   /** Optional profile morph/transform stations along normalized path distance. */
   profileStations?: SweepProfileStationDefinition[]
   /** Cap open path ends. Closed paths are never capped. */
@@ -460,7 +487,7 @@ export interface LoftGeometryDefinition extends GeometryDefinition {
 }
 
 export interface PathArrayDefinition {
-  path: CurveDefinition
+  path: CurveInput
   spacing: number
   /** Distance from the beginning of an open path. */
   offset?: number

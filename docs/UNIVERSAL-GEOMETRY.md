@@ -149,3 +149,39 @@ Raw vertex channels are nested under `attributes`. This is deliberate: top-level
 The source is normalized and hashed like every other geometry definition, checked against the existing geometry limits before typed-array allocation, converted to Float32 vertex channels plus Uint16/Uint32 indices, finalized as an ordinary `GeometryMesh`, and can then flow through `pipeline.modifiers`. No renderer branch exists for authored meshes.
 
 The escape hatch is still triangle-list geometry, not an embedded scripting or shader system. SDFs, voxels, remeshing, sculpting, GPU procedural meshing, and object-specific primitives remain outside this step.
+
+
+## Step 5 — reusable curve resources
+
+rc.29 makes curves reusable authoring resources without turning them into runtime renderer resources. World 0.9 may define a top-level `curves` map and reference an entry anywhere Step 5 explicitly accepts a `CurveInput`, including `sweep.path` and path-array layout. Inline curve definitions remain supported.
+
+```json
+{
+  "curves": {
+    "main-spine": {
+      "kind": "helix",
+      "radius": 1.2,
+      "height": 6,
+      "turns": 2.25,
+      "segments": 72
+    }
+  },
+  "geometries": {
+    "cable": {
+      "kind": "sweep",
+      "profile": { "points": [[-0.04,-0.04],[0.04,-0.04],[0.04,0.04],[-0.04,0.04]] },
+      "path": "main-spine"
+    }
+  }
+}
+```
+
+### Curve vocabulary
+
+The reusable authoring vocabulary includes the established `line`, `polyline`, `quadraticBezier`, `cubicBezier`, and `catmullRom` kinds plus analytic `arc`, `circle`, and `helix`. The analytic forms deterministically lower to the existing normalized polyline evaluator and frame system; there is no parallel curve engine.
+
+### Identity and runtime boundary
+
+Curve references are resolved and normalized before dependent geometry is hashed. Therefore two names with identical normalized curve content can produce the same dependent geometry key, while changing the curve content changes that key. Curves themselves are not ResourceGraph nodes. ResourceGraph and Sekai64 still see only the ordinary geometry resources produced from them.
+
+Native Object 0.1 imports namespace reusable curves and rewrite local sweep references during instantiation so imported objects do not collide with world-local curve IDs. World 0.8 remains unchanged. Reusable profiles are deferred to Step 6.

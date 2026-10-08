@@ -56,7 +56,7 @@ export function compileWorldResourceGraph(document: NormalizedWorldDocument, com
   )
   if (!resourceBacked) return undefined
 
-  const builder = createResourceGraphBuilder()
+  const builder = createResourceGraphBuilder({ curves: document.curves })
   const assetIds = new Map<string, ResourceId>()
   const materialIds = new Map<string, ResourceId>()
 

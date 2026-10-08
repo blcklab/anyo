@@ -1,4 +1,5 @@
 import type {
+  CurveResourceMap,
   GeometryDefinition,
   GeometryMesh,
   GeometryMeshDraft,
@@ -16,6 +17,8 @@ import { BUILTIN_GEOMETRY_KINDS } from '../primitives/index.js'
 import { BUILTIN_GEOMETRY_OPERATORS } from '../operators/index.js'
 import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfacePolicy.js'
 import { applyVertexColorPolicy, normalizeVertexColorPolicy } from '../attributes/vertexColor.js'
+import { normalizeCurve } from '../curves/normalizeCurve.js'
+import type { NormalizedCurveDefinition } from '../curves/types.js'
 
 export interface GeometryOperatorContext {
   readonly limits: GeometrySafetyLimits
@@ -36,6 +39,8 @@ export interface GeometryBuildContext {
   readonly limits: GeometrySafetyLimits
   readonly modifierDepth: number
   readonly booleanDepth: number
+  /** Resolve an inline or named curve resource into the canonical evaluator vocabulary. */
+  resolveCurve(input: unknown, path?: string): NormalizedCurveDefinition
   /** Compile a nested legacy modifier child and count the nesting boundary. */
   normalizeChild(definition: unknown, modifierKind: string): GeometryDefinition
   compileChild(definition: unknown, modifierKind: string): GeometryMesh
@@ -74,6 +79,8 @@ export interface GeometryCompilerOptions {
   operators?: Iterable<GeometryOperatorCompiler>
   cache?: GeometryCache | false
   limits?: Partial<GeometrySafetyLimits>
+  /** Optional named reusable curve resources available to geometry consumers such as sweep. */
+  curves?: CurveResourceMap
 }
 
 export class GeometryCompiler {
@@ -81,9 +88,14 @@ export class GeometryCompiler {
   readonly #operators = new Map<string, GeometryOperatorCompiler>()
   readonly #cache?: GeometryCache
   readonly #limits: GeometrySafetyLimits
+  readonly #curves: CurveResourceMap
 
   constructor(options: GeometryCompilerOptions = {}) {
     this.#limits = resolveGeometrySafetyLimits(options.limits)
+    this.#curves = Object.freeze(Object.fromEntries(Object.entries(options.curves ?? {}).map(([id, definition]) => {
+      if (!id.trim()) throw new Error('Geometry curve resource ids must be non-empty strings.')
+      return [id, structuredClone(definition)]
+    })))
     this.#cache = options.cache === false ? undefined : (options.cache ?? new GeometryCache({ limits: this.#limits }))
     for (const kind of BUILTIN_GEOMETRY_KINDS) this.register(kind)
     for (const kind of options.kinds ?? []) this.register(kind)
@@ -187,6 +199,7 @@ export class GeometryCompiler {
     return {
       limits: this.#limits,
       modifierDepth,
+      resolveCurve: (input, path = '/path') => normalizeCurve(input, { limits: this.#limits, path, curves: this.#curves }),
       booleanDepth,
       normalizeChild: (definition, modifierKind) => this.#normalizeInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),
       compileChild: (definition, modifierKind) => this.#compileInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),

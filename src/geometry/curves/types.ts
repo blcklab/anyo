@@ -1,9 +1,10 @@
-import type { CurveDefinition } from '../types/index.js'
-
 export type CurvePoint3 = readonly [number, number, number]
 
-export interface NormalizedCurveDefinition extends CurveDefinition {
-  kind: CurveDefinition['kind']
+/** Analytic authoring kinds lower to this evaluator vocabulary during normalization. */
+export type NormalizedCurveKind = 'line' | 'polyline' | 'quadraticBezier' | 'cubicBezier' | 'catmullRom'
+
+export interface NormalizedCurveDefinition {
+  kind: NormalizedCurveKind
   points: [number, number, number][]
   segments: number
   closed?: boolean

@@ -7,6 +7,7 @@ import { COMPOSITION_PARAMETER_NAME_PATTERN, COMPOSITION_PARAMETER_TYPES, isComp
 import { compositionCatalogWithImports, inspectAnyoImportMap, inspectImportCompositionConflicts } from './imports.js'
 import { normalizeVertexColorDefinition } from '../geometry/attributes/vertexColor.js'
 import { normalizeProfile } from '../geometry/profiles/index.js'
+import { normalizeCurve } from '../geometry/curves/index.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -922,6 +923,23 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
 
   if (document.building && !Array.isArray(document.building.floors)) {
     issue(issues, 'FLOORS_REQUIRED', '/building/floors', 'building.floors must be an array when a building is provided.')
+  }
+
+  if (!version.startsWith('0.9') && document.curves !== undefined) {
+    issue(issues, 'CURVES_REQUIRE_0_9', '/curves', 'Top-level reusable curve resources require Anyo world schema 0.9 or newer.')
+  }
+  if (version.startsWith('0.9')) {
+    for (const [curveId, curve] of Object.entries(document.curves ?? {})) {
+      const path = `/curves/${curveId}`
+      if (!curveId.trim()) issue(issues, 'CURVE_ID_REQUIRED', path, 'Curve ids must be non-empty strings.')
+      try {
+        normalizeCurve(curve, { path })
+      } catch (error) {
+        const curveIssues = (error as { issues?: Array<{ code?: string; path?: string; message?: string; suggestion?: string }> }).issues ?? []
+        if (curveIssues.length === 0) issue(issues, 'CURVE_INVALID', path, String(error))
+        else for (const curveIssue of curveIssues) issue(issues, curveIssue.code ?? 'CURVE_INVALID', curveIssue.path ?? path, curveIssue.message ?? 'Invalid curve definition.', curveIssue.suggestion)
+      }
+    }
   }
 
   if (!version.startsWith('0.8') && !version.startsWith('0.9') && document.geometries !== undefined) {

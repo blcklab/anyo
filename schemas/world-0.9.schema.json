@@ -122,6 +122,13 @@
     "events": {
       "$ref": "#/$defs/eventMap"
     },
+    "curves": {
+      "type": "object",
+      "description": "Named reusable renderer-neutral curve resources. Geometry consumers may reference these ids instead of repeating inline curve definitions.",
+      "additionalProperties": {
+        "$ref": "#/$defs/geometryCurveDefinition"
+      }
+    },
     "geometries": {
       "type": "object",
       "additionalProperties": {
@@ -5593,7 +5600,7 @@
       },
       "additionalProperties": false
     },
-    "geometryCurve": {
+    "geometryCurveDefinition": {
       "oneOf": [
         {
           "type": "object",
@@ -5759,6 +5766,139 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "radius",
+            "startAngle",
+            "endAngle"
+          ],
+          "properties": {
+            "kind": {
+              "const": "arc"
+            },
+            "center": {
+              "$ref": "#/$defs/vec3"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "startAngle": {
+              "type": "number"
+            },
+            "endAngle": {
+              "type": "number"
+            },
+            "normal": {
+              "$ref": "#/$defs/vec3"
+            },
+            "radial": {
+              "$ref": "#/$defs/vec3"
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "radius"
+          ],
+          "properties": {
+            "kind": {
+              "const": "circle"
+            },
+            "center": {
+              "$ref": "#/$defs/vec3"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "normal": {
+              "$ref": "#/$defs/vec3"
+            },
+            "radial": {
+              "$ref": "#/$defs/vec3"
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "radius",
+            "height",
+            "turns"
+          ],
+          "properties": {
+            "kind": {
+              "const": "helix"
+            },
+            "origin": {
+              "$ref": "#/$defs/vec3"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number"
+            },
+            "turns": {
+              "type": "number"
+            },
+            "startAngle": {
+              "type": "number"
+            },
+            "axis": {
+              "$ref": "#/$defs/vec3"
+            },
+            "radial": {
+              "$ref": "#/$defs/vec3"
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 4096
+            },
+            "quality": {
+              "$ref": "#/$defs/geometryQuality"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "geometryCurve": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reference to a named top-level curve resource."
+        },
+        {
+          "$ref": "#/$defs/geometryCurveDefinition"
         }
       ]
     },

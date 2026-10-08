@@ -604,3 +604,35 @@ These operations are the final generic modeling additions for the portfolio free
 The universal-composition series adds `mesh` as the renderer-neutral escape hatch for geometry that does not need a dedicated procedural kind. Author flat xyz `positions`, triangle-list `indices`, optional raw per-vertex `attributes` (`normals`, `uvs`, `tangents`, `colors`), and optional draw `groups`. Raw normals are nested under `attributes.normals`; the established top-level `normals` field remains the normal-generation policy.
 
 Mesh sources are normalized, hashed, bounded by the existing geometry safety limits, converted to the ordinary typed-array `GeometryMesh` contract, and finalized through the same validation/cache path. Missing channels are not guessed: authors may explicitly request the existing `normals`, `uv`, and `tangents` surface policies where derivation is appropriate. A `mesh` source can be used directly inside the generic `pipeline`, so Sekai64 does not need a separate arbitrary-mesh authoring path.
+
+
+## Reusable curves (rc.29)
+
+World 0.9 can move a curve out of an individual sweep and into the top-level `curves` resource map. Consumers may still use an inline definition or a string resource ID. Reusable curves are authoring data only and resolve to normalized curve content before geometry identity/cache calculation.
+
+Supported curve authoring kinds are `line`, `polyline`, `quadraticBezier`, `cubicBezier`, `catmullRom`, `arc`, `circle`, and `helix`. `arc`, `circle`, and `helix` lower deterministically to the established sampled-polyline evaluator, so sweep framing and interpolation keep one implementation.
+
+```json
+{
+  "curves": {
+    "arch": {
+      "kind": "arc",
+      "center": [0, 2, 0],
+      "radius": 2,
+      "startAngle": 3.141592653589793,
+      "endAngle": 6.283185307179586,
+      "normal": [0, 0, 1],
+      "segments": 32
+    }
+  },
+  "geometries": {
+    "arched-rail": {
+      "kind": "sweep",
+      "profile": { "points": [[-0.05,-0.05],[0.05,-0.05],[0.05,0.05],[-0.05,0.05]] },
+      "path": "arch"
+    }
+  }
+}
+```
+
+Step 5 explicitly wires reusable curves into sweep compilation and path-array layout. Architecture helpers that still accept inline `CurveDefinition` values remain unchanged in this milestone.

@@ -88,6 +88,7 @@ test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring add
       delete copy.$defs.exploration.properties.character
       delete copy.$defs.exploration.properties.spawn.properties.rotation
       delete copy.properties.imports
+      delete copy.properties.curves
       delete copy.$defs.importDefinition
       // Step 10: standardized metadata + strict built-in authoring objects.
       copy.properties.metadata = structuredClone(schema08.properties.metadata)
@@ -116,7 +117,7 @@ test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring add
         delete definition.allOf
       }
       for (const name of [
-        'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurve', 'geometryMeshAttributes', 'geometryMeshGroup', 'geometryMesh',
+        'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurveDefinition', 'geometryCurve', 'geometryMeshAttributes', 'geometryMeshGroup', 'geometryMesh',
         'geometryBox', 'geometryRoundedBox', 'geometryPlane', 'geometrySphere', 'geometryCylinder', 'geometryCone', 'geometryCapsule', 'geometryDisc',
         'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryOperatorBend', 'geometryOperatorMirror', 'geometryOperatorNoise', 'geometryOperatorArray', 'geometryOperatorWeld', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
         'geometryBend', 'geometryTwist', 'geometryTaper', 'geometryUnion', 'geometrySubtract', 'geometryIntersect',
@@ -157,6 +158,8 @@ test('createWorldSchema supports World 0.9 and keeps procedural definitions enab
   const schema = createWorldSchema({ version: '0.9' })
   assert.equal(schema.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
   assert.equal(schema.properties.version.pattern, '^0\\.9(?:\\.|$)')
+  assert.ok(schema.properties.curves)
+  assert.ok(schema.$defs.curveDefinition)
   assert.ok(schema.properties.geometries)
   assert.ok(schema.$defs.geometryDefinition)
 })

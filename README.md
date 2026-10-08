@@ -453,3 +453,31 @@ Use the `array` operator when repeated copies need to become one mesh for later 
 ### Arbitrary indexed mesh escape hatch (rc.28)
 
 World 0.9 may author a generic `mesh` source with flat `positions` and triangle-list `indices`, plus optional raw `attributes` and semantic/material `groups`. Raw vertex normals live at `attributes.normals`; the existing top-level `normals` field remains the normal-generation policy. The source compiles to the same validated `GeometryMesh` contract as procedural geometry and can be fed directly into the universal operator pipeline. Sekai64 requires no special mesh-authoring semantics.
+
+
+### Reusable curve resources (rc.29)
+
+World 0.9 can declare renderer-neutral top-level `curves` and reuse them from generic sweep/path consumers. Inline curves remain fully supported. Curve references resolve to normalized curve content before geometry hashing, so equivalent inline and named curves deduplicate naturally while edits invalidate dependent geometry deterministically.
+
+```json
+{
+  "curves": {
+    "main-spine": {
+      "kind": "helix",
+      "radius": 1.2,
+      "height": 5,
+      "turns": 2.5,
+      "segments": 64
+    }
+  },
+  "geometries": {
+    "tube": {
+      "kind": "sweep",
+      "profile": { "points": [[-0.08,-0.08],[0.08,-0.08],[0.08,0.08],[-0.08,0.08]] },
+      "path": "main-spine"
+    }
+  }
+}
+```
+
+`arc`, `circle`, and `helix` are analytic authoring conveniences that lower into Anyo's existing sampled-curve/frame implementation. Curves remain authoring resources rather than renderer resources; Sekai64 still receives only finalized `GeometryMesh` data.

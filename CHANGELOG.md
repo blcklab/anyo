@@ -1,3 +1,15 @@
+## 0.11.0-rc.29
+
+### Universal Geometry Step 5 — reusable curve resources
+
+- Add reusable top-level World 0.9 `curves` resources and allow generic `sweep.path` / path-array consumers to reference them by ID while preserving inline curve authoring.
+- Add renderer-neutral analytic `arc`, `circle`, and `helix` authoring that deterministically lowers into the established sampled polyline evaluator/frame system rather than creating a second curve engine.
+- Resolve curve references by normalized content before geometry hashing, so equivalent inline/named curves share geometry identity and curve edits invalidate dependent geometry deterministically.
+- Keep curves authoring-only: they do not become ResourceGraph runtime nodes and Sekai64 continues to receive ordinary finalized `GeometryMesh` resources only.
+- Namespace reusable curves across native Object 0.1 imports and rewrite local sweep references safely during instantiation.
+- Keep World 0.8 byte-identical, add no runtime dependencies, and leave `@blcklab/sekai64@0.8.0-rc.56` unchanged.
+- Reusable profiles remain intentionally deferred to Universal Geometry Step 6.
+
 ## 0.11.0-rc.28
 
 ### Universal Geometry Step 4 — arbitrary indexed-mesh escape hatch

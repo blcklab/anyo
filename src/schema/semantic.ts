@@ -11,6 +11,7 @@ import type {
 import type { ValidationIssue } from './errors.js'
 import { getDataPath } from './bindings.js'
 import { resolveCompositionParameterDefinitions } from './compositionParameters.js'
+import type { GeometryDefinition } from '../geometry/types/index.js'
 
 const BUILTIN_ENTITY_TYPES = new Set([
   'box', 'plane', 'cylinder', 'disc', 'cone', 'sphere', 'text', 'image', 'model', 'light', 'group',
@@ -23,7 +24,7 @@ const BUILTIN_COMPONENT_TYPES = new Set([
 const MARKER_COMPONENTS = new Set(['anyo.vfx', 'anyo.map', 'anyo.mapFeature', 'anyo.animation', 'anyo.rigidBody', 'anyo.characterController', 'anyo.joint', 'anyo.billboard'])
 
 const TOP_LEVEL_FIELDS = new Set([
-  '$schema', 'version', 'revision', 'units', 'metadata', 'imports', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'geometries',
+  '$schema', 'version', 'revision', 'units', 'metadata', 'imports', 'data', 'environment', 'rendering', 'cameras', 'activeCamera', 'channels', 'requires', 'events', 'materials', 'curves', 'geometries',
   'assets', 'prefabs', 'compositions', 'building', 'entities', 'exploration', 'visibility', 'extensions',
 ])
 const ENTITY_FIELDS = new Set([
@@ -271,6 +272,24 @@ function inspectRenderer(document: WorldDocument, info: RendererInfo | undefined
   if ((document.environment?.sun?.castShadow || document.environment?.sun?.shadows) && !caps.shadows) add(issues, 'warning', 'ANYO_SHADOWS_UNSUPPORTED', '/environment/sun/castShadow', `Renderer "${info.name}" cannot render the requested sun shadows.`)
 }
 
+
+function inspectGeometryCurveReferences(definition: unknown, path: string, curveIds: ReadonlySet<string>, mode: ValidationMode, issues: ValidationIssue[]): void {
+  if (!definition || typeof definition !== 'object' || Array.isArray(definition)) return
+  const geometry = definition as GeometryDefinition
+  if (geometry.kind === 'sweep' && typeof geometry.path === 'string' && !curveIds.has(geometry.path)) {
+    add(issues, severity(mode, true), 'ANYO_CURVE_NOT_FOUND', `${path}/path`, `Curve resource "${geometry.path}" does not exist.`)
+  }
+  for (const field of ['source', 'left', 'right'] as const) {
+    const child = geometry[field]
+    if (child && typeof child === 'object' && !Array.isArray(child)) inspectGeometryCurveReferences(child, `${path}/${field}`, curveIds, mode, issues)
+  }
+}
+
+function inspectEntityCurveReferences(entity: EntityDefinition, path: string, curveIds: ReadonlySet<string>, mode: ValidationMode, issues: ValidationIssue[]): void {
+  if (entity.geometry && typeof entity.geometry === 'object' && !Array.isArray(entity.geometry)) inspectGeometryCurveReferences(entity.geometry, `${path}/geometry`, curveIds, mode, issues)
+  entity.children?.forEach((child, index) => inspectEntityCurveReferences(child, `${path}/children/${index}`, curveIds, mode, issues))
+}
+
 export function inspectWorldSemantics(document: WorldDocument, options: WorldValidationOptions = {}): ValidationIssue[] {
   const issues: ValidationIssue[] = []
   const mode = options.mode ?? 'permissive'
@@ -285,6 +304,13 @@ export function inspectWorldSemantics(document: WorldDocument, options: WorldVal
   const materialIds = new Set(Object.keys(document.materials ?? {}))
   const assetIds = new Set(Object.keys(document.assets ?? {}))
   const geometryIds = new Set(Object.keys(document.geometries ?? {}))
+  const curveIds = new Set(Object.keys(document.curves ?? {}))
+
+  for (const [id, geometry] of Object.entries(document.geometries ?? {})) inspectGeometryCurveReferences(geometry, `/geometries/${id}`, curveIds, mode, issues)
+  document.entities?.forEach((entity, index) => inspectEntityCurveReferences(entity, `/entities/${index}`, curveIds, mode, issues))
+  for (const [floorIndex, floor] of floors.entries()) for (const [roomIndex, room] of floor.rooms.entries()) room.entities?.forEach((entity, index) => inspectEntityCurveReferences(entity, `/building/floors/${floorIndex}/rooms/${roomIndex}/entities/${index}`, curveIds, mode, issues))
+  for (const [name, prefab] of Object.entries(document.prefabs ?? {})) inspectEntityCurveReferences(prefab as EntityDefinition, `/prefabs/${name}`, curveIds, mode, issues)
+  for (const [name, composition] of Object.entries(document.compositions ?? {})) inspectEntityCurveReferences(composition as EntityDefinition, `/compositions/${name}`, curveIds, mode, issues)
 
   const environmentMap = document.environment?.lighting?.environmentMap
   if (environmentMap && !assetIds.has(environmentMap)) add(issues, severity(mode, true), 'ANYO_ENVIRONMENT_MAP_ASSET_NOT_FOUND', '/environment/lighting/environmentMap', `Environment-map asset "${environmentMap}" does not exist.`)

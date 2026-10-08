@@ -14,7 +14,6 @@ import { contourPerimeter, PROFILE_EPSILON } from '../profiles/contourMath.js'
 import type { NormalizedProfile, ProfilePoint } from '../profiles/types.js'
 import { canonicalAngle, interpolateAngle, interpolateProfile, profileToJson, profilesHaveCompatibleTopology, transformProfile } from '../profiles/morphProfile.js'
 import { triangulateProfile } from '../triangulation/triangulateProfile.js'
-import { normalizeCurve } from '../curves/normalizeCurve.js'
 import { sampleCurve } from '../curves/sampleCurve.js'
 import { computeCurveFrames } from '../curves/frames.js'
 import type { CurveFrame, CurvePoint3 } from '../curves/types.js'
@@ -39,7 +38,7 @@ export const sweepGeometryKind: GeometryKindCompiler = {
     const pathInput = isRecord(definition.path) && definition.path.quality === undefined && inheritedQuality
       ? { ...definition.path, quality: inheritedQuality }
       : definition.path
-    const path = normalizeCurve(pathInput, { limits: context.limits, path: '/path', quality: inheritedQuality })
+    const path = context.resolveCurve(pathInput, '/path')
     let cap = definition.cap ?? !path.closed
     if (typeof cap !== 'boolean') parameterError('/cap', 'cap must be boolean.')
     if (path.closed && cap) parameterError('/cap', 'Closed sweep paths cannot be capped.', 'Set cap to false for closed paths.')
@@ -60,7 +59,7 @@ export const sweepGeometryKind: GeometryKindCompiler = {
   },
   compile(definition, context) {
     const profile = normalizeProfile(definition.profile, { limits: context.limits, path: '/profile' })
-    const path = normalizeCurve(definition.path, { limits: context.limits, path: '/path' })
+    const path = context.resolveCurve(definition.path, '/path')
     const sampled = sampleCurve(path, { limits: context.limits, path: '/path' })
     const up = definition.up as unknown as readonly [number, number, number] | undefined
     const frames = computeCurveFrames(sampled, up)
@@ -331,7 +330,7 @@ function normalizeUp(raw: unknown): [number, number, number] {
   const length = Math.hypot(raw[0] as number, raw[1] as number, raw[2] as number)
   return [(raw[0] as number) / length, (raw[1] as number) / length, (raw[2] as number) / length]
 }
-function curveToJson(curve: ReturnType<typeof normalizeCurve>): GeometryJsonValue {
+function curveToJson(curve: import('../curves/types.js').NormalizedCurveDefinition): GeometryJsonValue {
   return { kind: curve.kind, points: curve.points.map(point => [point[0], point[1], point[2]]), segments: curve.segments, ...(curve.closed ? { closed: true } : {}), ...(curve.tension === undefined ? {} : { tension: curve.tension }) }
 }
 function mesh(builder: MeshBuilder): GeometryMeshDraft {

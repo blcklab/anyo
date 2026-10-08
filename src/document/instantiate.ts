@@ -11,6 +11,7 @@ import type {
   ResolvedWorldDocumentGraph,
   WorldDocument,
 } from '../core/types.js'
+import type { GeometryDefinition } from '../geometry/types/index.js'
 import { AnyoImportError } from './imports.js'
 import { validateWorldDocument } from '../schema/validate.js'
 import { mergeCompositionParameters } from '../schema/compositionParameters.js'
@@ -26,7 +27,7 @@ const MATERIAL_TEXTURE_FIELDS = [
   'lightMapTexture',
 ] as const
 
-function resourceId(namespace: string, kind: 'asset' | 'material' | 'geometry' | 'composition', id: string): string {
+function resourceId(namespace: string, kind: 'asset' | 'material' | 'curve' | 'geometry' | 'composition', id: string): string {
   return `${namespace}::${kind}::${id}`
 }
 
@@ -166,6 +167,19 @@ function rewriteMaterial(material: MaterialDefinition, node: ResolvedAnyoImport)
   return output
 }
 
+
+function rewriteGeometry(definition: GeometryDefinition, node: ResolvedAnyoImport): GeometryDefinition {
+  const output = structuredClone(definition)
+  if (output.kind === 'sweep' && typeof output.path === 'string') {
+    output.path = localReference(node.document.curves, output.path, (id) => resourceId(node.namespace, 'curve', id)) ?? output.path
+  }
+  for (const field of ['source', 'left', 'right'] as const) {
+    const child = output[field]
+    if (child && typeof child === 'object' && !Array.isArray(child)) output[field] = rewriteGeometry(child as GeometryDefinition, node)
+  }
+  return output
+}
+
 function rewriteComposition(composition: CompositionDefinition, node: ResolvedAnyoImport): CompositionDefinition {
   const output = rewriteEntity(composition, node)
   if (output.extends) output.extends = compositionReference(node, output.extends)
@@ -206,7 +220,7 @@ function mergeGenerated<T>(target: Record<string, T>, id: string, value: T, sour
 
 function instantiateNode(
   node: ResolvedAnyoImport,
-  output: Required<Pick<WorldDocument, 'assets' | 'materials' | 'geometries' | 'compositions'>>,
+  output: Required<Pick<WorldDocument, 'assets' | 'materials' | 'curves' | 'geometries' | 'compositions'>>,
 ): void {
   for (const alias of Object.keys(node.imports).sort()) instantiateNode(node.imports[alias] as ResolvedAnyoImport, output)
 
@@ -216,8 +230,11 @@ function instantiateNode(
   for (const id of Object.keys(node.document.materials ?? {}).sort()) {
     mergeGenerated(output.materials, resourceId(node.namespace, 'material', id), rewriteMaterial((node.document.materials as NonNullable<AnyoObjectDocument['materials']>)[id] as MaterialDefinition, node), node.sourceUrl)
   }
+  for (const id of Object.keys(node.document.curves ?? {}).sort()) {
+    mergeGenerated(output.curves, resourceId(node.namespace, 'curve', id), structuredClone((node.document.curves as NonNullable<AnyoObjectDocument['curves']>)[id]), node.sourceUrl)
+  }
   for (const id of Object.keys(node.document.geometries ?? {}).sort()) {
-    mergeGenerated(output.geometries, resourceId(node.namespace, 'geometry', id), structuredClone((node.document.geometries as NonNullable<AnyoObjectDocument['geometries']>)[id]), node.sourceUrl)
+    mergeGenerated(output.geometries, resourceId(node.namespace, 'geometry', id), rewriteGeometry((node.document.geometries as NonNullable<AnyoObjectDocument['geometries']>)[id] as GeometryDefinition, node), node.sourceUrl)
   }
   for (const id of Object.keys(node.document.compositions ?? {}).sort()) {
     const composition = (node.document.compositions as NonNullable<AnyoObjectDocument['compositions']>)[id] as CompositionDefinition
@@ -288,12 +305,14 @@ export function instantiateResolvedWorldDocument(graph: ResolvedWorldDocumentGra
   const output = rewriteRootWorldReferences(graph.document, graph.imports)
   output.assets = structuredClone(output.assets ?? {})
   output.materials = structuredClone(output.materials ?? {})
+  output.curves = structuredClone(output.curves ?? {})
   output.geometries = structuredClone(output.geometries ?? {})
   output.compositions = structuredClone(output.compositions ?? {})
 
   const generated = {
     assets: output.assets,
     materials: output.materials,
+    curves: output.curves,
     geometries: output.geometries,
     compositions: output.compositions,
   }
