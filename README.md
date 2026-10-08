@@ -423,3 +423,22 @@ The contract is deliberately provider-neutral. Astronomy, weather, time-of-day, 
 ### Final modeling completeness freeze candidate
 
 `0.11.0-rc.24` adds generic multi-profile `loft` geometry and optional `sweep.profileStations`. Together with existing curves, extrusion/bevel, CSG, modifiers, generated UVs, tangents, PBR authoring, repeat variation, and composition reuse, these close the main procedural-organic authoring gap needed for portfolio worlds without adding tree/flower/rock-specific systems. Both features lower into the ordinary renderer-neutral geometry mesh contract; Sekai64 needs no special semantic knowledge.
+
+
+### Universal geometry operator pipeline
+
+`0.11.0-rc.26` adds an ordered, renderer-neutral operator pipeline without removing the established nested modifier syntax. A pipeline owns one geometry source and applies source-free operators in order:
+
+```json
+{
+  "kind": "pipeline",
+  "source": { "kind": "box", "size": [1, 3, 1] },
+  "modifiers": [
+    { "kind": "taper", "axis": "y", "startScale": 1, "endScale": 0.6 },
+    { "kind": "twist", "axis": "y", "angle": 0.5 },
+    { "kind": "transform", "position": [1, 0, 0] }
+  ]
+}
+```
+
+The built-in Step 2 operator set is intentionally small: `transform`, `taper`, and `twist`. Legacy nested forms use the same underlying algorithms. Operators compile to ordinary `GeometryMesh` values; Sekai64 does not know whether a mesh came from a primitive, loft/sweep, a legacy modifier chain, or the generic pipeline.

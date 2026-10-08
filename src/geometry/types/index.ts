@@ -71,12 +71,32 @@ export interface GeometryDefinition {
 export type GeometrySource = GeometryDefinition
 
 /**
- * JSON-first descriptor for a geometry operator. Step 1 freezes only the descriptor
- * shape; execution/composition is introduced by the operator-pipeline milestone.
+ * JSON-first, source-free descriptor for one ordered geometry operator. Operators
+ * are normalized and applied by the generic pipeline rather than nesting sources.
  */
 export interface GeometryOperator {
   kind: string
   [key: string]: GeometryJsonValue | undefined
+}
+
+export interface GeometryTransformOperator extends GeometryOperator {
+  kind: 'transform'
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  scale?: [number, number, number]
+}
+
+export interface GeometryTaperOperator extends GeometryOperator {
+  kind: 'taper'
+  axis?: GeometryAxis
+  startScale?: number
+  endScale?: number
+}
+
+export interface GeometryTwistOperator extends GeometryOperator {
+  kind: 'twist'
+  axis?: GeometryAxis
+  angle?: number
 }
 
 export interface BoxGeometryDefinition extends GeometryDefinition {
@@ -232,6 +252,13 @@ export interface TransformGeometryDefinition extends GeometryDefinition {
   rotation?: [number, number, number]
   /** Geometry-local non-zero scale. Negative components mirror handedness and winding. */
   scale?: [number, number, number]
+}
+
+/** Ordered mesh-operator composition over one geometry source. */
+export interface GeometryPipelineDefinition extends GeometryDefinition {
+  kind: 'pipeline'
+  source: GeometryDefinition
+  modifiers: GeometryOperator[]
 }
 
 export type GeometryMirrorAxis = 'x' | 'y' | 'z'
@@ -401,6 +428,7 @@ export type BuiltinGeometryDefinition =
   | ExtrudeGeometryDefinition
   | SweepGeometryDefinition
   | LoftGeometryDefinition
+  | GeometryPipelineDefinition
   | TransformGeometryDefinition
   | MirrorGeometryDefinition
   | NoiseGeometryDefinition
@@ -463,6 +491,7 @@ export type GeometryIssueCode =
   | 'GEOMETRY_DEFINITION_INVALID'
   | 'GEOMETRY_KIND_INVALID'
   | 'GEOMETRY_KIND_UNSUPPORTED'
+  | 'GEOMETRY_OPERATOR_UNSUPPORTED'
   | 'GEOMETRY_NON_FINITE_NUMBER'
   | 'GEOMETRY_DEFINITION_LIMIT'
   | 'GEOMETRY_PARAMETER_INVALID'

@@ -1,3 +1,16 @@
+## 0.11.0-rc.26
+
+### Universal Geometry Step 2 — generic operator pipeline
+
+- Add built-in `pipeline` geometry: one normalized `source` plus ordered source-free `modifiers[]`, compiled entirely to the existing renderer-neutral `GeometryMesh` contract.
+- Add the generic `GeometryOperatorCompiler` registry, `GeometryOperatorContext`, `GeometryCompiler.registerOperator()`, `normalizeOperator()`, `applyOperator()`, and public `applyGeometryOperator()` helper.
+- Seed the operator registry with `transform`, `taper`, and `twist` only; Step 3 owns expansion to the broader universal modifier set.
+- Refactor legacy nested `transform` / `taper` / `twist` kinds to share the same normalization and mesh-operation functions as the new operator path, preventing parallel deformation implementations.
+- Preserve legacy nested modifier JSON unchanged while World 0.9 gains strict `pipeline` and source-free operator schemas; World 0.8 remains schema-byte-compatible and accepts the generic kind through its existing extensible geometry definition.
+- Operator order is part of canonical geometry hashing; operator stacks use the established `maxModifierDepth` safety limit.
+- ResourceGraph tracks the pipeline source as the only geometry dependency; operators remain descriptors, not resource nodes.
+- No Sekai64 change and no runtime dependency addition.
+
 ## 0.11.0-rc.25
 
 ### Universal Geometry Step 1 — canonical pipeline contract

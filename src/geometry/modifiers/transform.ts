@@ -1,5 +1,13 @@
-import type { GeometryDefinition, GeometryIssue, GeometryJsonValue } from '../types/index.js'
-import type { GeometryKindCompiler } from '../core/GeometryCompiler.js'
+import type {
+  GeometryDefinition,
+  GeometryIssue,
+  GeometryJsonValue,
+  GeometryMesh,
+  GeometryMeshDraft,
+  GeometryOperator,
+  GeometryTransformOperator,
+} from '../types/index.js'
+import type { GeometryKindCompiler, GeometryOperatorCompiler } from '../core/GeometryCompiler.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { transformGeometryMesh } from './meshTransform.js'
 
@@ -7,25 +15,47 @@ export const transformGeometryKind: GeometryKindCompiler = {
   kind: 'transform',
   normalize(definition, context) {
     const source = context.normalizeChild(requireRecord(definition.source, '/source'), 'transform')
-    const position = vec3(definition.position ?? [0, 0, 0], '/position', true)
-    const rotation = vec3(definition.rotation ?? [0, 0, 0], '/rotation', true)
-    const scale = vec3(definition.scale ?? [1, 1, 1], '/scale', false)
+    const operator = normalizeTransformOperator(definition)
     return {
       ...definition,
       source: source as unknown as GeometryJsonValue,
-      position,
-      rotation,
-      scale,
+      position: operator.position,
+      rotation: operator.rotation,
+      scale: operator.scale,
     }
   },
   compile(definition, context) {
     const source = context.compileChild(requireRecord(definition.source, '/source'), 'transform')
-    return transformGeometryMesh(source, {
-      position: definition.position as [number, number, number],
-      rotation: definition.rotation as [number, number, number],
-      scale: definition.scale as [number, number, number],
-    })
+    return applyTransformOperator(source, definition)
   },
+}
+
+export const transformGeometryOperator: GeometryOperatorCompiler = {
+  kind: 'transform',
+  normalize(operator) {
+    return normalizeTransformOperator(operator)
+  },
+  apply(mesh, operator) {
+    return applyTransformOperator(mesh, operator)
+  },
+}
+
+export function normalizeTransformOperator(input: GeometryOperator | GeometryDefinition): GeometryTransformOperator {
+  return {
+    kind: 'transform',
+    position: vec3(input.position ?? [0, 0, 0], '/position', true),
+    rotation: vec3(input.rotation ?? [0, 0, 0], '/rotation', true),
+    scale: vec3(input.scale ?? [1, 1, 1], '/scale', false),
+  }
+}
+
+export function applyTransformOperator(mesh: GeometryMesh, input: GeometryOperator | GeometryDefinition): GeometryMeshDraft {
+  const operator = normalizeTransformOperator(input)
+  return transformGeometryMesh(mesh, {
+    position: operator.position!,
+    rotation: operator.rotation!,
+    scale: operator.scale!,
+  })
 }
 
 function vec3(input: unknown, path: string, allowZero: boolean): [number, number, number] {

@@ -295,6 +295,48 @@
     },
     "tangents": true
   },
+  "pipeline": {
+    "kind": "pipeline",
+    "source": {
+      "kind": "box",
+      "size": [
+        1,
+        2,
+        1
+      ]
+    },
+    "modifiers": [
+      {
+        "kind": "taper",
+        "axis": "y",
+        "startScale": 1,
+        "endScale": 0.6
+      },
+      {
+        "kind": "twist",
+        "axis": "y",
+        "angle": 0.35
+      },
+      {
+        "kind": "transform",
+        "position": [
+          1,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0.2,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    ]
+  },
   "transform": {
     "kind": "transform",
     "source": {

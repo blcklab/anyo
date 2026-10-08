@@ -121,6 +121,20 @@
       }
     ]
   },
+  "pipeline": {
+    "kind": "pipeline",
+    "source": {
+      "kind": "box"
+    },
+    "modifiers": [
+      {
+        "kind": "transform",
+        "source": {
+          "kind": "box"
+        }
+      }
+    ]
+  },
   "transform": {
     "kind": "transform",
     "source": {

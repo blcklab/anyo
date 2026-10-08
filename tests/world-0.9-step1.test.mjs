@@ -49,7 +49,7 @@ test('World 0.8 schema remains available with its original identity and version 
   assert.equal(schema08.properties.version.pattern, '^0\\.8(?:\\.|$)')
 })
 
-test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-11 and final-quality Q1-Q3 fields', async () => {
+test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring additions', async () => {
   const schema08 = JSON.parse(await readFile(schema08Url, 'utf8'))
   const schema09 = JSON.parse(await readFile(schema09Url, 'utf8'))
   assert.equal(schema09.$id, 'https://anyo.blcklab.dev/schemas/world-0.9.schema.json')
@@ -118,7 +118,7 @@ test('World 0.9 keeps the 0.8 baseline outside the explicitly approved Step 2-11
       for (const name of [
         'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurve',
         'geometryBox', 'geometryRoundedBox', 'geometryPlane', 'geometrySphere', 'geometryCylinder', 'geometryCone', 'geometryCapsule', 'geometryDisc',
-        'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryTransform', 'geometryMirror', 'geometryNoise',
+        'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
         'geometryBend', 'geometryTwist', 'geometryTaper', 'geometryUnion', 'geometrySubtract', 'geometryIntersect',
         'constructionWallOpening', 'constructionWall', 'constructionFloor', 'constructionCeiling', 'constructionPanel', 'constructionColumn',
         'constructionBeam', 'constructionStairs', 'constructionRailing', 'constructionTrim', 'constructionRoof', 'constructionDoorOpening',

@@ -27,7 +27,7 @@ function asTransform(transform: ArchitectureTransform | Partial<ResourceTransfor
 }
 
 function geometryChildren(definition: GeometryDefinition): readonly { field: string; definition: GeometryDefinition }[] {
-  if (definition.kind === 'transform' || definition.kind === 'mirror' || definition.kind === 'noise' || definition.kind === 'bend' || definition.kind === 'twist' || definition.kind === 'taper') {
+  if (definition.kind === 'pipeline' || definition.kind === 'transform' || definition.kind === 'mirror' || definition.kind === 'noise' || definition.kind === 'bend' || definition.kind === 'twist' || definition.kind === 'taper') {
     const source = definition.source
     return source && typeof source === 'object' && !Array.isArray(source) ? [{ field: 'source', definition: source as GeometryDefinition }] : []
   }

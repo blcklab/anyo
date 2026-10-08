@@ -1,4 +1,11 @@
-import type { GeometryDefinition, GeometryMesh, GeometryMeshDraft, GeometrySafetyLimits, GeometrySource } from '../types/index.js'
+import type {
+  GeometryDefinition,
+  GeometryMesh,
+  GeometryMeshDraft,
+  GeometryOperator,
+  GeometrySafetyLimits,
+  GeometrySource,
+} from '../types/index.js'
 import { GeometryCache } from '../cache/GeometryCache.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
@@ -6,15 +13,38 @@ import { finalizeGeometryMesh } from '../validation/validateMesh.js'
 import { normalizeGeometryDefinition } from './normalizeGeometry.js'
 import { hashGeometryDefinition } from './hashGeometry.js'
 import { BUILTIN_GEOMETRY_KINDS } from '../primitives/index.js'
+import { BUILTIN_GEOMETRY_OPERATORS } from '../operators/index.js'
 import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfacePolicy.js'
 import { applyVertexColorPolicy, normalizeVertexColorPolicy } from '../attributes/vertexColor.js'
+
+export interface GeometryOperatorContext {
+  readonly limits: GeometrySafetyLimits
+  /** One-based modifier depth used for safety-limit enforcement. */
+  readonly modifierDepth: number
+  finalizeDraft(mesh: GeometryMeshDraft): GeometryMesh
+}
+
+export interface GeometryOperatorCompiler {
+  readonly kind: string
+  /** Normalize one source-free operator descriptor before hashing or execution. */
+  normalize?(operator: GeometryOperator, context: GeometryOperatorContext): GeometryOperator
+  /** Apply one operator to an already finalized mesh. */
+  apply(mesh: GeometryMesh, operator: GeometryOperator, context: GeometryOperatorContext): GeometryMeshDraft
+}
 
 export interface GeometryBuildContext {
   readonly limits: GeometrySafetyLimits
   readonly modifierDepth: number
   readonly booleanDepth: number
+  /** Compile a nested legacy modifier child and count the nesting boundary. */
   normalizeChild(definition: unknown, modifierKind: string): GeometryDefinition
   compileChild(definition: unknown, modifierKind: string): GeometryMesh
+  /** Compile a container/pipeline source without treating the container itself as a modifier. */
+  normalizeSource(definition: unknown): GeometryDefinition
+  compileSource(definition: unknown): GeometryMesh
+  /** Normalize/apply an ordered pipeline operator at its zero-based position. */
+  normalizeOperator(operator: unknown, index?: number): GeometryOperator
+  applyOperator(mesh: GeometryMesh, operator: unknown, index?: number): GeometryMesh
   normalizeBooleanChild(definition: unknown, booleanKind: string): GeometryDefinition
   compileBooleanChild(definition: unknown, booleanKind: string): GeometryMesh
   finalizeDraft(mesh: GeometryMeshDraft): GeometryMesh
@@ -41,12 +71,14 @@ export interface GeometryKindCompiler {
 
 export interface GeometryCompilerOptions {
   kinds?: Iterable<GeometryKindCompiler>
+  operators?: Iterable<GeometryOperatorCompiler>
   cache?: GeometryCache | false
   limits?: Partial<GeometrySafetyLimits>
 }
 
 export class GeometryCompiler {
   readonly #kinds = new Map<string, GeometryKindCompiler>()
+  readonly #operators = new Map<string, GeometryOperatorCompiler>()
   readonly #cache?: GeometryCache
   readonly #limits: GeometrySafetyLimits
 
@@ -55,12 +87,21 @@ export class GeometryCompiler {
     this.#cache = options.cache === false ? undefined : (options.cache ?? new GeometryCache({ limits: this.#limits }))
     for (const kind of BUILTIN_GEOMETRY_KINDS) this.register(kind)
     for (const kind of options.kinds ?? []) this.register(kind)
+    for (const operator of BUILTIN_GEOMETRY_OPERATORS) this.registerOperator(operator)
+    for (const operator of options.operators ?? []) this.registerOperator(operator)
   }
 
   register(kindCompiler: GeometryKindCompiler): this {
     const kind = kindCompiler.kind.trim()
     if (!kind || this.#kinds.has(kind)) throw new Error(`Geometry compiler kind "${kind}" is invalid or already registered.`)
     this.#kinds.set(kind, kindCompiler)
+    return this
+  }
+
+  registerOperator(operatorCompiler: GeometryOperatorCompiler): this {
+    const kind = operatorCompiler.kind.trim()
+    if (!kind || this.#operators.has(kind)) throw new Error(`Geometry operator kind "${kind}" is invalid or already registered.`)
+    this.#operators.set(kind, operatorCompiler)
     return this
   }
 
@@ -77,6 +118,26 @@ export class GeometryCompiler {
     return normalizeGeometryDefinition(normalizeVertexColorPolicy(normalizeSurfacePolicy(kindNormalized)), { limits: this.#limits })
   }
 
+  normalizeOperator(operator: unknown): GeometryOperator {
+    return this.#normalizeOperatorInternal(operator, 1)
+  }
+
+  #normalizeOperatorInternal(operator: unknown, modifierDepth: number): GeometryOperator {
+    const base = normalizeGeometryDefinition(operator, { limits: this.#limits }) as GeometryOperator
+    this.#assertModifierDepth(modifierDepth, base.kind)
+    const operatorCompiler = this.#operators.get(base.kind)
+    if (!operatorCompiler) {
+      throw new GeometryValidationError([{
+        code: 'GEOMETRY_OPERATOR_UNSUPPORTED',
+        path: '/kind',
+        message: `Unsupported geometry operator "${base.kind}".`,
+      }])
+    }
+    const context = this.#operatorContextFor(modifierDepth)
+    const normalized = operatorCompiler.normalize ? operatorCompiler.normalize(base, context) : base
+    return normalizeGeometryDefinition(normalized, { limits: this.#limits }) as GeometryOperator
+  }
+
   keyFor(definition: unknown): string {
     return hashGeometryDefinition(this.normalize(definition), { limits: this.#limits })
   }
@@ -91,6 +152,11 @@ export class GeometryCompiler {
 
   compile(definition: unknown): GeometryMesh {
     return this.#buildInternal(definition, 0, 0).mesh
+  }
+
+  /** Apply one normalized/normalizable source-free operator to a finalized mesh. */
+  applyOperator(mesh: GeometryMesh, operator: unknown): GeometryMesh {
+    return this.#applyOperatorInternal(mesh, operator, 1)
   }
 
   #compileInternal(definition: unknown, modifierDepth: number, booleanDepth: number): GeometryMesh {
@@ -110,6 +176,13 @@ export class GeometryCompiler {
     return { source, key, mesh }
   }
 
+  #applyOperatorInternal(mesh: GeometryMesh, operator: unknown, modifierDepth: number): GeometryMesh {
+    const normalized = this.#normalizeOperatorInternal(operator, modifierDepth)
+    const operatorCompiler = this.#operators.get(normalized.kind)!
+    const applied = operatorCompiler.apply(mesh, normalized, this.#operatorContextFor(modifierDepth))
+    return finalizeGeometryMesh(applied, { limits: this.#limits })
+  }
+
   #contextFor(modifierDepth: number, booleanDepth: number): GeometryBuildContext {
     return {
       limits: this.#limits,
@@ -117,12 +190,50 @@ export class GeometryCompiler {
       booleanDepth,
       normalizeChild: (definition, modifierKind) => this.#normalizeInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),
       compileChild: (definition, modifierKind) => this.#compileInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),
+      normalizeSource: (definition) => this.#normalizeInternal(definition, modifierDepth, booleanDepth),
+      compileSource: (definition) => this.#compileInternal(definition, modifierDepth, booleanDepth),
+      normalizeOperator: (operator, index = 0) => this.#normalizeOperatorInternal(operator, this.#operatorDepth(modifierDepth, index, operator)),
+      applyOperator: (mesh, operator, index = 0) => this.#applyOperatorInternal(mesh, operator, this.#operatorDepth(modifierDepth, index, operator)),
       normalizeBooleanChild: (definition, booleanKind) => this.#normalizeInternal(definition, modifierDepth, this.#nextBooleanDepth(booleanDepth, booleanKind)),
       compileBooleanChild: (definition, booleanKind) => this.#compileInternal(definition, modifierDepth, this.#nextBooleanDepth(booleanDepth, booleanKind)),
       finalizeDraft: (mesh) => finalizeGeometryMesh(mesh, { limits: this.#limits }),
     }
   }
 
+  #operatorContextFor(modifierDepth: number): GeometryOperatorContext {
+    return {
+      limits: this.#limits,
+      modifierDepth,
+      finalizeDraft: (mesh) => finalizeGeometryMesh(mesh, { limits: this.#limits }),
+    }
+  }
+
+  #operatorDepth(current: number, index: number, operator: unknown): number {
+    if (!Number.isSafeInteger(index) || index < 0) {
+      throw new GeometryValidationError([{
+        code: 'GEOMETRY_PARAMETER_INVALID',
+        path: '/modifiers',
+        message: 'Geometry operator index must be a non-negative safe integer.',
+      }])
+    }
+    const kind = operator && typeof operator === 'object' && !Array.isArray(operator) && typeof (operator as { kind?: unknown }).kind === 'string'
+      ? (operator as { kind: string }).kind
+      : 'operator'
+    const next = current + index + 1
+    this.#assertModifierDepth(next, kind)
+    return next
+  }
+
+  #assertModifierDepth(depth: number, modifierKind: string): void {
+    if (depth > this.#limits.maxModifierDepth) {
+      throw new GeometryValidationError([{
+        code: 'GEOMETRY_MODIFIER_LIMIT',
+        path: '/modifiers',
+        message: `Geometry modifier nesting exceeds maxModifierDepth ${this.#limits.maxModifierDepth}.`,
+        suggestion: `Flatten the ${modifierKind} operator stack or increase the explicit safety limit.`,
+      }])
+    }
+  }
 
   #nextBooleanDepth(current: number, booleanKind: string): number {
     const next = current + 1
@@ -161,4 +272,9 @@ export function buildGeometry(definition: unknown, options: GeometryCompilerOpti
 /** Compile a built-in geometry expression or an explicitly registered extension kind. */
 export function compileGeometry(definition: unknown, options: GeometryCompilerOptions = {}): GeometryMesh {
   return createGeometryCompiler(options).compile(definition)
+}
+
+/** Apply one source-free geometry operator to an already finalized mesh. */
+export function applyGeometryOperator(mesh: GeometryMesh, operator: unknown, options: GeometryCompilerOptions = {}): GeometryMesh {
+  return createGeometryCompiler(options).applyOperator(mesh, operator)
 }

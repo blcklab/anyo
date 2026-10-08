@@ -4661,6 +4661,9 @@
           "$ref": "#/$defs/geometryLoft"
         },
         {
+          "$ref": "#/$defs/geometryPipeline"
+        },
+        {
           "$ref": "#/$defs/geometryTransform"
         },
         {
@@ -6290,6 +6293,151 @@
           },
           "minItems": 2,
           "maxItems": 4097
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperator": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/geometryOperatorTransform"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorTaper"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorTwist"
+        }
+      ]
+    },
+    "geometryOperatorTransform": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "transform"
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            }
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorTaper": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "taper"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "startScale": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endScale": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorTwist": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "twist"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "angle": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryPipeline": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source",
+        "modifiers"
+      ],
+      "properties": {
+        "kind": {
+          "const": "pipeline"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
+        "source": {
+          "$ref": "#/$defs/geometryDefinition"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/geometryOperator"
+          },
+          "minItems": 1,
+          "maxItems": 32
         }
       },
       "additionalProperties": false
