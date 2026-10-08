@@ -1,5 +1,13 @@
-import type { GeometryDefinition, GeometryIssue, GeometryJsonValue } from '../types/index.js'
-import type { GeometryKindCompiler } from '../core/GeometryCompiler.js'
+import type {
+  GeometryDefinition,
+  GeometryIssue,
+  GeometryJsonValue,
+  GeometryMesh,
+  GeometryMeshDraft,
+  GeometryMirrorOperator,
+  GeometryOperator,
+} from '../types/index.js'
+import type { GeometryKindCompiler, GeometryOperatorCompiler } from '../core/GeometryCompiler.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { mergeGeometryMeshes, transformGeometryMesh } from './meshTransform.js'
 
@@ -7,33 +15,57 @@ export const mirrorGeometryKind: GeometryKindCompiler = {
   kind: 'mirror',
   normalize(definition, context) {
     const source = context.normalizeChild(requireRecord(definition.source, '/source'), 'mirror')
-    const axis = definition.axis ?? 'x'
-    if (axis !== 'x' && axis !== 'y' && axis !== 'z') parameterError('/axis', 'axis must be x, y, or z.')
-    const offset = definition.offset ?? 0
-    if (typeof offset !== 'number' || !Number.isFinite(offset)) parameterError('/offset', 'offset must be a finite number in meters.')
-    const includeOriginal = definition.includeOriginal ?? true
-    if (typeof includeOriginal !== 'boolean') parameterError('/includeOriginal', 'includeOriginal must be boolean.')
+    const operator = normalizeMirrorOperator(definition)
     return {
       ...definition,
       source: source as unknown as GeometryJsonValue,
-      axis,
-      offset,
-      includeOriginal,
+      axis: operator.axis,
+      offset: operator.offset,
+      includeOriginal: operator.includeOriginal,
     }
   },
   compile(definition, context) {
     const source = context.compileChild(requireRecord(definition.source, '/source'), 'mirror')
-    const axis = definition.axis as 'x' | 'y' | 'z'
-    const offset = definition.offset as number
-    const includeOriginal = definition.includeOriginal as boolean
-    const position: [number, number, number] = [0, 0, 0]
-    const scale: [number, number, number] = [1, 1, 1]
-    const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2
-    scale[axisIndex] = -1
-    position[axisIndex] = offset * 2
-    const mirrored = context.finalizeDraft(transformGeometryMesh(source, { position, rotation: [0, 0, 0], scale }))
-    return includeOriginal ? mergeGeometryMeshes(source, mirrored) : mirrored
+    return applyMirrorOperator(source, definition, context.finalizeDraft)
   },
+}
+
+export const mirrorGeometryOperator: GeometryOperatorCompiler = {
+  kind: 'mirror',
+  normalize(operator) {
+    return normalizeMirrorOperator(operator)
+  },
+  apply(mesh, operator, context) {
+    return applyMirrorOperator(mesh, operator, context.finalizeDraft)
+  },
+}
+
+export function normalizeMirrorOperator(input: GeometryOperator | GeometryDefinition): GeometryMirrorOperator {
+  const axis = input.axis ?? 'x'
+  if (axis !== 'x' && axis !== 'y' && axis !== 'z') parameterError('/axis', 'axis must be x, y, or z.')
+  const offset = input.offset ?? 0
+  if (typeof offset !== 'number' || !Number.isFinite(offset)) parameterError('/offset', 'offset must be a finite number in meters.')
+  const includeOriginal = input.includeOriginal ?? true
+  if (typeof includeOriginal !== 'boolean') parameterError('/includeOriginal', 'includeOriginal must be boolean.')
+  return { kind: 'mirror', axis, offset, includeOriginal }
+}
+
+export function applyMirrorOperator(
+  source: GeometryMesh,
+  input: GeometryOperator | GeometryDefinition,
+  finalizeDraft: (mesh: GeometryMeshDraft) => GeometryMesh,
+): GeometryMeshDraft {
+  const operator = normalizeMirrorOperator(input)
+  const axis = operator.axis!
+  const offset = operator.offset!
+  const includeOriginal = operator.includeOriginal!
+  const position: [number, number, number] = [0, 0, 0]
+  const scale: [number, number, number] = [1, 1, 1]
+  const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2
+  scale[axisIndex] = -1
+  position[axisIndex] = offset * 2
+  const mirrored = finalizeDraft(transformGeometryMesh(source, { position, rotation: [0, 0, 0], scale }))
+  return includeOriginal ? mergeGeometryMeshes(source, mirrored) : mirrored
 }
 
 function requireRecord(value: unknown, path: string): GeometryDefinition {

@@ -99,6 +99,59 @@ export interface GeometryTwistOperator extends GeometryOperator {
   angle?: number
 }
 
+export interface GeometryBendOperator extends GeometryOperator {
+  kind: 'bend'
+  axis?: GeometryAxis
+  direction?: GeometryAxis
+  angle?: number
+}
+
+export interface GeometryMirrorOperator extends GeometryOperator {
+  kind: 'mirror'
+  axis?: GeometryMirrorAxis
+  /** Mirror plane offset along the selected axis, in meters. Defaults to 0. */
+  offset?: number
+  /** Keep the source alongside its mirrored copy. Defaults to true. */
+  includeOriginal?: boolean
+}
+
+export interface GeometryNoiseOperator extends GeometryOperator {
+  kind: 'noise'
+  /** Deterministic signed 32-bit seed. */
+  seed?: number
+  /** Base spatial sampling frequency in inverse local meters. */
+  frequency?: number
+  /** Maximum signed displacement distance in local meters. */
+  strength?: number
+  /** Number of fBm layers. Bounded to 1..16. */
+  octaves?: number
+  /** Frequency multiplier per octave. */
+  lacunarity?: number
+  /** Amplitude multiplier per octave, from 0..1. */
+  persistence?: number
+  /** Local sampling-space offset. */
+  offset?: [number, number, number]
+}
+
+export interface GeometryArrayOperator extends GeometryOperator {
+  kind: 'array'
+  count: number
+  /** Per-copy translation step in meters. */
+  offset: [number, number, number]
+  /** Base transform of the first copy. */
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  /** Per-copy Euler rotation step in radians. */
+  rotationOffset?: [number, number, number]
+  scale?: [number, number, number]
+}
+
+export interface GeometryWeldOperator extends GeometryOperator {
+  kind: 'weld'
+  /** Maximum positional distance for otherwise attribute-identical vertices. */
+  tolerance?: number
+}
+
 export interface BoxGeometryDefinition extends GeometryDefinition {
   kind: 'box'
   size?: [number, number, number]

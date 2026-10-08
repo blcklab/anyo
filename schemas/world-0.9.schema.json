@@ -6307,6 +6307,21 @@
         },
         {
           "$ref": "#/$defs/geometryOperatorTwist"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorBend"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorMirror"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorNoise"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorArray"
+        },
+        {
+          "$ref": "#/$defs/geometryOperatorWeld"
         }
       ]
     },
@@ -6398,6 +6413,173 @@
         },
         "angle": {
           "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorBend": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "bend"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "angle": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorMirror": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "mirror"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "offset": {
+          "type": "number"
+        },
+        "includeOriginal": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorNoise": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "noise"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "frequency": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "strength": {
+          "type": "number",
+          "minimum": 0
+        },
+        "octaves": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "lacunarity": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "persistence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "offset": {
+          "$ref": "#/$defs/vec3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorArray": {
+      "type": "object",
+      "required": [
+        "kind",
+        "count",
+        "offset"
+      ],
+      "properties": {
+        "kind": {
+          "const": "array"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "$ref": "#/$defs/vec3"
+        },
+        "position": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rotationOffset": {
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            },
+            {
+              "type": "number",
+              "not": {
+                "const": 0
+              }
+            }
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorWeld": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "weld"
+        },
+        "tolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       },
       "additionalProperties": false

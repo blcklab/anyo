@@ -1,3 +1,15 @@
+## 0.11.0-rc.27
+
+### Universal Geometry Step 3 — core universal modifier set
+
+- Expand the generic source-free operator registry from `transform` / `taper` / `twist` to `bend`, `mirror`, deterministic `noise`, baked-mesh `array`, and conservative attribute-preserving `weld`.
+- Refactor the mature legacy `bend`, `mirror`, and `noise` geometry kinds to share the exact same normalization/application functions as pipeline operators; no duplicate deformation algorithms are introduced.
+- Keep the existing `layoutGeometryArray()` / ResourceGraph instance-array path unchanged for efficient scene repetition. The new `array` operator intentionally bakes copies into one mesh so later operators can deform/weld the combined result, and it is bounded by both instance and mesh safety limits.
+- Add `weld` as the only new mesh algorithm in this step. It merges position-near vertices only when all authored vertex attributes match exactly, preserving UV seams, hard normals, tangent handedness, vertex colors, material groups, and triangle order.
+- Extend strict World 0.9 pipeline schemas for all eight built-in operators while leaving World 0.8 unchanged.
+- Preserve renderer neutrality: every operator resolves to the existing validated `GeometryMesh` contract; Sekai64 remains unchanged.
+- Step 4 owns the arbitrary indexed-mesh escape hatch; this release does not add a new semantic object primitive or arbitrary-mesh authoring kind.
+
 ## 0.11.0-rc.26
 
 ### Universal Geometry Step 2 — generic operator pipeline

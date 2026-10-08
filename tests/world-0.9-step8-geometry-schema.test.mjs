@@ -144,6 +144,36 @@ test('valid schema fixtures normalize and compile through the unchanged geometry
   }
 })
 
+test('World 0.9 pipeline schema accepts the complete universal Step 3 operator vocabulary and rejects malformed descriptors', () => {
+  const validOperators = [
+    { kind: 'transform', position: [1, 2, 3] },
+    { kind: 'taper', axis: 'y', startScale: 1, endScale: 0.5 },
+    { kind: 'twist', axis: 'z', angle: 0.5 },
+    { kind: 'bend', axis: 'y', direction: 'x', angle: 0.75 },
+    { kind: 'mirror', axis: 'x', offset: 1, includeOriginal: false },
+    { kind: 'noise', seed: 42, frequency: 1.5, strength: 0.1, octaves: 3, lacunarity: 2, persistence: 0.5, offset: [0, 0, 0] },
+    { kind: 'array', count: 4, offset: [1, 0, 0], rotationOffset: [0, 0.1, 0], scale: [1, 1, 1] },
+    { kind: 'weld', tolerance: 0.000001 },
+  ]
+  for (const operator of validOperators) {
+    assert.deepEqual(schemaErrors(operator, schema.$defs.geometryOperator), [], operator.kind)
+  }
+
+  const invalidOperators = [
+    { kind: 'bend', axis: 'q' },
+    { kind: 'mirror', includeOriginal: 'yes' },
+    { kind: 'noise', octaves: 17 },
+    { kind: 'noise', persistence: 1.1 },
+    { kind: 'array', count: 0, offset: [1, 0, 0] },
+    { kind: 'array', count: 2 },
+    { kind: 'array', count: 2, offset: [1, 0, 0], scale: [1, 0, 1] },
+    { kind: 'weld', tolerance: 0 },
+  ]
+  for (const operator of invalidOperators) {
+    assert.ok(schemaErrors(operator, schema.$defs.geometryOperator).length > 0, `${operator.kind} malformed operator unexpectedly passed`)
+  }
+})
+
 test('cross-field and topology constraints remain semantic/compiler checks rather than guessed schema rules', () => {
   const compiler = createGeometryCompiler({ cache: false })
   const semanticInvalid = [

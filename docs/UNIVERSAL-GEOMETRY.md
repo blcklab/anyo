@@ -73,3 +73,53 @@ No Sekai64 change is required. The renderer still receives only finalized mesh r
 ## Deferred to Step 3
 
 The operator registry deliberately contains only the minimal proof set in rc.26. Bend, mirror, noise/displace, array/repetition, weld, and the rest of the universal modifier vocabulary belong to Step 3 so each addition stays reviewable and patch-isolated.
+
+## Step 3 — universal modifier vocabulary
+
+rc.27 expands the generic operator pipeline without adding semantic object kinds. The built-in operator vocabulary is now:
+
+```text
+transform
+taper
+twist
+bend
+mirror
+noise
+array
+weld
+```
+
+`bend`, `mirror`, and `noise` are promotions of mature legacy geometry operations. Their nested legacy forms and source-free pipeline forms share the same normalization and mesh code.
+
+### Baked array versus scene instances
+
+The `array` operator is deliberately different from `layoutGeometryArray()` / `ResourceGraphBuilder.addGeometryArray()`. The established resource API creates reusable instance placements and remains the preferred path for large repeated scenes. The pipeline operator bakes copies into a single mesh so later operators can act on the combined topology:
+
+```json
+{
+  "kind": "pipeline",
+  "source": { "kind": "box", "size": [0.2, 1, 0.2] },
+  "modifiers": [
+    { "kind": "array", "count": 8, "offset": [0.3, 0, 0] },
+    { "kind": "bend", "axis": "x", "direction": "y", "angle": 0.8 }
+  ]
+}
+```
+
+Baked arrays obey `maxGeneratedInstances`, `maxGeometryVertices`, and `maxGeometryIndices`. Use resource instances when copies do not need to become one deformable mesh.
+
+### Deterministic noise displacement
+
+The `noise` operator reuses Anyo's existing deterministic fBm displacement. Seed, frequency, strength, octave parameters, and offset normalize before hashing, so identical normalized definitions reproduce identical geometry.
+
+### Conservative weld
+
+`weld` removes safe duplicate vertices within a positional tolerance. Two vertices are eligible only when all present vertex attributes match exactly. This intentionally avoids crossing UV seams, hard-normal boundaries, tangent-handedness splits, or color boundaries. Material groups and triangle order stay unchanged.
+
+```json
+{ "kind": "weld", "tolerance": 0.000001 }
+```
+
+### Freeze boundary
+
+Step 3 does not add tree, road, building, stair, cloud, or other semantic geometry. It also does not add arbitrary mesh authoring yet. Step 4 owns the indexed-mesh escape hatch.

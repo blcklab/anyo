@@ -1,5 +1,13 @@
-import type { GeometryDefinition, GeometryIssue, GeometryJsonValue, GeometryMeshDraft } from '../types/index.js'
-import type { GeometryKindCompiler } from '../core/GeometryCompiler.js'
+import type {
+  GeometryDefinition,
+  GeometryIssue,
+  GeometryJsonValue,
+  GeometryMesh,
+  GeometryMeshDraft,
+  GeometryNoiseOperator,
+  GeometryOperator,
+} from '../types/index.js'
+import type { GeometryKindCompiler, GeometryOperatorCompiler } from '../core/GeometryCompiler.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { generateNormals } from '../attributes/normals.js'
 import { generateTangents } from '../attributes/tangents.js'
@@ -17,79 +25,105 @@ export const noiseGeometryKind: GeometryKindCompiler = {
   kind: 'noise',
   normalize(definition, context) {
     const source = context.normalizeChild(requireRecord(definition.source, '/source'), 'noise')
-    const seed = integer(definition.seed ?? DEFAULT_SEED, '/seed', -0x8000_0000, 0x7fff_ffff)
-    const frequency = positive(definition.frequency ?? DEFAULT_FREQUENCY, '/frequency')
-    const strength = nonNegative(definition.strength ?? DEFAULT_STRENGTH, '/strength')
-    const octaves = integer(definition.octaves ?? DEFAULT_OCTAVES, '/octaves', 1, MAX_NOISE_OCTAVES)
-    const lacunarity = positive(definition.lacunarity ?? DEFAULT_LACUNARITY, '/lacunarity')
-    const persistence = bounded(definition.persistence ?? DEFAULT_PERSISTENCE, '/persistence', 0, 1)
-    const offset = vec3(definition.offset ?? [0, 0, 0], '/offset')
+    const operator = normalizeNoiseOperator(definition)
     return {
       ...definition,
       source: source as unknown as GeometryJsonValue,
-      seed,
-      frequency,
-      strength,
-      octaves,
-      lacunarity,
-      persistence,
-      offset,
+      seed: operator.seed,
+      frequency: operator.frequency,
+      strength: operator.strength,
+      octaves: operator.octaves,
+      lacunarity: operator.lacunarity,
+      persistence: operator.persistence,
+      offset: operator.offset,
     }
   },
   compile(definition, context) {
     const source = context.compileChild(requireRecord(definition.source, '/source'), 'noise')
-    const seed = definition.seed as number
-    const frequency = definition.frequency as number
-    const strength = definition.strength as number
-    const octaves = definition.octaves as number
-    const lacunarity = definition.lacunarity as number
-    const persistence = definition.persistence as number
-    const offset = definition.offset as [number, number, number]
-
-    if (strength === 0) return cloneMeshWithoutBounds(source)
-
-    // Surface displacement needs a stable direction per vertex. Existing authored
-    // normals are preferred; meshes without normals receive deterministic smooth
-    // normals before deformation. Normals are regenerated again afterwards.
-    const sourceWithNormals = source.normals
-      ? source
-      : context.finalizeDraft(generateNormals(cloneMeshWithoutBounds(source), { mode: 'smooth', creaseAngle: Math.PI }))
-
-    const positions = new Float32Array(sourceWithNormals.positions.length)
-    for (let index = 0; index < sourceWithNormals.positions.length; index += 3) {
-      const px = sourceWithNormals.positions[index]!
-      const py = sourceWithNormals.positions[index + 1]!
-      const pz = sourceWithNormals.positions[index + 2]!
-      const nx = sourceWithNormals.normals![index]!
-      const ny = sourceWithNormals.normals![index + 1]!
-      const nz = sourceWithNormals.normals![index + 2]!
-      const sx = px * frequency + offset[0]
-      const sy = py * frequency + offset[1]
-      const sz = pz * frequency + offset[2]
-      if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(sz)) {
-        parameterError('/frequency', 'frequency and offset must keep sampled noise coordinates finite for the source geometry.')
-      }
-      const displacement = fbm3(sx, sy, sz, seed, octaves, lacunarity, persistence) * strength
-      positions[index] = px + nx * displacement
-      positions[index + 1] = py + ny * displacement
-      positions[index + 2] = pz + nz * displacement
-    }
-
-    const deformed: GeometryMeshDraft = {
-      positions,
-      indices: sourceWithNormals.indices,
-      ...(sourceWithNormals.uvs ? { uvs: sourceWithNormals.uvs } : {}),
-      ...(sourceWithNormals.colors ? { colors: sourceWithNormals.colors } : {}),
-      ...(sourceWithNormals.groups ? { groups: sourceWithNormals.groups } : {}),
-    }
-
-    // Never retain stale surface attributes after displacement. Preserve the
-    // source's tangent capability when present; outer surface policy may still
-    // override normal/UV/tangent generation after this compiler returns.
-    let result = generateNormals(deformed, { mode: 'smooth', creaseAngle: Math.PI })
-    if (source.tangents && result.uvs) result = generateTangents(result)
-    return result
+    return applyNoiseOperator(source, definition, context.finalizeDraft)
   },
+}
+
+export const noiseGeometryOperator: GeometryOperatorCompiler = {
+  kind: 'noise',
+  normalize(operator) {
+    return normalizeNoiseOperator(operator)
+  },
+  apply(mesh, operator, context) {
+    return applyNoiseOperator(mesh, operator, context.finalizeDraft)
+  },
+}
+
+export function normalizeNoiseOperator(input: GeometryOperator | GeometryDefinition): GeometryNoiseOperator {
+  return {
+    kind: 'noise',
+    seed: integer(input.seed ?? DEFAULT_SEED, '/seed', -0x8000_0000, 0x7fff_ffff),
+    frequency: positive(input.frequency ?? DEFAULT_FREQUENCY, '/frequency'),
+    strength: nonNegative(input.strength ?? DEFAULT_STRENGTH, '/strength'),
+    octaves: integer(input.octaves ?? DEFAULT_OCTAVES, '/octaves', 1, MAX_NOISE_OCTAVES),
+    lacunarity: positive(input.lacunarity ?? DEFAULT_LACUNARITY, '/lacunarity'),
+    persistence: bounded(input.persistence ?? DEFAULT_PERSISTENCE, '/persistence', 0, 1),
+    offset: vec3(input.offset ?? [0, 0, 0], '/offset'),
+  }
+}
+
+export function applyNoiseOperator(
+  source: GeometryMesh,
+  input: GeometryOperator | GeometryDefinition,
+  finalizeDraft: (mesh: GeometryMeshDraft) => GeometryMesh,
+): GeometryMeshDraft {
+  const operator = normalizeNoiseOperator(input)
+  const seed = operator.seed!
+  const frequency = operator.frequency!
+  const strength = operator.strength!
+  const octaves = operator.octaves!
+  const lacunarity = operator.lacunarity!
+  const persistence = operator.persistence!
+  const offset = operator.offset!
+
+  if (strength === 0) return cloneMeshWithoutBounds(source)
+
+  // Surface displacement needs a stable direction per vertex. Existing authored
+  // normals are preferred; meshes without normals receive deterministic smooth
+  // normals before deformation. Normals are regenerated again afterwards.
+  const sourceWithNormals = source.normals
+    ? source
+    : finalizeDraft(generateNormals(cloneMeshWithoutBounds(source), { mode: 'smooth', creaseAngle: Math.PI }))
+
+  const positions = new Float32Array(sourceWithNormals.positions.length)
+  for (let index = 0; index < sourceWithNormals.positions.length; index += 3) {
+    const px = sourceWithNormals.positions[index]!
+    const py = sourceWithNormals.positions[index + 1]!
+    const pz = sourceWithNormals.positions[index + 2]!
+    const nx = sourceWithNormals.normals![index]!
+    const ny = sourceWithNormals.normals![index + 1]!
+    const nz = sourceWithNormals.normals![index + 2]!
+    const sx = px * frequency + offset[0]
+    const sy = py * frequency + offset[1]
+    const sz = pz * frequency + offset[2]
+    if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(sz)) {
+      parameterError('/frequency', 'frequency and offset must keep sampled noise coordinates finite for the source geometry.')
+    }
+    const displacement = fbm3(sx, sy, sz, seed, octaves, lacunarity, persistence) * strength
+    positions[index] = px + nx * displacement
+    positions[index + 1] = py + ny * displacement
+    positions[index + 2] = pz + nz * displacement
+  }
+
+  const deformed: GeometryMeshDraft = {
+    positions,
+    indices: sourceWithNormals.indices,
+    ...(sourceWithNormals.uvs ? { uvs: sourceWithNormals.uvs } : {}),
+    ...(sourceWithNormals.colors ? { colors: sourceWithNormals.colors } : {}),
+    ...(sourceWithNormals.groups ? { groups: sourceWithNormals.groups } : {}),
+  }
+
+  // Never retain stale surface attributes after displacement. Preserve the
+  // source's tangent capability when present; outer surface policy may still
+  // override normal/UV/tangent generation after this compiler returns.
+  let result = generateNormals(deformed, { mode: 'smooth', creaseAngle: Math.PI })
+  if (source.tangents && result.uvs) result = generateTangents(result)
+  return result
 }
 
 /** Deterministic normalized fBm built from small integer-hashed 3D value noise. */
@@ -149,7 +183,7 @@ function lattice(x: number, y: number, z: number, seed: number): number {
 function fade(value: number): number { return value * value * (3 - 2 * value) }
 function lerp(a: number, b: number, t: number): number { return a + (b - a) * t }
 
-function cloneMeshWithoutBounds(source: GeometryMeshDraft): GeometryMeshDraft {
+function cloneMeshWithoutBounds(source: GeometryMesh): GeometryMeshDraft {
   return {
     positions: source.positions,
     indices: source.indices,

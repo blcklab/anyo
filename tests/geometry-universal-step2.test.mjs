@@ -44,9 +44,9 @@ function meshSnapshot(mesh) {
   }
 }
 
-test('universal geometry step 2 registers one generic pipeline and the minimal operator set', () => {
+test('universal geometry step 2 pipeline keeps its original transform/taper/twist operator foundation', () => {
   assert.ok(BUILTIN_GEOMETRY_KIND_NAMES.includes('pipeline'))
-  assert.deepEqual([...BUILTIN_GEOMETRY_OPERATOR_NAMES], ['transform', 'taper', 'twist'])
+  assert.deepEqual([...BUILTIN_GEOMETRY_OPERATOR_NAMES].slice(0, 3), ['transform', 'taper', 'twist'])
   for (const semantic of ['tree', 'road', 'building', 'stair', 'cloud']) assert.ok(!BUILTIN_GEOMETRY_KIND_NAMES.includes(semantic))
 })
 

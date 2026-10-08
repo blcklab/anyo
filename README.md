@@ -442,3 +442,9 @@ The contract is deliberately provider-neutral. Astronomy, weather, time-of-day, 
 ```
 
 The built-in Step 2 operator set is intentionally small: `transform`, `taper`, and `twist`. Legacy nested forms use the same underlying algorithms. Operators compile to ordinary `GeometryMesh` values; Sekai64 does not know whether a mesh came from a primitive, loft/sweep, a legacy modifier chain, or the generic pipeline.
+
+### Universal geometry modifier set (rc.27)
+
+The generic pipeline now supports `transform`, `taper`, `twist`, `bend`, `mirror`, deterministic `noise`, baked-mesh `array`, and conservative `weld`. Existing nested bend/mirror/noise authoring remains compatible and shares the same implementation as the operator path.
+
+Use the `array` operator when repeated copies need to become one mesh for later deformation or welding. For large ordinary repetition, keep using Anyo's instance-array/resource path so geometry is shared instead of duplicated. `weld` preserves UV/normal/tangent/color seams by merging only attribute-identical vertices within tolerance.

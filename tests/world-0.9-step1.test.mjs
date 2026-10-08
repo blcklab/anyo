@@ -118,7 +118,7 @@ test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring add
       for (const name of [
         'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurve',
         'geometryBox', 'geometryRoundedBox', 'geometryPlane', 'geometrySphere', 'geometryCylinder', 'geometryCone', 'geometryCapsule', 'geometryDisc',
-        'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
+        'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryOperatorBend', 'geometryOperatorMirror', 'geometryOperatorNoise', 'geometryOperatorArray', 'geometryOperatorWeld', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
         'geometryBend', 'geometryTwist', 'geometryTaper', 'geometryUnion', 'geometrySubtract', 'geometryIntersect',
         'constructionWallOpening', 'constructionWall', 'constructionFloor', 'constructionCeiling', 'constructionPanel', 'constructionColumn',
         'constructionBeam', 'constructionStairs', 'constructionRailing', 'constructionTrim', 'constructionRoof', 'constructionDoorOpening',
