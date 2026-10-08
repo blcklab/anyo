@@ -25,7 +25,7 @@ const source = { kind: 'roundedBox', size: [1.5, 3, 1], radius: 0.08, segments: 
 
 test('universal geometry step 3 expands the generic operator vocabulary without semantic kinds', () => {
   assert.deepEqual([...BUILTIN_GEOMETRY_OPERATOR_NAMES], [
-    'transform', 'taper', 'twist', 'bend', 'mirror', 'noise', 'array', 'weld',
+    'transform', 'taper', 'twist', 'bend', 'mirror', 'noise', 'array', 'weld', 'displace',
   ])
 })
 

@@ -4,7 +4,7 @@ import type { ArchitectureDefinition, ArchitectureAssembly, ArchitectureTransfor
 import { lowerArchitecture } from '../geometry/architecture/index.js'
 import { layoutGeometryArray } from '../geometry/modifiers/index.js'
 import { layoutPathArray } from '../geometry/path-array/index.js'
-import type { CurveResourceMap, ProfileResourceMap, GeometryArrayDefinition, GeometryDefinition, PathArrayDefinition } from '../geometry/types/index.js'
+import type { CurveResourceMap, ProfileResourceMap, ScalarFieldResourceMap, GeometryArrayDefinition, GeometryDefinition, PathArrayDefinition } from '../geometry/types/index.js'
 import { hashGeometryDefinition } from '../geometry/core/hashGeometry.js'
 import { hashResourceValue } from './hash.js'
 import { ResourceGraph } from './graph.js'
@@ -45,6 +45,7 @@ export interface ResourceGraphBuilderOptions {
   geometryCompiler?: GeometryCompiler
   curves?: CurveResourceMap
   profiles?: ProfileResourceMap
+  fields?: ScalarFieldResourceMap
 }
 
 export class ResourceGraphBuilder {
@@ -53,13 +54,15 @@ export class ResourceGraphBuilder {
   readonly #geometryCompiler: GeometryCompiler
   readonly #curves: CurveResourceMap
   readonly #profiles: ProfileResourceMap
+  readonly #fields: ScalarFieldResourceMap
   #instanceCount = 0
 
   constructor(options: ResourceGraphBuilderOptions = {}) {
     this.#limits = resolveResourceGraphLimits(options.limits)
     this.#curves = options.curves ?? Object.freeze({})
     this.#profiles = options.profiles ?? Object.freeze({})
-    this.#geometryCompiler = options.geometryCompiler ?? new GeometryCompiler({ curves: this.#curves, profiles: this.#profiles })
+    this.#fields = options.fields ?? Object.freeze({})
+    this.#geometryCompiler = options.geometryCompiler ?? new GeometryCompiler({ curves: this.#curves, profiles: this.#profiles, fields: this.#fields })
   }
 
   get size(): number { return this.#nodes.size }

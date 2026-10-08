@@ -504,3 +504,31 @@ World 0.9 can declare top-level `profiles` and reuse one canonical 2D contour de
 ```
 
 Profiles preserve the existing canonical winding, hole topology, and compatibility rules; there is no second profile engine. They are authoring resources only and never become renderer nodes. Native Object 0.1 imports namespace local profile IDs and rewrite dependent geometry references. Construction trim remains inline-only in this milestone because its architecture lowering path does not receive profile-resource context.
+### Generic scalar fields (rc.31)
+
+World 0.9 can declare reusable renderer-neutral scalar fields and use them to drive generic geometry operations. A field is only mathematical authoring data: it maps a 3D position to one scalar value and does not represent terrain, clouds, vegetation, or any other semantic object.
+
+```json
+{
+  "fields": {
+    "rock-shape": {
+      "kind": "multiply",
+      "fields": [
+        { "kind": "noise", "seed": 42, "frequency": 1.5, "octaves": 3 },
+        { "kind": "radial", "center": [0, 0, 0], "radius": 4 }
+      ]
+    }
+  },
+  "geometries": {
+    "rock": {
+      "kind": "pipeline",
+      "source": { "kind": "sphere", "radius": 1 },
+      "modifiers": [
+        { "kind": "displace", "field": "rock-shape", "strength": 0.25, "direction": "normal" }
+      ]
+    }
+  }
+}
+```
+
+The field vocabulary is deliberately small and composable: `constant`, `gradient`, `distance`, `radial`, deterministic `noise`, `add`, `multiply`, `min`, `max`, `invert`, and `clamp`. Named references resolve to canonical content before geometry hashing, so resource names are not geometry identity. Fields remain authoring-only and do not create ResourceGraph or renderer nodes. Native Object 0.1 imports namespace field IDs and nested references automatically.

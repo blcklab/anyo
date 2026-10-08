@@ -214,3 +214,45 @@ Profile references resolve to normalized contour content before geometry hashing
 Profiles themselves are not ResourceGraph or renderer resources. Sekai64 continues to receive only finalized `GeometryMesh` data. Native Object 0.1 imports namespace profiles and rewrite every Step 6 profile-reference site. World 0.8 remains unchanged.
 
 Construction trim remains inline-profile-only in Step 6 because the architecture lowering boundary does not carry reusable-profile context. Step 7 owns generic scalar fields; it must build on the rc.30 canonical geometry/resource contracts rather than expanding Step 6 into field/displacement semantics.
+## Step 7 — generic scalar fields
+
+rc.31 adds a small renderer-neutral scalar-field language. A field answers only one question: given a local 3D position, what scalar value does this definition produce? This keeps procedural variation independent from domain concepts such as terrain, rocks, trees, water, or clouds.
+
+```json
+{
+  "fields": {
+    "shape": {
+      "kind": "multiply",
+      "fields": [
+        { "kind": "noise", "seed": 42, "frequency": 1.5, "octaves": 3 },
+        { "kind": "radial", "center": [0, 0, 0], "radius": 4 }
+      ]
+    }
+  },
+  "geometries": {
+    "organic-form": {
+      "kind": "pipeline",
+      "source": { "kind": "sphere", "radius": 1 },
+      "modifiers": [
+        { "kind": "displace", "field": "shape", "strength": 0.25, "direction": "normal" }
+      ]
+    }
+  }
+}
+```
+
+### Field vocabulary
+
+The built-in vocabulary is intentionally compact: `constant`, `gradient`, `distance`, `radial`, deterministic `noise`, the binary/n-ary composition operators `add`, `multiply`, `min`, and `max`, plus unary `invert` and `clamp`. Noise reuses Anyo's established deterministic 3D fBm sampler rather than introducing another procedural-noise implementation.
+
+### Displacement integration
+
+`displace` is a normal source-free geometry operator. It evaluates a normalized field at each source vertex and applies the result times `strength` along the vertex normal or the local X/Y/Z axis. Normal-directed displacement generates source normals when needed, and changed geometry regenerates normals/tangents through the existing mesh policies. The result remains a normal finalized `GeometryMesh`.
+
+### Identity and runtime boundary
+
+Named and nested field references resolve to canonical field content before dependent geometry is hashed. Equivalent inline and named fields can therefore produce the same geometry identity; changing field content changes that identity. Cycles and excessive definition depth/node counts fail before mesh execution.
+
+Fields themselves are authoring resources, not ResourceGraph nodes. Sekai64 has no field concept. Native Object 0.1 imports namespace field IDs and rewrite both nested field references and `displace.field` use-sites. World 0.8 remains unchanged.
+
+Step 8 owns namespaced geometry-extension/provider contracts. It must consume the canonical geometry/field contracts rather than making arbitrary world JSON execute code.

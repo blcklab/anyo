@@ -7,11 +7,12 @@ import { mirrorGeometryOperator } from '../modifiers/mirror.js'
 import { noiseGeometryOperator } from '../modifiers/noise.js'
 import { arrayGeometryOperator } from '../modifiers/array.js'
 import { weldGeometryOperator } from '../modifiers/weld.js'
+import { displaceGeometryOperator } from '../modifiers/displace.js'
 
 export { pipelineGeometryKind } from './pipeline.js'
 export {
   transformGeometryOperator, taperGeometryOperator, twistGeometryOperator, bendGeometryOperator,
-  mirrorGeometryOperator, noiseGeometryOperator, arrayGeometryOperator, weldGeometryOperator,
+  mirrorGeometryOperator, noiseGeometryOperator, arrayGeometryOperator, weldGeometryOperator, displaceGeometryOperator,
 }
 
 export const BUILTIN_GEOMETRY_OPERATORS: readonly GeometryOperatorCompiler[] = Object.freeze([
@@ -23,6 +24,7 @@ export const BUILTIN_GEOMETRY_OPERATORS: readonly GeometryOperatorCompiler[] = O
   noiseGeometryOperator,
   arrayGeometryOperator,
   weldGeometryOperator,
+  displaceGeometryOperator,
 ])
 
 export const BUILTIN_GEOMETRY_OPERATOR_NAMES: readonly string[] = Object.freeze(BUILTIN_GEOMETRY_OPERATORS.map(operator => operator.kind))

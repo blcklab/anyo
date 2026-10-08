@@ -1,3 +1,16 @@
+## 0.11.0-rc.31
+
+### Universal Geometry Step 7 — generic scalar fields
+
+- Add reusable top-level World 0.9 `fields` resources implementing renderer-neutral `position -> value` math: `constant`, `gradient`, `distance`, `radial`, deterministic `noise`, `add`, `multiply`, `min`, `max`, `invert`, and `clamp`.
+- Resolve named and nested field references to canonical field content before geometry hashing, detect cyclic references, and enforce the existing geometry definition depth/node safety limits.
+- Add the generic source-free `displace` operator, driven by any inline or reusable field, with displacement along vertex normals or the local X/Y/Z axes.
+- Reuse Anyo's established deterministic 3D fBm sampler for field noise; no second noise engine or renderer-specific procedural system is introduced.
+- Keep fields authoring-only: they do not become ResourceGraph nodes, and Sekai64 continues to receive ordinary finalized `GeometryMesh` data only.
+- Namespace reusable fields across native Object 0.1 imports and rewrite nested field references plus `displace.field` use-sites during instantiation.
+- Keep World 0.8 byte-identical, add no runtime dependencies, and leave `@blcklab/sekai64@0.8.0-rc.56` unchanged.
+- Namespaced geometry extensions remain intentionally deferred to Universal Geometry Step 8.
+
 ## 0.11.0-rc.30
 
 ### Universal Geometry Step 6 — reusable profile resources

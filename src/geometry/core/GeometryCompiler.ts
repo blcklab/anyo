@@ -1,6 +1,7 @@
 import type {
   CurveResourceMap,
   ProfileResourceMap,
+  ScalarFieldResourceMap,
   GeometryDefinition,
   GeometryMesh,
   GeometryMeshDraft,
@@ -20,10 +21,14 @@ import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfac
 import { applyVertexColorPolicy, normalizeVertexColorPolicy } from '../attributes/vertexColor.js'
 import { normalizeCurve } from '../curves/normalizeCurve.js'
 import { normalizeProfile } from '../profiles/normalizeProfile.js'
+import { normalizeScalarField } from '../fields/normalizeField.js'
+import type { NormalizedScalarFieldDefinition } from '../fields/types.js'
 import type { NormalizedCurveDefinition } from '../curves/types.js'
 
 export interface GeometryOperatorContext {
   readonly limits: GeometrySafetyLimits
+  /** Resolve an inline or named scalar field into canonical mathematical content. */
+  resolveField(input: unknown, path?: string): NormalizedScalarFieldDefinition
   /** One-based modifier depth used for safety-limit enforcement. */
   readonly modifierDepth: number
   finalizeDraft(mesh: GeometryMeshDraft): GeometryMesh
@@ -45,6 +50,8 @@ export interface GeometryBuildContext {
   resolveCurve(input: unknown, path?: string): NormalizedCurveDefinition
   /** Resolve an inline or named profile resource into canonical winding/topology. */
   resolveProfile(input: unknown, path?: string): import('../profiles/types.js').NormalizedProfile
+  /** Resolve an inline or named scalar field into canonical mathematical content. */
+  resolveField(input: unknown, path?: string): NormalizedScalarFieldDefinition
   /** Compile a nested legacy modifier child and count the nesting boundary. */
   normalizeChild(definition: unknown, modifierKind: string): GeometryDefinition
   compileChild(definition: unknown, modifierKind: string): GeometryMesh
@@ -87,6 +94,8 @@ export interface GeometryCompilerOptions {
   curves?: CurveResourceMap
   /** Optional named reusable profile resources available to extrude/sweep/loft. */
   profiles?: ProfileResourceMap
+  /** Optional named reusable scalar-field resources available to geometry operators. */
+  fields?: ScalarFieldResourceMap
 }
 
 export class GeometryCompiler {
@@ -96,6 +105,7 @@ export class GeometryCompiler {
   readonly #limits: GeometrySafetyLimits
   readonly #curves: CurveResourceMap
   readonly #profiles: ProfileResourceMap
+  readonly #fields: ScalarFieldResourceMap
 
   constructor(options: GeometryCompilerOptions = {}) {
     this.#limits = resolveGeometrySafetyLimits(options.limits)
@@ -105,6 +115,10 @@ export class GeometryCompiler {
     })))
     this.#profiles = Object.freeze(Object.fromEntries(Object.entries(options.profiles ?? {}).map(([id, definition]) => {
       if (!id.trim()) throw new Error('Geometry profile resource ids must be non-empty strings.')
+      return [id, structuredClone(definition)]
+    })))
+    this.#fields = Object.freeze(Object.fromEntries(Object.entries(options.fields ?? {}).map(([id, definition]) => {
+      if (!id.trim()) throw new Error('Geometry scalar-field resource ids must be non-empty strings.')
       return [id, structuredClone(definition)]
     })))
     this.#cache = options.cache === false ? undefined : (options.cache ?? new GeometryCache({ limits: this.#limits }))
@@ -212,6 +226,7 @@ export class GeometryCompiler {
       modifierDepth,
       resolveCurve: (input, path = '/path') => normalizeCurve(input, { limits: this.#limits, path, curves: this.#curves }),
       resolveProfile: (input, path = '/profile') => normalizeProfile(input, { limits: this.#limits, path, profiles: this.#profiles }),
+      resolveField: (input, path = '/field') => normalizeScalarField(input, { limits: this.#limits, path, fields: this.#fields }),
       booleanDepth,
       normalizeChild: (definition, modifierKind) => this.#normalizeInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),
       compileChild: (definition, modifierKind) => this.#compileInternal(definition, this.#nextModifierDepth(modifierDepth, modifierKind), booleanDepth),
@@ -229,6 +244,7 @@ export class GeometryCompiler {
     return {
       limits: this.#limits,
       modifierDepth,
+      resolveField: (input, path = '/field') => normalizeScalarField(input, { limits: this.#limits, path, fields: this.#fields }),
       finalizeDraft: (mesh) => finalizeGeometryMesh(mesh, { limits: this.#limits }),
     }
   }

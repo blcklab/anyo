@@ -136,6 +136,13 @@
         "$ref": "#/$defs/geometryProfile"
       }
     },
+    "fields": {
+      "type": "object",
+      "description": "Named reusable renderer-neutral scalar-field resources. Geometry operators may reference these ids instead of repeating inline field definitions.",
+      "additionalProperties": {
+        "$ref": "#/$defs/geometryScalarFieldDefinition"
+      }
+    },
     "geometries": {
       "type": "object",
       "additionalProperties": {
@@ -5581,6 +5588,111 @@
         }
       ]
     },
+    "geometryScalarFieldDefinition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "constant" },
+            "value": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "gradient" },
+            "origin": { "$ref": "#/$defs/vec3" },
+            "direction": { "$ref": "#/$defs/vec3" },
+            "scale": { "type": "number" },
+            "offset": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "distance" },
+            "point": { "$ref": "#/$defs/vec3" },
+            "scale": { "type": "number" },
+            "offset": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "radial" },
+            "center": { "$ref": "#/$defs/vec3" },
+            "radius": { "type": "number", "exclusiveMinimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "noise" },
+            "seed": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+            "frequency": { "type": "number", "exclusiveMinimum": 0 },
+            "octaves": { "type": "integer", "minimum": 1, "maximum": 16 },
+            "lacunarity": { "type": "number", "exclusiveMinimum": 0 },
+            "persistence": { "type": "number", "minimum": 0, "maximum": 1 },
+            "offset": { "$ref": "#/$defs/vec3" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "fields"],
+          "properties": {
+            "kind": { "enum": ["add", "multiply", "min", "max"] },
+            "fields": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "$ref": "#/$defs/geometryScalarFieldInput" }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "field"],
+          "properties": {
+            "kind": { "const": "invert" },
+            "field": { "$ref": "#/$defs/geometryScalarFieldInput" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "field"],
+          "properties": {
+            "kind": { "const": "clamp" },
+            "field": { "$ref": "#/$defs/geometryScalarFieldInput" },
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "geometryScalarFieldInput": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reference to a named top-level scalar-field resource."
+        },
+        {
+          "$ref": "#/$defs/geometryScalarFieldDefinition"
+        }
+      ]
+    },
     "latheProfile": {
       "type": "array",
       "minItems": 2,
@@ -6599,6 +6711,9 @@
           "$ref": "#/$defs/geometryOperatorNoise"
         },
         {
+          "$ref": "#/$defs/geometryOperatorDisplace"
+        },
+        {
           "$ref": "#/$defs/geometryOperatorArray"
         },
         {
@@ -6790,6 +6905,33 @@
         },
         "offset": {
           "$ref": "#/$defs/vec3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryOperatorDisplace": {
+      "type": "object",
+      "required": [
+        "kind",
+        "field"
+      ],
+      "properties": {
+        "kind": {
+          "const": "displace"
+        },
+        "field": {
+          "$ref": "#/$defs/geometryScalarFieldInput"
+        },
+        "strength": {
+          "type": "number"
+        },
+        "direction": {
+          "enum": [
+            "normal",
+            "x",
+            "y",
+            "z"
+          ]
         }
       },
       "additionalProperties": false

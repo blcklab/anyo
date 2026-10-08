@@ -10,3 +10,5 @@ export { transformGeometryMesh, mergeGeometryMeshes } from './meshTransform.js'
 export type { GeometryLocalTransform } from './meshTransform.js'
 
 export { weldGeometryOperator, normalizeWeldOperator, applyWeldOperator } from './weld.js'
+
+export { displaceGeometryOperator, normalizeDisplaceOperator, applyDisplaceOperator } from './displace.js'

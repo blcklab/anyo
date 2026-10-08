@@ -8,6 +8,7 @@ import { compositionCatalogWithImports, inspectAnyoImportMap, inspectImportCompo
 import { normalizeVertexColorDefinition } from '../geometry/attributes/vertexColor.js'
 import { normalizeProfile } from '../geometry/profiles/index.js'
 import { normalizeCurve } from '../geometry/curves/index.js'
+import { normalizeScalarField } from '../geometry/fields/index.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -955,6 +956,23 @@ export function inspectWorldDocument(document: WorldDocument, options: WorldVali
         const profileIssues = (error as { issues?: Array<{ code?: string; path?: string; message?: string; suggestion?: string }> }).issues ?? []
         if (profileIssues.length === 0) issue(issues, 'PROFILE_INVALID', path, String(error))
         else for (const profileIssue of profileIssues) issue(issues, profileIssue.code ?? 'PROFILE_INVALID', profileIssue.path ?? path, profileIssue.message ?? 'Invalid profile definition.', profileIssue.suggestion)
+      }
+    }
+  }
+
+  if (!version.startsWith('0.9') && document.fields !== undefined) {
+    issue(issues, 'FIELDS_REQUIRE_0_9', '/fields', 'Top-level reusable scalar-field resources require Anyo world schema 0.9 or newer.')
+  }
+  if (version.startsWith('0.9')) {
+    for (const [fieldId, field] of Object.entries(document.fields ?? {})) {
+      const path = `/fields/${fieldId}`
+      if (!fieldId.trim()) issue(issues, 'FIELD_ID_REQUIRED', path, 'Scalar-field ids must be non-empty strings.')
+      try {
+        normalizeScalarField(field, { path, fields: document.fields })
+      } catch (error) {
+        const fieldIssues = (error as { issues?: Array<{ code?: string; path?: string; message?: string; suggestion?: string }> }).issues ?? []
+        if (fieldIssues.length === 0) issue(issues, 'FIELD_INVALID', path, String(error))
+        else for (const fieldIssue of fieldIssues) issue(issues, fieldIssue.code ?? 'FIELD_INVALID', fieldIssue.path ?? path, fieldIssue.message ?? 'Invalid scalar-field definition.', fieldIssue.suggestion)
       }
     }
   }

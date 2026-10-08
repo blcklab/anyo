@@ -152,6 +152,7 @@ test('World 0.9 pipeline schema accepts the complete universal Step 3 operator v
     { kind: 'bend', axis: 'y', direction: 'x', angle: 0.75 },
     { kind: 'mirror', axis: 'x', offset: 1, includeOriginal: false },
     { kind: 'noise', seed: 42, frequency: 1.5, strength: 0.1, octaves: 3, lacunarity: 2, persistence: 0.5, offset: [0, 0, 0] },
+    { kind: 'displace', field: { kind: 'noise', seed: 7, frequency: 2 }, strength: 0.2, direction: 'normal' },
     { kind: 'array', count: 4, offset: [1, 0, 0], rotationOffset: [0, 0.1, 0], scale: [1, 1, 1] },
     { kind: 'weld', tolerance: 0.000001 },
   ]
@@ -164,6 +165,8 @@ test('World 0.9 pipeline schema accepts the complete universal Step 3 operator v
     { kind: 'mirror', includeOriginal: 'yes' },
     { kind: 'noise', octaves: 17 },
     { kind: 'noise', persistence: 1.1 },
+    { kind: 'displace', strength: 0.1 },
+    { kind: 'displace', field: { kind: 'constant', value: 1 }, direction: 'q' },
     { kind: 'array', count: 0, offset: [1, 0, 0] },
     { kind: 'array', count: 2 },
     { kind: 'array', count: 2, offset: [1, 0, 0], scale: [1, 0, 1] },

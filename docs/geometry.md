@@ -663,3 +663,41 @@ World 0.9 may move a 2D contour definition into the top-level `profiles` map. `e
 A named profile is resolved through the same `normalizeProfile()` path as inline authoring. Canonical point order, winding, holes, self-intersection rules, and topology compatibility remain authoritative. Resolution happens before hashing/cache lookup, so identical profile content under different IDs produces identical dependent geometry identity.
 
 Profiles do not create ResourceGraph nodes and do not add renderer semantics. Imported Object 0.1 documents namespace local profile IDs and rewrite extrude/sweep/profile-station/loft references. Architecture `constructionTrim.profile` remains inline-only for rc.30; broadening architecture lowering to resource-aware profile context is intentionally outside Step 6.
+## Generic scalar fields (rc.31)
+
+World 0.9 may define reusable scalar fields under the top-level `fields` map. A `ScalarFieldDefinition` is renderer-neutral mathematical data that evaluates `position -> value`.
+
+Supported kinds are `constant`, `gradient`, `distance`, `radial`, deterministic `noise`, `add`, `multiply`, `min`, `max`, `invert`, and `clamp`. Composite fields may contain inline child definitions or string references to other named fields.
+
+```json
+{
+  "fields": {
+    "ridge": {
+      "kind": "clamp",
+      "min": 0,
+      "max": 1,
+      "field": {
+        "kind": "add",
+        "fields": [
+          { "kind": "noise", "seed": 17, "frequency": 2, "octaves": 4 },
+          { "kind": "gradient", "direction": [0, 1, 0], "scale": 0.15 }
+        ]
+      }
+    }
+  }
+}
+```
+
+The generic `displace` operator consumes any scalar field:
+
+```json
+{
+  "kind": "pipeline",
+  "source": { "kind": "sphere", "radius": 1 },
+  "modifiers": [
+    { "kind": "displace", "field": "ridge", "strength": 0.2, "direction": "normal" }
+  ]
+}
+```
+
+`direction` may be `normal`, `x`, `y`, or `z`. Field references are resolved and normalized before pipeline hashing, so equivalent inline/named field content produces equivalent geometry identity. Reusable fields do not become ResourceGraph nodes or renderer resources. Object 0.1 imports namespace field IDs and rewrite nested references and displacement consumers.

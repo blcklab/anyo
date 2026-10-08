@@ -11,7 +11,7 @@ import type {
   ResolvedWorldDocumentGraph,
   WorldDocument,
 } from '../core/types.js'
-import type { GeometryDefinition } from '../geometry/types/index.js'
+import type { GeometryDefinition, ScalarFieldDefinition } from '../geometry/types/index.js'
 import { AnyoImportError } from './imports.js'
 import { validateWorldDocument } from '../schema/validate.js'
 import { mergeCompositionParameters } from '../schema/compositionParameters.js'
@@ -27,7 +27,7 @@ const MATERIAL_TEXTURE_FIELDS = [
   'lightMapTexture',
 ] as const
 
-function resourceId(namespace: string, kind: 'asset' | 'material' | 'curve' | 'profile' | 'geometry' | 'composition', id: string): string {
+function resourceId(namespace: string, kind: 'asset' | 'material' | 'curve' | 'profile' | 'field' | 'geometry' | 'composition', id: string): string {
   return `${namespace}::${kind}::${id}`
 }
 
@@ -168,6 +168,24 @@ function rewriteMaterial(material: MaterialDefinition, node: ResolvedAnyoImport)
 }
 
 
+
+function rewriteScalarField(definition: ScalarFieldDefinition, node: ResolvedAnyoImport): ScalarFieldDefinition {
+  const output = structuredClone(definition) as ScalarFieldDefinition
+  if ((output.kind === 'invert' || output.kind === 'clamp') && typeof output.field === 'string') {
+    output.field = localReference(node.document.fields, output.field, (id) => resourceId(node.namespace, 'field', id)) ?? output.field
+  } else if ((output.kind === 'invert' || output.kind === 'clamp') && output.field && typeof output.field === 'object' && !Array.isArray(output.field)) {
+    output.field = rewriteScalarField(output.field as ScalarFieldDefinition, node)
+  }
+  if ((output.kind === 'add' || output.kind === 'multiply' || output.kind === 'min' || output.kind === 'max') && Array.isArray(output.fields)) {
+    output.fields = output.fields.map((field) => {
+      if (typeof field === 'string') return localReference(node.document.fields, field, (id) => resourceId(node.namespace, 'field', id)) ?? field
+      if (field && typeof field === 'object' && !Array.isArray(field)) return rewriteScalarField(field as ScalarFieldDefinition, node)
+      return field
+    })
+  }
+  return output
+}
+
 function rewriteGeometry(definition: GeometryDefinition, node: ResolvedAnyoImport): GeometryDefinition {
   const output = structuredClone(definition)
   if (output.kind === 'sweep' && typeof output.path === 'string') {
@@ -193,6 +211,17 @@ function rewriteGeometry(definition: GeometryDefinition, node: ResolvedAnyoImpor
       if (typeof rewritten.profile === 'string') rewritten.profile = localReference(node.document.profiles, rewritten.profile, (id) => resourceId(node.namespace, 'profile', id)) ?? rewritten.profile
       return rewritten
     }) as GeometryDefinition['sections']
+  }
+  if (output.kind === 'pipeline' && Array.isArray(output.modifiers)) {
+    output.modifiers = output.modifiers.map((modifier) => {
+      if (!modifier || typeof modifier !== 'object' || Array.isArray(modifier)) return modifier
+      const rewritten = structuredClone(modifier) as Record<string, unknown>
+      if (rewritten.kind === 'displace') {
+        if (typeof rewritten.field === 'string') rewritten.field = localReference(node.document.fields, rewritten.field, (id) => resourceId(node.namespace, 'field', id)) ?? rewritten.field
+        else if (rewritten.field && typeof rewritten.field === 'object' && !Array.isArray(rewritten.field)) rewritten.field = rewriteScalarField(rewritten.field as ScalarFieldDefinition, node)
+      }
+      return rewritten
+    }) as GeometryDefinition['modifiers']
   }
   for (const field of ['source', 'left', 'right'] as const) {
     const child = output[field]
@@ -241,7 +270,7 @@ function mergeGenerated<T>(target: Record<string, T>, id: string, value: T, sour
 
 function instantiateNode(
   node: ResolvedAnyoImport,
-  output: Required<Pick<WorldDocument, 'assets' | 'materials' | 'curves' | 'profiles' | 'geometries' | 'compositions'>>,
+  output: Required<Pick<WorldDocument, 'assets' | 'materials' | 'curves' | 'profiles' | 'fields' | 'geometries' | 'compositions'>>,
 ): void {
   for (const alias of Object.keys(node.imports).sort()) instantiateNode(node.imports[alias] as ResolvedAnyoImport, output)
 
@@ -256,6 +285,10 @@ function instantiateNode(
   }
   for (const id of Object.keys(node.document.profiles ?? {}).sort()) {
     mergeGenerated(output.profiles, resourceId(node.namespace, 'profile', id), structuredClone((node.document.profiles as NonNullable<AnyoObjectDocument['profiles']>)[id]), node.sourceUrl)
+  }
+  for (const id of Object.keys(node.document.fields ?? {}).sort()) {
+    const field = (node.document.fields as NonNullable<AnyoObjectDocument['fields']>)[id] as ScalarFieldDefinition
+    mergeGenerated(output.fields, resourceId(node.namespace, 'field', id), rewriteScalarField(field, node), node.sourceUrl)
   }
   for (const id of Object.keys(node.document.geometries ?? {}).sort()) {
     mergeGenerated(output.geometries, resourceId(node.namespace, 'geometry', id), rewriteGeometry((node.document.geometries as NonNullable<AnyoObjectDocument['geometries']>)[id] as GeometryDefinition, node), node.sourceUrl)
@@ -331,6 +364,7 @@ export function instantiateResolvedWorldDocument(graph: ResolvedWorldDocumentGra
   output.materials = structuredClone(output.materials ?? {})
   output.curves = structuredClone(output.curves ?? {})
   output.profiles = structuredClone(output.profiles ?? {})
+  output.fields = structuredClone(output.fields ?? {})
   output.geometries = structuredClone(output.geometries ?? {})
   output.compositions = structuredClone(output.compositions ?? {})
 
@@ -339,6 +373,7 @@ export function instantiateResolvedWorldDocument(graph: ResolvedWorldDocumentGra
     materials: output.materials,
     curves: output.curves,
     profiles: output.profiles,
+    fields: output.fields,
     geometries: output.geometries,
     compositions: output.compositions,
   }

@@ -1,4 +1,4 @@
-import type { CurveDefinition, GeometryDefinition, ProfileDefinition } from '../geometry/types/index.js'
+import type { CurveDefinition, GeometryDefinition, ProfileDefinition, ScalarFieldDefinition } from '../geometry/types/index.js'
 import type { ArchitectureDefinition } from '../geometry/architecture/types.js'
 import type { ResourceGraph } from '../resources/graph.js'
 export type Vec2 = readonly [number, number]
@@ -1473,6 +1473,7 @@ export interface AnyoObjectDocument {
   materials?: Record<string, MaterialDefinition>
   curves?: Record<string, CurveDefinition>
   profiles?: Record<string, ProfileDefinition>
+  fields?: Record<string, ScalarFieldDefinition>
   geometries?: Record<string, GeometryDefinition>
   compositions?: Record<string, CompositionDefinition>
   root: CompositionDefinition
@@ -1500,6 +1501,8 @@ export interface WorldDocument {
   curves?: Record<string, CurveDefinition>
   /** Reusable renderer-neutral 2D profile resources (world schema 0.9+). */
   profiles?: Record<string, ProfileDefinition>
+  /** Reusable renderer-neutral scalar-field resources (world schema 0.9+). */
+  fields?: Record<string, ScalarFieldDefinition>
   /** Reusable renderer-neutral procedural geometry definitions (world schema 0.8+). */
   geometries?: Record<string, GeometryDefinition>
   assets?: Record<string, AssetDefinition>

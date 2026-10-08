@@ -27,14 +27,14 @@ function defaultBaseSchema(version: '0.7' | '0.8' | '0.9' = '0.7'): Record<strin
     properties: {
       version: { type: 'string', pattern: `^${version.replace('.', '\\.')}(?:\\.|$)` },
       extensions: { type: 'object', additionalProperties: true },
-      ...(reusableCurves ? { curves: { type: 'object', additionalProperties: { $ref: '#/$defs/curveDefinition' } }, profiles: { type: 'object', additionalProperties: { $ref: '#/$defs/profileDefinition' } } } : {}),
+      ...(reusableCurves ? { curves: { type: 'object', additionalProperties: { $ref: '#/$defs/curveDefinition' } }, profiles: { type: 'object', additionalProperties: { $ref: '#/$defs/profileDefinition' } }, fields: { type: 'object', additionalProperties: { $ref: '#/$defs/fieldDefinition' } } } : {}),
       ...(procedural ? { geometries: { type: 'object', additionalProperties: { $ref: '#/$defs/geometryDefinition' } } } : {}),
       entities: { type: 'array', items: { $ref: '#/$defs/entity' } },
     },
     additionalProperties: false,
     $defs: {
       component: { type: 'object', required: ['type'], properties: { type: { type: 'string' } }, additionalProperties: true },
-      ...(reusableCurves ? { curveDefinition: { type: 'object', required: ['kind'], properties: { kind: { type: 'string' } }, additionalProperties: true }, profileDefinition: { type: 'object', required: ['points'], properties: { points: { type: 'array' } }, additionalProperties: true } } : {}),
+      ...(reusableCurves ? { curveDefinition: { type: 'object', required: ['kind'], properties: { kind: { type: 'string' } }, additionalProperties: true }, profileDefinition: { type: 'object', required: ['points'], properties: { points: { type: 'array' } }, additionalProperties: true }, fieldDefinition: { type: 'object', required: ['kind'], properties: { kind: { type: 'string' } }, additionalProperties: true } } : {}),
       ...(procedural ? { geometryDefinition: { type: 'object', required: ['kind'], properties: { kind: { type: 'string' } }, additionalProperties: true } } : {}),
       entity: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, ...(procedural ? { geometry: { oneOf: [{ type: 'string' }, { $ref: '#/$defs/geometryDefinition' }] }, construction: { type: 'object' }, materialBindings: { type: 'object', additionalProperties: { type: 'string' } }, collisionPolicy: { enum: ['none', 'bounds', 'semantic', 'parts'] } } : {}), components: { type: 'array', items: { $ref: '#/$defs/component' } } }, additionalProperties: true },
     },

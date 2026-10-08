@@ -90,6 +90,7 @@ test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring add
       delete copy.properties.imports
       delete copy.properties.curves
       delete copy.properties.profiles
+      delete copy.properties.fields
       delete copy.$defs.importDefinition
       // Step 10: standardized metadata + strict built-in authoring objects.
       copy.properties.metadata = structuredClone(schema08.properties.metadata)
@@ -118,9 +119,9 @@ test('World 0.9 keeps the 0.8 baseline outside explicitly approved authoring add
         delete definition.allOf
       }
       for (const name of [
-        'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'geometryProfileInput', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurveDefinition', 'geometryCurve', 'geometryMeshAttributes', 'geometryMeshGroup', 'geometryMesh',
+        'geometryQuality', 'geometryNormalPolicy', 'geometryUvPolicy', 'geometryProfile', 'geometryProfileInput', 'geometryScalarFieldDefinition', 'geometryScalarFieldInput', 'latheProfile', 'geometryExtrudeBevel', 'geometryCurveDefinition', 'geometryCurve', 'geometryMeshAttributes', 'geometryMeshGroup', 'geometryMesh',
         'geometryBox', 'geometryRoundedBox', 'geometryPlane', 'geometrySphere', 'geometryCylinder', 'geometryCone', 'geometryCapsule', 'geometryDisc',
-        'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryOperatorBend', 'geometryOperatorMirror', 'geometryOperatorNoise', 'geometryOperatorArray', 'geometryOperatorWeld', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
+        'geometryTorus', 'geometryPolygon', 'geometryLathe', 'geometryExtrude', 'geometrySweep', 'geometrySweepProfileStation', 'geometryLoftSection', 'geometryLoft', 'geometryOperator', 'geometryOperatorTransform', 'geometryOperatorTaper', 'geometryOperatorTwist', 'geometryOperatorBend', 'geometryOperatorMirror', 'geometryOperatorNoise', 'geometryOperatorDisplace', 'geometryOperatorArray', 'geometryOperatorWeld', 'geometryPipeline', 'geometryTransform', 'geometryMirror', 'geometryNoise',
         'geometryBend', 'geometryTwist', 'geometryTaper', 'geometryUnion', 'geometrySubtract', 'geometryIntersect',
         'constructionWallOpening', 'constructionWall', 'constructionFloor', 'constructionCeiling', 'constructionPanel', 'constructionColumn',
         'constructionBeam', 'constructionStairs', 'constructionRailing', 'constructionTrim', 'constructionRoof', 'constructionDoorOpening',

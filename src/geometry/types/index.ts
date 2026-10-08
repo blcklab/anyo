@@ -315,6 +315,43 @@ export type CurveInput = CurveDefinition | string
 
 export type GeometryAxis = 'x' | 'y' | 'z'
 
+export type ScalarFieldKind = 'constant' | 'gradient' | 'distance' | 'radial' | 'noise' | 'add' | 'multiply' | 'min' | 'max' | 'invert' | 'clamp'
+
+/** Renderer-neutral scalar field. Named references are resolved before geometry hashing. */
+export interface ScalarFieldDefinition {
+  [key: string]: GeometryJsonValue | ScalarFieldInput | ScalarFieldInput[] | undefined
+  kind: ScalarFieldKind
+  value?: number
+  origin?: [number, number, number]
+  direction?: [number, number, number]
+  scale?: number
+  offset?: number | [number, number, number]
+  point?: [number, number, number]
+  center?: [number, number, number]
+  radius?: number
+  seed?: number
+  frequency?: number
+  octaves?: number
+  lacunarity?: number
+  persistence?: number
+  fields?: ScalarFieldInput[]
+  field?: ScalarFieldInput
+  min?: number
+  max?: number
+}
+
+export type ScalarFieldResourceMap = Readonly<Record<string, ScalarFieldDefinition>>
+export type ScalarFieldInput = ScalarFieldDefinition | string
+
+export interface GeometryDisplaceOperator extends GeometryOperator {
+  kind: 'displace'
+  field: ScalarFieldInput
+  /** Scalar multiplier applied to the sampled field value, in local meters. */
+  strength?: number
+  /** Displacement direction. Defaults to the vertex normal. */
+  direction?: 'normal' | GeometryAxis
+}
+
 export interface LatheGeometryDefinition extends GeometryDefinition {
   /** Revolves an ordered [radius, height] profile around local +Y. */
   kind: 'lathe'
