@@ -511,3 +511,58 @@ Gradient coordinates are normalized from the compiled geometry's local bounds on
 Noise is deterministic. It reuses Anyo's existing integer-hashed geometry noise sampler, samples normalized local bounds, and never uses global random state. `strength: 0` yields the midpoint of the two colors and `strength: 1` allows the complete deterministic noise range between them.
 
 Vertex colors are generated at the geometry-compiler boundary. A colored source therefore keeps its channel through bend, twist, taper, geometry-noise deformation, transform, surface attribute regeneration, and CSG interpolation. If an outer geometry operator authors its own `vertexColor`, the outer policy intentionally regenerates colors from that operator's compiled local positions. This makes coloring deterministic and compositional without adding per-kind coloring implementations.
+
+## Final modeling completeness: variable-profile sweep and loft
+
+The final portfolio-freeze geometry pass adds two generic construction tools rather than semantic object types.
+
+### Variable-profile sweep
+
+Existing `sweep` authoring remains backward compatible. An optional `profileStations` array can change the cross-section along normalized path distance. Stations must begin at `at: 0`, end at `at: 1`, and preserve outer/hole point counts. Each station can replace the compatible profile and independently vary positive 2D scale, rotation, and offset.
+
+```json
+{
+  "kind": "sweep",
+  "profile": { "points": [[-0.18,-0.18],[0.18,-0.18],[0.18,0.18],[-0.18,0.18]] },
+  "path": {
+    "kind": "catmullRom",
+    "points": [[0,0,0],[0.2,1.6,0.1],[0.5,3.4,0.4],[0.9,5.2,0.7]],
+    "segments": 32
+  },
+  "profileStations": [
+    { "at": 0, "scale": [1,1] },
+    { "at": 0.55, "scale": [0.72,0.82], "rotation": 0.08, "offset": [0.04,0] },
+    { "at": 1, "scale": [0.24,0.3], "rotation": 0.18, "offset": [0.1,0.02] }
+  ],
+  "normals": { "mode": "smooth", "creaseAngle": 1.3 },
+  "tangents": true
+}
+```
+
+Closed sweeps require the first and last station state to match so the seam remains continuous. This keeps the feature useful for tubes, branches, roots, vines, cables, rails, horns, and similar forms without introducing domain-specific geometry kinds.
+
+### Loft
+
+`loft` skins compatible 2D profiles placed at strictly increasing local-Z section positions. Profiles may vary point positions while preserving topology. Per-section scale, rotation, and offset support controlled asymmetry without baking renderer-specific mesh data.
+
+```json
+{
+  "kind": "loft",
+  "sections": [
+    { "z": 0, "profile": { "points": [[-0.8,-0.7],[0.8,-0.7],[0.8,0.7],[-0.8,0.7]] } },
+    { "z": 1.5, "profile": { "points": [[-0.7,-0.6],[0.75,-0.5],[0.62,0.7],[-0.72,0.55]] }, "rotation": 0.07 },
+    { "z": 3.4, "profile": { "points": [[-0.48,-0.42],[0.54,-0.36],[0.45,0.5],[-0.5,0.4]] }, "offset": [0.12,0.04] },
+    { "z": 5, "profile": { "points": [[-0.2,-0.22],[0.24,-0.18],[0.2,0.24],[-0.22,0.18]] }, "offset": [0.24,0.06] }
+  ],
+  "cap": true,
+  "uv": { "mode": "generated", "metersPerTile": 1 },
+  "normals": { "mode": "smooth", "creaseAngle": 1.2 },
+  "tangents": true
+}
+```
+
+Loft intentionally follows the same local-Z construction convention as extrusion. Entity/geometry transforms can orient the result in a Y-up world. It emits `startCap`, `endCap`, `outerSide`, and `holeSide:N` semantic regions and reuses the existing surface policy pipeline.
+
+### Freeze boundary
+
+These operations are the final generic modeling additions for the portfolio freeze. They do not add `TreeSystem`, `RockSystem`, `FlowerSystem`, or other object-specific engines. A future Anyo change should reopen the geometry contract only when a missing capability blocks an entire class of forms and cannot reasonably be solved by composition, materials, imported assets, or world authoring.

@@ -26,7 +26,7 @@ function healthy(mesh) {
 function anchor(assembly, name) { return assembly.anchors.find(item => item.name === name) }
 
  test('S7 architecture stays a semantic lowering layer rather than new geometry kinds', () => {
-  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box','roundedBox','plane','sphere','cylinder','cone','capsule','disc','torus','polygon','lathe','extrude','sweep','transform','mirror','noise','bend','twist','taper','union','subtract','intersect'])
+  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box','roundedBox','plane','sphere','cylinder','cone','capsule','disc','torus','polygon','lathe','extrude','sweep','loft','transform','mirror','noise','bend','twist','taper','union','subtract','intersect'])
   for (const semantic of ['wall','floor','ceiling','stairs','railing','column','beam','roof','panel','trim']) assert.ok(!BUILTIN_GEOMETRY_KIND_NAMES.includes(semantic))
 })
 

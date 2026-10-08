@@ -20,7 +20,7 @@ function normal(mesh, offset=0){
 function len(v){ return Math.hypot(...v) }
 
  test('S6 registers transform and mirror as composable mesh modifiers without baking array into a geometry kind', () => {
-  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box','roundedBox','plane','sphere','cylinder','cone','capsule','disc','torus','polygon','lathe','extrude','sweep','transform','mirror','noise','bend','twist','taper','union','subtract','intersect'])
+  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box','roundedBox','plane','sphere','cylinder','cone','capsule','disc','torus','polygon','lathe','extrude','sweep','loft','transform','mirror','noise','bend','twist','taper','union','subtract','intersect'])
   assert.ok(!BUILTIN_GEOMETRY_KIND_NAMES.includes('array'))
 })
 

@@ -291,14 +291,49 @@ export interface GeometryArrayLayout {
   placements: readonly GeometryArrayPlacement[]
 }
 
+export interface SweepProfileStationDefinition {
+  [key: string]: GeometryJsonValue | ProfileDefinition | undefined
+  /** Normalized distance along the path from 0 to 1. First/last stations must be 0/1. */
+  at: number
+  /** Optional replacement profile. Topology must match the base sweep profile. */
+  profile?: ProfileDefinition
+  /** Positive local profile scale. Defaults to [1, 1]. */
+  scale?: [number, number]
+  /** Local profile rotation in radians. */
+  rotation?: number
+  /** Local profile offset in profile coordinates. */
+  offset?: [number, number]
+}
+
 export interface SweepGeometryDefinition extends GeometryDefinition {
   kind: 'sweep'
   profile: ProfileDefinition
   path: CurveDefinition
+  /** Optional profile morph/transform stations along normalized path distance. */
+  profileStations?: SweepProfileStationDefinition[]
   /** Cap open path ends. Closed paths are never capped. */
   cap?: boolean
   /** Preferred initial profile-up direction. Parallel inputs use a stable fallback axis. */
   up?: [number, number, number]
+}
+
+export interface LoftSectionDefinition {
+  [key: string]: GeometryJsonValue | ProfileDefinition | undefined
+  /** Section position along local +Z, in meters. Sections must be strictly increasing. */
+  z: number
+  profile: ProfileDefinition
+  /** Positive local profile scale. Defaults to [1, 1]. */
+  scale?: [number, number]
+  /** Rotation around local +Z, in radians. */
+  rotation?: number
+  /** Local XY profile offset. */
+  offset?: [number, number]
+}
+
+export interface LoftGeometryDefinition extends GeometryDefinition {
+  kind: 'loft'
+  sections: LoftSectionDefinition[]
+  cap?: boolean
 }
 
 export interface PathArrayDefinition {
@@ -350,6 +385,7 @@ export type BuiltinGeometryDefinition =
   | LatheGeometryDefinition
   | ExtrudeGeometryDefinition
   | SweepGeometryDefinition
+  | LoftGeometryDefinition
   | TransformGeometryDefinition
   | MirrorGeometryDefinition
   | NoiseGeometryDefinition

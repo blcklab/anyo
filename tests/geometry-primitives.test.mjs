@@ -38,8 +38,8 @@ function assertMeshHealthy(mesh, { allowZeroArea = false } = {}) {
   }
 }
 
-test('S2 precision primitives remain registered while S4 extrusion, S5 sweep, and S6 mesh modifiers are additive', () => {
-  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box', 'roundedBox', 'plane', 'sphere', 'cylinder', 'cone', 'capsule', 'disc', 'torus', 'polygon', 'lathe', 'extrude', 'sweep', 'transform', 'mirror', 'noise', 'bend', 'twist', 'taper', 'union', 'subtract', 'intersect'])
+test('S2 precision primitives remain registered while extrusion, sweep/loft, and modifiers stay additive', () => {
+  assert.deepEqual(BUILTIN_GEOMETRY_KIND_NAMES, ['box', 'roundedBox', 'plane', 'sphere', 'cylinder', 'cone', 'capsule', 'disc', 'torus', 'polygon', 'lathe', 'extrude', 'sweep', 'loft', 'transform', 'mirror', 'noise', 'bend', 'twist', 'taper', 'union', 'subtract', 'intersect'])
 })
 
 test('S2 quality presets resolve before cache hashing and explicit values win', () => {

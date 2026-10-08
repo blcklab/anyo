@@ -12,15 +12,16 @@ import { polygonGeometryKind } from './polygon.js'
 import { latheGeometryKind } from './lathe.js'
 import { extrudeGeometryKind } from '../extrusion/extrude.js'
 import { sweepGeometryKind } from '../sweep/sweep.js'
+import { loftGeometryKind } from '../loft/loft.js'
 import { bendGeometryKind, mirrorGeometryKind, noiseGeometryKind, taperGeometryKind, transformGeometryKind, twistGeometryKind } from '../modifiers/index.js'
 import { intersectGeometryKind, subtractGeometryKind, unionGeometryKind } from '../csg/index.js'
 
 export { GEOMETRY_QUALITY_DEFAULTS } from './quality.js'
-export { boxGeometryKind, roundedBoxGeometryKind, planeGeometryKind, sphereGeometryKind, cylinderGeometryKind, coneGeometryKind, capsuleGeometryKind, discGeometryKind, torusGeometryKind, polygonGeometryKind, latheGeometryKind, extrudeGeometryKind, sweepGeometryKind, transformGeometryKind, mirrorGeometryKind, noiseGeometryKind, bendGeometryKind, twistGeometryKind, taperGeometryKind, unionGeometryKind, subtractGeometryKind, intersectGeometryKind }
+export { boxGeometryKind, roundedBoxGeometryKind, planeGeometryKind, sphereGeometryKind, cylinderGeometryKind, coneGeometryKind, capsuleGeometryKind, discGeometryKind, torusGeometryKind, polygonGeometryKind, latheGeometryKind, extrudeGeometryKind, sweepGeometryKind, loftGeometryKind, transformGeometryKind, mirrorGeometryKind, noiseGeometryKind, bendGeometryKind, twistGeometryKind, taperGeometryKind, unionGeometryKind, subtractGeometryKind, intersectGeometryKind }
 
 export const BUILTIN_GEOMETRY_KINDS: readonly GeometryKindCompiler[] = Object.freeze([
   boxGeometryKind, roundedBoxGeometryKind, planeGeometryKind, sphereGeometryKind, cylinderGeometryKind,
-  coneGeometryKind, capsuleGeometryKind, discGeometryKind, torusGeometryKind, polygonGeometryKind, latheGeometryKind, extrudeGeometryKind, sweepGeometryKind,
+  coneGeometryKind, capsuleGeometryKind, discGeometryKind, torusGeometryKind, polygonGeometryKind, latheGeometryKind, extrudeGeometryKind, sweepGeometryKind, loftGeometryKind,
   transformGeometryKind, mirrorGeometryKind, noiseGeometryKind, bendGeometryKind, twistGeometryKind, taperGeometryKind, unionGeometryKind, subtractGeometryKind, intersectGeometryKind,
 ])
 

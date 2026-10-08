@@ -419,3 +419,7 @@ world.setEnvironmentRuntimeState({
 ```
 
 The contract is deliberately provider-neutral. Astronomy, weather, time-of-day, or game systems may produce these generic values externally; Anyo does not import or identify those providers. `resetEnvironmentRuntimeState()` restores the authored environment. Active runtime clouds are re-lit from the latest runtime sky sun direction/intensity.
+
+### Final modeling completeness freeze candidate
+
+`0.11.0-rc.24` adds generic multi-profile `loft` geometry and optional `sweep.profileStations`. Together with existing curves, extrusion/bevel, CSG, modifiers, generated UVs, tangents, PBR authoring, repeat variation, and composition reuse, these close the main procedural-organic authoring gap needed for portfolio worlds without adding tree/flower/rock-specific systems. Both features lower into the ordinary renderer-neutral geometry mesh contract; Sekai64 needs no special semantic knowledge.

@@ -1,24 +1,456 @@
 {
-  "box": {"kind":"box","size":[1,2,3],"quality":"high","normals":{"mode":"smooth","creaseAngle":1},"uv":{"mode":"planar","axis":"xz","scale":[1,1],"rotation":0,"offset":[0,0],"metersPerTile":1},"tangents":true},
-  "roundedBox": {"kind":"roundedBox","size":[2,1,3],"radius":0.1,"segments":2},
-  "plane": {"kind":"plane","size":[2,3]},
-  "sphere": {"kind":"sphere","radius":1,"segments":16,"rings":8},
-  "cylinder": {"kind":"cylinder","radius":0.5,"height":2,"segments":16,"cap":true},
-  "cone": {"kind":"cone","radius":0.5,"height":2,"segments":16,"cap":true},
-  "capsule": {"kind":"capsule","radius":0.5,"height":2,"segments":16,"rings":6},
-  "disc": {"kind":"disc","radius":1,"segments":16},
-  "torus": {"kind":"torus","radius":1,"tubeRadius":0.2,"segments":16,"tubeSegments":8},
-  "polygon": {"kind":"polygon","points":[[0,0],[2,0],[1,1]]},
-  "lathe": {"kind":"lathe","profile":[[0.3,0],[0.6,1],[0.2,2]],"segments":16,"cap":true},
-  "extrude": {"kind":"extrude","profile":{"points":[[-1,-1],[1,-1],[1,1],[-1,1]]},"depth":0.5,"cap":true,"bevel":{"size":0.05,"segments":2}},
-  "sweep": {"kind":"sweep","profile":{"points":[[-0.2,-0.2],[0.2,-0.2],[0,0.2]]},"path":{"kind":"line","points":[[0,0,0],[0,0,2]],"segments":1},"cap":true,"up":[0,1,0]},
-  "transform": {"kind":"transform","source":{"kind":"box","size":[1,1,1]},"position":[1,2,3],"rotation":[0,0.5,0],"scale":[1,2,-1]},
-  "mirror": {"kind":"mirror","source":{"kind":"sphere","radius":0.5},"axis":"x","offset":1,"includeOriginal":true},
-  "noise": {"kind":"noise","source":{"kind":"sphere","radius":1,"segments":12,"rings":6},"seed":42,"frequency":1.5,"strength":0.1,"octaves":3,"lacunarity":2,"persistence":0.5,"offset":[0,0,0]},
-  "bend": {"kind":"bend","source":{"kind":"box","size":[1,2,1]},"axis":"y","direction":"x","angle":0.5},
-  "twist": {"kind":"twist","source":{"kind":"box","size":[1,2,1]},"axis":"y","angle":1},
-  "taper": {"kind":"taper","source":{"kind":"box","size":[1,2,1]},"axis":"y","startScale":1,"endScale":0.5},
-  "union": {"kind":"union","left":{"kind":"box","size":[1,1,1]},"right":{"kind":"transform","source":{"kind":"box","size":[1,1,1]},"position":[0.5,0,0]}},
-  "subtract": {"kind":"subtract","left":{"kind":"box","size":[2,2,2]},"right":{"kind":"sphere","radius":0.5,"segments":12,"rings":6}},
-  "intersect": {"kind":"intersect","left":{"kind":"box","size":[2,2,2]},"right":{"kind":"sphere","radius":1,"segments":12,"rings":6}}
+  "box": {
+    "kind": "box",
+    "size": [
+      1,
+      2,
+      3
+    ],
+    "quality": "high",
+    "normals": {
+      "mode": "smooth",
+      "creaseAngle": 1
+    },
+    "uv": {
+      "mode": "planar",
+      "axis": "xz",
+      "scale": [
+        1,
+        1
+      ],
+      "rotation": 0,
+      "offset": [
+        0,
+        0
+      ],
+      "metersPerTile": 1
+    },
+    "tangents": true
+  },
+  "roundedBox": {
+    "kind": "roundedBox",
+    "size": [
+      2,
+      1,
+      3
+    ],
+    "radius": 0.1,
+    "segments": 2
+  },
+  "plane": {
+    "kind": "plane",
+    "size": [
+      2,
+      3
+    ]
+  },
+  "sphere": {
+    "kind": "sphere",
+    "radius": 1,
+    "segments": 16,
+    "rings": 8
+  },
+  "cylinder": {
+    "kind": "cylinder",
+    "radius": 0.5,
+    "height": 2,
+    "segments": 16,
+    "cap": true
+  },
+  "cone": {
+    "kind": "cone",
+    "radius": 0.5,
+    "height": 2,
+    "segments": 16,
+    "cap": true
+  },
+  "capsule": {
+    "kind": "capsule",
+    "radius": 0.5,
+    "height": 2,
+    "segments": 16,
+    "rings": 6
+  },
+  "disc": {
+    "kind": "disc",
+    "radius": 1,
+    "segments": 16
+  },
+  "torus": {
+    "kind": "torus",
+    "radius": 1,
+    "tubeRadius": 0.2,
+    "segments": 16,
+    "tubeSegments": 8
+  },
+  "polygon": {
+    "kind": "polygon",
+    "points": [
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  "lathe": {
+    "kind": "lathe",
+    "profile": [
+      [
+        0.3,
+        0
+      ],
+      [
+        0.6,
+        1
+      ],
+      [
+        0.2,
+        2
+      ]
+    ],
+    "segments": 16,
+    "cap": true
+  },
+  "extrude": {
+    "kind": "extrude",
+    "profile": {
+      "points": [
+        [
+          -1,
+          -1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          -1,
+          1
+        ]
+      ]
+    },
+    "depth": 0.5,
+    "cap": true,
+    "bevel": {
+      "size": 0.05,
+      "segments": 2
+    }
+  },
+  "sweep": {
+    "kind": "sweep",
+    "profile": {
+      "points": [
+        [
+          -0.2,
+          -0.2
+        ],
+        [
+          0.2,
+          -0.2
+        ],
+        [
+          0,
+          0.2
+        ]
+      ]
+    },
+    "path": {
+      "kind": "line",
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ],
+      "segments": 1
+    },
+    "cap": true,
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "profileStations": [
+      {
+        "at": 0,
+        "scale": [
+          1,
+          1
+        ]
+      },
+      {
+        "at": 1,
+        "scale": [
+          0.5,
+          0.7
+        ],
+        "rotation": 0.2,
+        "offset": [
+          0.1,
+          0
+        ]
+      }
+    ]
+  },
+  "loft": {
+    "kind": "loft",
+    "sections": [
+      {
+        "z": 0,
+        "profile": {
+          "points": [
+            [
+              -0.5,
+              -0.5
+            ],
+            [
+              0.5,
+              -0.5
+            ],
+            [
+              0.5,
+              0.5
+            ],
+            [
+              -0.5,
+              0.5
+            ]
+          ]
+        }
+      },
+      {
+        "z": 1,
+        "profile": {
+          "points": [
+            [
+              -0.35,
+              -0.45
+            ],
+            [
+              0.45,
+              -0.35
+            ],
+            [
+              0.35,
+              0.45
+            ],
+            [
+              -0.45,
+              0.35
+            ]
+          ]
+        },
+        "rotation": 0.1,
+        "offset": [
+          0.05,
+          0
+        ]
+      },
+      {
+        "z": 2,
+        "profile": {
+          "points": [
+            [
+              -0.2,
+              -0.25
+            ],
+            [
+              0.25,
+              -0.2
+            ],
+            [
+              0.2,
+              0.25
+            ],
+            [
+              -0.25,
+              0.2
+            ]
+          ]
+        }
+      }
+    ],
+    "cap": true,
+    "normals": {
+      "mode": "smooth",
+      "creaseAngle": 1.2
+    },
+    "tangents": true
+  },
+  "transform": {
+    "kind": "transform",
+    "source": {
+      "kind": "box",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    "position": [
+      1,
+      2,
+      3
+    ],
+    "rotation": [
+      0,
+      0.5,
+      0
+    ],
+    "scale": [
+      1,
+      2,
+      -1
+    ]
+  },
+  "mirror": {
+    "kind": "mirror",
+    "source": {
+      "kind": "sphere",
+      "radius": 0.5
+    },
+    "axis": "x",
+    "offset": 1,
+    "includeOriginal": true
+  },
+  "noise": {
+    "kind": "noise",
+    "source": {
+      "kind": "sphere",
+      "radius": 1,
+      "segments": 12,
+      "rings": 6
+    },
+    "seed": 42,
+    "frequency": 1.5,
+    "strength": 0.1,
+    "octaves": 3,
+    "lacunarity": 2,
+    "persistence": 0.5,
+    "offset": [
+      0,
+      0,
+      0
+    ]
+  },
+  "bend": {
+    "kind": "bend",
+    "source": {
+      "kind": "box",
+      "size": [
+        1,
+        2,
+        1
+      ]
+    },
+    "axis": "y",
+    "direction": "x",
+    "angle": 0.5
+  },
+  "twist": {
+    "kind": "twist",
+    "source": {
+      "kind": "box",
+      "size": [
+        1,
+        2,
+        1
+      ]
+    },
+    "axis": "y",
+    "angle": 1
+  },
+  "taper": {
+    "kind": "taper",
+    "source": {
+      "kind": "box",
+      "size": [
+        1,
+        2,
+        1
+      ]
+    },
+    "axis": "y",
+    "startScale": 1,
+    "endScale": 0.5
+  },
+  "union": {
+    "kind": "union",
+    "left": {
+      "kind": "box",
+      "size": [
+        1,
+        1,
+        1
+      ]
+    },
+    "right": {
+      "kind": "transform",
+      "source": {
+        "kind": "box",
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "position": [
+        0.5,
+        0,
+        0
+      ]
+    }
+  },
+  "subtract": {
+    "kind": "subtract",
+    "left": {
+      "kind": "box",
+      "size": [
+        2,
+        2,
+        2
+      ]
+    },
+    "right": {
+      "kind": "sphere",
+      "radius": 0.5,
+      "segments": 12,
+      "rings": 6
+    }
+  },
+  "intersect": {
+    "kind": "intersect",
+    "left": {
+      "kind": "box",
+      "size": [
+        2,
+        2,
+        2
+      ]
+    },
+    "right": {
+      "kind": "sphere",
+      "radius": 1,
+      "segments": 12,
+      "rings": 6
+    }
+  }
 }

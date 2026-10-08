@@ -1,3 +1,15 @@
+## 0.11.0-rc.24
+
+### Final Modeling Completeness & Portfolio Freeze candidate
+
+- Add generic `loft` geometry for deterministic multi-profile skinning along local Z, including compatible profile holes, section scale/rotation/offset, caps, semantic side/cap groups, generated UVs, normals/tangents reuse, and geometry safety limits.
+- Extend generic `sweep` with optional `profileStations` so compatible profiles can morph and change scale, rotation, and offset along normalized path distance while preserving transported curve frames.
+- Keep both features renderer-neutral: they compile to the existing indexed `GeometryMesh` contract and require no Sekai64 renderer changes.
+- Keep semantic object systems out of Anyo. Trees, roots, vines, flowers, furniture, architecture, and sculptures remain compositions built from generic geometry.
+- World 0.9 schema now exposes `loft` and `sweep.profileStations`; World 0.8 remains unchanged.
+- Final-freeze geometry regression suite covers deterministic hashing, topology compatibility, holes, closed-sweep seam continuity, caps, generated UVs, tangents, and safety bounds.
+- Development compatibility baseline moves to Sekai64 `0.8.0-rc.56`; optional peer range is unchanged.
+
 ## 0.11.0-rc.23
 
 - Add renderer-neutral `environment.imageQuality.preset` values: `world`, `character`, and `product`; explicitly authored image-quality fields still win over preset defaults.

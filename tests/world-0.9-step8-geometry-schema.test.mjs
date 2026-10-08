@@ -13,7 +13,7 @@ const invalid = JSON.parse(readFileSync(new URL('./fixtures/world-0.9-geometry-k
 
 const expectedKinds = [
   'box', 'roundedBox', 'plane', 'sphere', 'cylinder', 'cone', 'capsule', 'disc', 'torus', 'polygon', 'lathe',
-  'extrude', 'sweep', 'transform', 'mirror', 'noise', 'bend', 'twist', 'taper', 'union', 'subtract', 'intersect',
+  'extrude', 'sweep', 'loft', 'transform', 'mirror', 'noise', 'bend', 'twist', 'taper', 'union', 'subtract', 'intersect',
 ]
 
 function localRef(ref) {
@@ -95,7 +95,7 @@ function schemaErrors(value, definition, path = '$', depth = 0) {
   return errors
 }
 
-test('World 0.9 geometry schema discriminates the exact 22 rc.7 built-in geometry kinds', () => {
+test('World 0.9 geometry schema discriminates the exact 23 final-freeze built-in geometry kinds', () => {
   assert.deepEqual([...BUILTIN_GEOMETRY_KIND_NAMES], expectedKinds)
   assert.deepEqual(Object.keys(valid), expectedKinds)
   assert.deepEqual(Object.keys(invalid), expectedKinds)

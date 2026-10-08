@@ -4658,6 +4658,9 @@
           "$ref": "#/$defs/geometrySweep"
         },
         {
+          "$ref": "#/$defs/geometryLoft"
+        },
+        {
           "$ref": "#/$defs/geometryTransform"
         },
         {
@@ -6279,6 +6282,14 @@
           ],
           "minItems": 3,
           "maxItems": 3
+        },
+        "profileStations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/geometrySweepProfileStation"
+          },
+          "minItems": 2,
+          "maxItems": 4097
         }
       },
       "additionalProperties": false
@@ -6901,6 +6912,120 @@
         }
       ],
       "description": "Named deterministic alias over an RFC 6901 template override path. No expressions or scripting are evaluated."
+    },
+    "geometrySweepProfileStation": {
+      "type": "object",
+      "required": [
+        "at"
+      ],
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "profile": {
+          "$ref": "#/$defs/geometryProfile"
+        },
+        "scale": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "offset": {
+          "$ref": "#/$defs/vec2"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryLoftSection": {
+      "type": "object",
+      "required": [
+        "z",
+        "profile"
+      ],
+      "properties": {
+        "z": {
+          "type": "number"
+        },
+        "profile": {
+          "$ref": "#/$defs/geometryProfile"
+        },
+        "scale": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "offset": {
+          "$ref": "#/$defs/vec2"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryLoft": {
+      "type": "object",
+      "required": [
+        "kind",
+        "sections"
+      ],
+      "properties": {
+        "kind": {
+          "const": "loft"
+        },
+        "quality": {
+          "$ref": "#/$defs/geometryQuality"
+        },
+        "normals": {
+          "$ref": "#/$defs/geometryNormalPolicy"
+        },
+        "uv": {
+          "$ref": "#/$defs/geometryUvPolicy"
+        },
+        "tangents": {
+          "type": "boolean"
+        },
+        "vertexColor": {
+          "$ref": "#/$defs/geometryVertexColor"
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/geometryLoftSection"
+          },
+          "minItems": 2,
+          "maxItems": 4097
+        },
+        "cap": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
