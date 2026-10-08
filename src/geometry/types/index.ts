@@ -64,6 +64,21 @@ export interface GeometryDefinition {
   [key: string]: GeometryJsonValue | GeometryNormalPolicy | GeometryUvPolicy | GeometryVertexColorDefinition | GeometryDefinition | undefined
 }
 
+/**
+ * Canonical renderer-neutral geometry source. This is an additive alias over the
+ * established GeometryDefinition contract so existing authoring remains source-compatible.
+ */
+export type GeometrySource = GeometryDefinition
+
+/**
+ * JSON-first descriptor for a geometry operator. Step 1 freezes only the descriptor
+ * shape; execution/composition is introduced by the operator-pipeline milestone.
+ */
+export interface GeometryOperator {
+  kind: string
+  [key: string]: GeometryJsonValue | undefined
+}
+
 export interface BoxGeometryDefinition extends GeometryDefinition {
   kind: 'box'
   size?: [number, number, number]

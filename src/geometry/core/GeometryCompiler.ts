@@ -1,4 +1,4 @@
-import type { GeometryDefinition, GeometryMesh, GeometryMeshDraft, GeometrySafetyLimits } from '../types/index.js'
+import type { GeometryDefinition, GeometryMesh, GeometryMeshDraft, GeometrySafetyLimits, GeometrySource } from '../types/index.js'
 import { GeometryCache } from '../cache/GeometryCache.js'
 import { GeometryValidationError } from '../validation/errors.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
@@ -9,7 +9,7 @@ import { BUILTIN_GEOMETRY_KINDS } from '../primitives/index.js'
 import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfacePolicy.js'
 import { applyVertexColorPolicy, normalizeVertexColorPolicy } from '../attributes/vertexColor.js'
 
-export interface GeometryCompileContext {
+export interface GeometryBuildContext {
   readonly limits: GeometrySafetyLimits
   readonly modifierDepth: number
   readonly booleanDepth: number
@@ -20,11 +20,23 @@ export interface GeometryCompileContext {
   finalizeDraft(mesh: GeometryMeshDraft): GeometryMesh
 }
 
+/** Backward-compatible name retained for existing external kind compilers. */
+export type GeometryCompileContext = GeometryBuildContext
+
+export interface GeometryBuildResult {
+  /** Fully normalized canonical source used for hashing and compilation. */
+  readonly source: GeometrySource
+  /** Deterministic identity of the normalized source. */
+  readonly key: string
+  /** Final validated renderer-neutral mesh. */
+  readonly mesh: GeometryMesh
+}
+
 export interface GeometryKindCompiler {
   readonly kind: string
   /** Resolve kind-specific defaults before hashing. Explicit authored values should win. */
-  normalize?(definition: GeometryDefinition, context: GeometryCompileContext): GeometryDefinition
-  compile(definition: GeometryDefinition, context: GeometryCompileContext): GeometryMeshDraft
+  normalize?(definition: GeometryDefinition, context: GeometryBuildContext): GeometryDefinition
+  compile(definition: GeometryDefinition, context: GeometryBuildContext): GeometryMeshDraft
 }
 
 export interface GeometryCompilerOptions {
@@ -69,25 +81,36 @@ export class GeometryCompiler {
     return hashGeometryDefinition(this.normalize(definition), { limits: this.#limits })
   }
 
+  /**
+   * Execute the canonical geometry build pipeline once and expose its normalized
+   * source, deterministic identity, and final renderer-neutral mesh together.
+   */
+  build(definition: unknown): GeometryBuildResult {
+    return this.#buildInternal(definition, 0, 0)
+  }
+
   compile(definition: unknown): GeometryMesh {
-    return this.#compileInternal(definition, 0, 0)
+    return this.#buildInternal(definition, 0, 0).mesh
   }
 
   #compileInternal(definition: unknown, modifierDepth: number, booleanDepth: number): GeometryMesh {
-    const normalized = this.#normalizeInternal(definition, modifierDepth, booleanDepth)
-    const key = hashGeometryDefinition(normalized, { limits: this.#limits })
-    const cached = this.#cache?.get(normalized)
-    if (cached) return cached
-    const kindCompiler = this.#kinds.get(normalized.kind)!
-    const compiled = kindCompiler.compile(normalized, this.#contextFor(modifierDepth, booleanDepth))
-    const colored = applyVertexColorPolicy(compiled, normalized)
-    const mesh = finalizeGeometryMesh(applySurfacePolicy(colored, normalized), { limits: this.#limits })
-    if (this.#cache) return this.#cache.set(normalized, mesh)
-    void key
-    return mesh
+    return this.#buildInternal(definition, modifierDepth, booleanDepth).mesh
   }
 
-  #contextFor(modifierDepth: number, booleanDepth: number): GeometryCompileContext {
+  #buildInternal(definition: unknown, modifierDepth: number, booleanDepth: number): GeometryBuildResult {
+    const source = this.#normalizeInternal(definition, modifierDepth, booleanDepth)
+    const key = hashGeometryDefinition(source, { limits: this.#limits })
+    const cached = this.#cache?.get(source)
+    if (cached) return { source, key, mesh: cached }
+    const kindCompiler = this.#kinds.get(source.kind)!
+    const compiled = kindCompiler.compile(source, this.#contextFor(modifierDepth, booleanDepth))
+    const colored = applyVertexColorPolicy(compiled, source)
+    const finalized = finalizeGeometryMesh(applySurfacePolicy(colored, source), { limits: this.#limits })
+    const mesh = this.#cache ? this.#cache.set(source, finalized) : finalized
+    return { source, key, mesh }
+  }
+
+  #contextFor(modifierDepth: number, booleanDepth: number): GeometryBuildContext {
     return {
       limits: this.#limits,
       modifierDepth,
@@ -128,6 +151,11 @@ export class GeometryCompiler {
 
 export function createGeometryCompiler(options: GeometryCompilerOptions = {}): GeometryCompiler {
   return new GeometryCompiler(options)
+}
+
+/** Build normalized source, deterministic identity, and mesh through one canonical pipeline. */
+export function buildGeometry(definition: unknown, options: GeometryCompilerOptions = {}): GeometryBuildResult {
+  return createGeometryCompiler(options).build(definition)
 }
 
 /** Compile a built-in geometry expression or an explicitly registered extension kind. */

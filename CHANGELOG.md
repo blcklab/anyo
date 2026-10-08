@@ -1,3 +1,14 @@
+## 0.11.0-rc.25
+
+### Universal Geometry Step 1 — canonical pipeline contract
+
+- Formalize the established geometry compiler as one canonical build pipeline without replacing mature rc.24 geometry algorithms.
+- Add additive `GeometrySource` and `GeometryOperator` public contracts; existing `GeometryDefinition` authoring remains source-compatible.
+- Add canonical `GeometryBuildContext` while retaining `GeometryCompileContext` as a compatibility alias for existing custom kind compilers.
+- Add `GeometryCompiler.build()` / `buildGeometry()` returning the normalized source, deterministic geometry key, and final validated `GeometryMesh` together.
+- Route existing `compile()` / `compileGeometry()` through the same internal build path so normalization, hashing, caching, surface policy, and validation cannot diverge.
+- No World schema, Sekai64, geometry-kind, topology, or rendering behavior change is part of this step.
+
 ## 0.11.0-rc.24
 
 ### Final Modeling Completeness & Portfolio Freeze candidate

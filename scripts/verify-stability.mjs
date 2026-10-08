@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = new URL('../', import.meta.url)
 const pkg = JSON.parse(await readFile(new URL('package.json', root), 'utf8'))
-assert.equal(pkg.version, '0.11.0-rc.24')
+assert.equal(pkg.version, '0.11.0-rc.25')
 assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'Anyo core must keep zero runtime dependencies.')
 
 const expectedSubpaths = [
@@ -36,4 +36,4 @@ assert.ok(!rendererTypes.includes('createDynamicTexture'), 'Dynamic texture crea
 const surfaceTypes = rendererTypes + (await readFile(new URL('dist/types/web-surface/index.d.ts', root), 'utf8')) + (await readFile(new URL('dist/types/web-surface/target.d.ts', root), 'utf8')) + (await readFile(new URL('dist/types/web-surface/registry.d.ts', root), 'utf8'))
 for (const name of ['WebSurfaceTarget', 'WebSurfacePresentation', 'RegisteredWebSurfaceApp']) assert.ok(surfaceTypes.includes(name), `${name} must remain declared.`)
 
-console.log('Verified Anyo 0.11 World 0.9 baseline, JSON-first, geometry, schema, validation, renderer, and Web Surface contracts.')
+console.log('Verified Anyo 0.11 rc.25 World 0.9 baseline, JSON-first, geometry, schema, validation, renderer, and Web Surface contracts.')

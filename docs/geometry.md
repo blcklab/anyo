@@ -36,6 +36,38 @@ Geometry definitions contain geometry parameters only. Entity transforms and mat
 
 Geometry compilation is a change-time operation, not a frame-time operation. Generated meshes are immutable by contract once cached so many world entities can safely share the same resource.
 
+### Canonical build pipeline
+
+The universal-composition freeze formalizes the existing S1 compiler rather than replacing it. A geometry build has one canonical flow:
+
+```text
+authored GeometrySource
+        ↓
+normalize kind defaults + surface policy
+        ↓
+normalized GeometrySource
+        ↓
+deterministic geometry key
+        ↓
+kind compiler / existing nested construction
+        ↓
+vertex-color + surface policy
+        ↓
+validated GeometryMesh
+```
+
+`GeometrySource` is an additive alias over `GeometryDefinition`; existing authoring and extension kinds stay source-compatible. `GeometryBuildContext` is the canonical compiler context name, while the previous `GeometryCompileContext` name remains as a compatibility alias.
+
+Use `GeometryCompiler.build()` (or `buildGeometry()`) when tooling needs all three canonical outputs together:
+
+```ts
+const { source, key, mesh } = buildGeometry({ kind: 'sphere', quality: 'high' })
+```
+
+`compileGeometry()` remains fully supported and returns only the final `GeometryMesh`. Internally it is now the mesh-only view of the same build path, so normalization, identity, caching, surface policy, and validation cannot drift between APIs.
+
+`GeometryOperator` is introduced only as the JSON-first descriptor boundary for the next composition milestone. Step 1 does not add a second modifier engine or change World 0.9 authoring syntax.
+
 ## S2 precision primitives
 
 S2 registers these built-in kinds:
