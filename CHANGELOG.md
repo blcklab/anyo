@@ -1,3 +1,15 @@
+## 0.11.0-rc.33
+
+### Universal Geometry Step 9 — deterministic build identity, provenance, and cacheability
+
+- Keep `hashGeometryDefinition()` as the stable pure canonical-source `g1` hash while adding canonical compiler/resource `g2` build identity through `GeometryBuildIdentity`, `GEOMETRY_BUILD_ABI`, and `hashGeometryBuildIdentity()`.
+- Include normalized source content, ordered modifier parameters, resolved reusable curve/profile/field content, the geometry build ABI, and sorted namespaced extension namespace/version/kind provenance in compiler/cache identity.
+- Add `GeometryCompiler.identityFor()` and expose inspectable identity on `GeometryBuildResult` so cache/provenance decisions are diagnosable rather than opaque.
+- Make compiler cache access key-aware so shared caches cannot return stale extension geometry when provider versions change; direct legacy `GeometryCache` definition methods remain available for pure-source callers.
+- Move ResourceGraph geometry ids to canonical `g2` build keys. Extension-containing graphs remain renderer-safe baked `mesh` definitions while provider version provenance still invalidates the resource id deterministically.
+- Introduce `anyo.geometry/1` as the explicit geometry build ABI. Safety limits remain validation policy rather than identity noise; bump the ABI only when equal canonical geometry is intentionally allowed to compile with changed semantics.
+- Preserve World 0.8/0.9 authoring schemas and Sekai64 behavior; this milestone changes identity/cache correctness, not rendered geometry or public world syntax.
+
 ## 0.11.0-rc.32
 
 ### Universal Geometry Step 8 — namespaced geometry extension contract

@@ -14,7 +14,8 @@ import { GeometryValidationError } from '../validation/errors.js'
 import { resolveGeometrySafetyLimits } from '../validation/limits.js'
 import { finalizeGeometryMesh } from '../validation/validateMesh.js'
 import { normalizeGeometryDefinition } from './normalizeGeometry.js'
-import { hashGeometryDefinition } from './hashGeometry.js'
+import { hashGeometryBuildIdentity } from './hashGeometry.js'
+import { createGeometryBuildIdentity, type GeometryBuildIdentity } from './geometryIdentity.js'
 import { BUILTIN_GEOMETRY_KINDS } from '../primitives/index.js'
 import { BUILTIN_GEOMETRY_OPERATORS } from '../operators/index.js'
 import { applySurfacePolicy, normalizeSurfacePolicy } from '../attributes/surfacePolicy.js'
@@ -74,7 +75,9 @@ export type GeometryCompileContext = GeometryBuildContext
 export interface GeometryBuildResult {
   /** Fully normalized canonical source used for hashing and compilation. */
   readonly source: GeometrySource
-  /** Deterministic identity of the normalized source. */
+  /** Inspectable build identity including geometry ABI and executable extension provenance. */
+  readonly identity: GeometryBuildIdentity
+  /** Deterministic compiler/cache identity derived from `identity`. */
   readonly key: string
   /** Final validated renderer-neutral mesh. */
   readonly mesh: GeometryMesh
@@ -229,8 +232,13 @@ export class GeometryCompiler {
     return normalizeGeometryDefinition(normalized, { limits: this.#limits }) as GeometryOperator
   }
 
+  identityFor(definition: unknown): GeometryBuildIdentity {
+    const source = this.normalize(definition) as GeometrySource
+    return createGeometryBuildIdentity(source, this.#extensions)
+  }
+
   keyFor(definition: unknown): string {
-    return hashGeometryDefinition(this.normalize(definition), { limits: this.#limits })
+    return hashGeometryBuildIdentity(this.identityFor(definition))
   }
 
   /**
@@ -255,18 +263,19 @@ export class GeometryCompiler {
   }
 
   #buildInternal(definition: unknown, modifierDepth: number, booleanDepth: number): GeometryBuildResult {
-    const source = this.#normalizeInternal(definition, modifierDepth, booleanDepth)
-    const key = hashGeometryDefinition(source, { limits: this.#limits })
-    const cached = this.#cache?.get(source)
-    if (cached) return { source, key, mesh: cached }
+    const source = this.#normalizeInternal(definition, modifierDepth, booleanDepth) as GeometrySource
+    const identity = createGeometryBuildIdentity(source, this.#extensions)
+    const key = hashGeometryBuildIdentity(identity)
+    const cached = this.#cache?.getByKey(key)
+    if (cached) return { source, identity, key, mesh: cached }
     const context = this.#contextFor(modifierDepth, booleanDepth)
     const compiled = isNamespacedGeometryKind(source.kind)
       ? this.#extensions.resolve(source.kind)!.compiler.compile(source as import('../extensions/types.js').GeometryExtensionDefinition, context)
       : this.#kinds.get(source.kind)!.compile(source, context)
     const colored = applyVertexColorPolicy(compiled, source)
     const finalized = finalizeGeometryMesh(applySurfacePolicy(colored, source), { limits: this.#limits })
-    const mesh = this.#cache ? this.#cache.set(source, finalized) : finalized
-    return { source, key, mesh }
+    const mesh = this.#cache ? this.#cache.setByKey(key, finalized) : finalized
+    return { source, identity, key, mesh }
   }
 
   #applyOperatorInternal(mesh: GeometryMesh, operator: unknown, modifierDepth: number): GeometryMesh {

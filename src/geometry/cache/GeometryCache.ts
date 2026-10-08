@@ -12,28 +12,39 @@ export class GeometryCache {
 
   get size(): number { return this.#entries.size }
 
+  /** Legacy pure-definition cache key retained for direct cache consumers. */
   keyFor(definition: GeometryDefinition): string {
     return hashGeometryDefinition(definition, { limits: this.#limits })
   }
 
-  has(definition: GeometryDefinition): boolean { return this.#entries.has(this.keyFor(definition)) }
-  get(definition: GeometryDefinition): GeometryMesh | undefined { return this.#entries.get(this.keyFor(definition)) }
+  hasKey(key: string): boolean { return this.#entries.has(key) }
+  getByKey(key: string): GeometryMesh | undefined { return this.#entries.get(key) }
 
-  set(definition: GeometryDefinition, mesh: GeometryMesh): GeometryMesh {
+  setByKey(key: string, mesh: GeometryMesh): GeometryMesh {
     const validated = finalizeGeometryMesh(mesh, { limits: this.#limits })
-    this.#entries.set(this.keyFor(definition), validated)
+    this.#entries.set(key, validated)
     return validated
   }
 
-  getOrCreate(definition: GeometryDefinition, create: () => GeometryMesh): GeometryMesh {
-    const key = this.keyFor(definition)
+  getOrCreateByKey(key: string, create: () => GeometryMesh): GeometryMesh {
     const existing = this.#entries.get(key)
     if (existing) return existing
-    const mesh = finalizeGeometryMesh(create(), { limits: this.#limits })
-    this.#entries.set(key, mesh)
-    return mesh
+    return this.setByKey(key, create())
   }
 
-  delete(definition: GeometryDefinition): boolean { return this.#entries.delete(this.keyFor(definition)) }
+  deleteByKey(key: string): boolean { return this.#entries.delete(key) }
+
+  has(definition: GeometryDefinition): boolean { return this.hasKey(this.keyFor(definition)) }
+  get(definition: GeometryDefinition): GeometryMesh | undefined { return this.getByKey(this.keyFor(definition)) }
+
+  set(definition: GeometryDefinition, mesh: GeometryMesh): GeometryMesh {
+    return this.setByKey(this.keyFor(definition), mesh)
+  }
+
+  getOrCreate(definition: GeometryDefinition, create: () => GeometryMesh): GeometryMesh {
+    return this.getOrCreateByKey(this.keyFor(definition), create)
+  }
+
+  delete(definition: GeometryDefinition): boolean { return this.deleteByKey(this.keyFor(definition)) }
   clear(): void { this.#entries.clear() }
 }

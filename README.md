@@ -546,4 +546,10 @@ const compiler = createGeometryCompiler({ extensions })
 
 World JSON may reference a registered kind, but it cannot install or execute a provider. The strict authoring envelope allows only `kind`, `params`, and the existing geometry surface policies. During ResourceGraph creation, extension-containing expressions are compiled and baked to the built-in indexed `mesh` source before renderer realization, so Sekai64 and other adapters remain completely unaware of extension packages.
 
-Provider namespace/version metadata is exposed for diagnostics in rc.32. Step 9 owns deterministic provider provenance and cache identity.
+Provider namespace/version metadata now participates in rc.33 canonical build identity. `hashGeometryDefinition()` remains the pure canonical-source `g1` hash; `GeometryCompiler.keyFor()` and ResourceGraph geometry ids use provenance-aware `g2` build keys.
+
+### Deterministic geometry build identity (rc.33)
+
+Geometry now has two intentionally different identities. `hashGeometryDefinition()` remains the compatibility-safe `g1` hash of canonical source JSON only. Compilation and ResourceGraph geometry use `g2`, produced from `GeometryBuildIdentity`: the normalized source, `anyo.geometry/1` build ABI, and sorted namespaced extension provider namespace/version/kind provenance. Reusable curves, profiles, and fields are resolved to canonical content before the identity is built, and ordered operators already live inside that normalized source.
+
+`GeometryCompiler.identityFor()` exposes the exact identity object used by `keyFor()`/cache. Versioned extension providers must bump their provider version when executable geometry semantics change; unversioned providers are represented explicitly with `version: null` and therefore cannot provide cross-release implementation invalidation guarantees.

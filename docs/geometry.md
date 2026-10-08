@@ -701,3 +701,9 @@ The generic `displace` operator consumes any scalar field:
 ```
 
 `direction` may be `normal`, `x`, `y`, or `z`. Field references are resolved and normalized before pipeline hashing, so equivalent inline/named field content produces equivalent geometry identity. Reusable fields do not become ResourceGraph nodes or renderer resources. Object 0.1 imports namespace field IDs and rewrite nested references and displacement consumers.
+
+## Build identity and cache provenance
+
+`hashGeometryDefinition()` is the pure canonical-source `g1` hash. `GeometryCompiler.identityFor()` produces the stronger build identity used by `keyFor()` and compiler caches; its `g2` key includes the `anyo.geometry/1` ABI and extension provider namespace/version/kind provenance in addition to the normalized source. `GeometryBuildResult` exposes both the normalized `source` and inspectable `identity`.
+
+This distinction lets tools compare authored/canonical geometry without coupling to executable providers, while runtime caches and ResourceGraph ids invalidate correctly when provider versions change.

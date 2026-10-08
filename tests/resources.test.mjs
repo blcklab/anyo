@@ -19,7 +19,7 @@ function issue(error, code) {
   assert.equal(a,b)
   const graph=builder.build()
   assert.equal(graph.list('geometry').length,1)
-  assert.match(a,/^geometry:g1-/)
+  assert.match(a,/^geometry:g2-/)
 })
 
  test('S9 nested transform/CSG expressions form explicit geometry dependency edges', () => {
@@ -74,7 +74,7 @@ function issue(error, code) {
 
  test('S9 missing resource references fail at graph finalization with repair guidance', () => {
   const builder=createResourceGraphBuilder()
-  builder.addInstance({id:'broken',source:'geometry:g1-missing'})
+  builder.addInstance({id:'broken',source:'geometry:g2-missing'})
   assert.throws(()=>builder.build(),error=>issue(error,'RESOURCE_REFERENCE_MISSING') && !!error.issues[0].suggestion)
 })
 

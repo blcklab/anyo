@@ -280,6 +280,21 @@ Providers compile through the normal `GeometryBuildContext` and return the ordin
 
 ### Identity boundary
 
-rc.32 records provider namespace/version for registry diagnostics but does not yet make provider provenance part of canonical geometry identity. Universal Geometry Step 9 owns deterministic extension/provider provenance, cache identity, and related hashing rules.
+rc.33 completes the identity follow-up: provider namespace/version/kind provenance participates in canonical compiler/cache identity while renderer-facing extension geometry remains baked to ordinary `mesh`.
 
 World 0.8 remains byte-identical, no runtime dependency is added, and Sekai64 remains unchanged.
+
+## Step 9 — deterministic build identity, provenance, and cacheability
+
+rc.33 separates **source identity** from **build identity**. `hashGeometryDefinition()` remains `g1` and answers whether two canonical geometry definitions contain the same normalized source content. `GeometryCompiler.keyFor()` returns a `g2` build key derived from an inspectable `GeometryBuildIdentity`.
+
+The build identity contains:
+
+- `abi: "anyo.geometry/1"`;
+- the fully normalized geometry source, including ordered operators and their normalized parameters;
+- canonical reusable curve/profile/field content because those references resolve during normalization;
+- sorted extension provenance grouped by provider namespace, provider version (or explicit `null`), and referenced full kind names.
+
+`GeometryBuildResult.identity` and `GeometryCompiler.identityFor()` expose this data for diagnostics. The compiler uses the `g2` key directly in `GeometryCache`, so a cache shared across compilers cannot accidentally reuse geometry built by a different provider version. ResourceGraph geometry ids also use `g2`; extension expressions are still baked to built-in mesh definitions before renderer realization, so provenance affects lifecycle invalidation without leaking executable extension semantics into Sekai64.
+
+Safety limits are deliberately excluded from build identity because they validate whether a build is allowed rather than changing successful mesh semantics. When Anyo intentionally changes the meaning/output of unchanged canonical geometry, the geometry ABI must be bumped. Extension authors must similarly change provider `version` whenever provider code changes geometry semantics.

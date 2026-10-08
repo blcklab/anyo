@@ -8,7 +8,6 @@ import type { CurveResourceMap, ProfileResourceMap, ScalarFieldResourceMap, Geom
 import { containsGeometryExtension, geometryMeshToDefinition } from '../geometry/extensions/lower.js'
 import type { GeometryExtensionProvider } from '../geometry/extensions/types.js'
 import { GeometryExtensionRegistry } from '../geometry/extensions/GeometryExtensionRegistry.js'
-import { hashGeometryDefinition } from '../geometry/core/hashGeometry.js'
 import { hashResourceValue } from './hash.js'
 import { ResourceGraph } from './graph.js'
 import { resourceError } from './errors.js'
@@ -93,16 +92,20 @@ export class ResourceGraphBuilder {
 
   addGeometry(definition: unknown): ResourceId {
     const normalized = this.#geometryCompiler.normalize(definition)
+    const hasExtension = containsGeometryExtension(normalized)
     // Extension providers are an authoring/build concern only. Bake any expression
     // containing a namespaced kind into the ordinary built-in indexed-mesh contract
     // before it enters ResourceGraph so every renderer remains extension-agnostic.
-    const resourceDefinition = containsGeometryExtension(normalized)
-      ? this.#geometryCompiler.normalize(geometryMeshToDefinition(this.#geometryCompiler.compile(normalized)))
+    // The resource key still comes from the original build identity so provider
+    // namespace/version provenance invalidates stale compiled resources deterministically.
+    const built = hasExtension ? this.#geometryCompiler.build(normalized) : undefined
+    const resourceDefinition = built
+      ? this.#geometryCompiler.normalize(geometryMeshToDefinition(built.mesh))
       : normalized
-    const childIds = containsGeometryExtension(normalized)
+    const childIds = hasExtension
       ? []
       : geometryChildren(resourceDefinition).map((child) => this.addGeometry(child.definition))
-    const key = hashGeometryDefinition(resourceDefinition)
+    const key = built?.key ?? this.#geometryCompiler.keyFor(resourceDefinition)
     const id = `geometry:${key}`
     const resource: GeometryResource = Object.freeze({
       id, kind: 'geometry', key,

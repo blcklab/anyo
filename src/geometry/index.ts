@@ -1,5 +1,7 @@
 export { ANYO_GEOMETRY_CONVENTIONS } from './core/conventions.js'
-export { canonicalGeometryString, geometryDefinitionsEqual, hashGeometryDefinition } from './core/hashGeometry.js'
+export { canonicalGeometryBuildIdentityString, canonicalGeometryString, geometryDefinitionsEqual, hashGeometryBuildIdentity, hashGeometryDefinition } from './core/hashGeometry.js'
+export { GEOMETRY_BUILD_ABI, collectGeometryExtensionProvenance, createGeometryBuildIdentity } from './core/geometryIdentity.js'
+export type { GeometryBuildIdentity, GeometryExtensionBuildProvenance } from './core/geometryIdentity.js'
 export { inspectGeometryDefinition, normalizeGeometryDefinition } from './core/normalizeGeometry.js'
 export { GeometryCompiler, applyGeometryOperator, buildGeometry, compileGeometry, createGeometryCompiler } from './core/GeometryCompiler.js'
 export { GeometryExtensionRegistry, GEOMETRY_EXTENSION_KIND_NAME_PATTERN, GEOMETRY_EXTENSION_NAMESPACE_PATTERN, GEOMETRY_NAMESPACED_KIND_PATTERN, assertGeometryExtensionDefinition, isNamespacedGeometryKind, splitNamespacedGeometryKind, containsGeometryExtension, geometryMeshToDefinition, lowerGeometryExtensions } from './extensions/index.js'

@@ -14,7 +14,8 @@ test('universal geometry step 1 exposes one canonical normalized build result', 
 
   assert.deepEqual(result.source, compiler.normalize(authored))
   assert.equal(result.key, compiler.keyFor(authored))
-  assert.equal(result.key, hashGeometryDefinition(result.source))
+  assert.notEqual(result.key, hashGeometryDefinition(result.source), 'build identity is stronger than the pure source hash')
+  assert.equal(result.identity.source, result.source)
   assert.strictEqual(result.mesh, compiler.compile(authored), 'compile() must remain the mesh-only view of the same cached build')
   assert.ok(result.mesh.positions.length > 0)
   assert.ok(result.mesh.indices.length > 0)
@@ -35,7 +36,7 @@ test('buildGeometry stays output-compatible with compileGeometry for existing de
   assert.deepEqual([...built.mesh.indices], [...compiled.indices])
   assert.deepEqual(built.mesh.bounds, compiled.bounds)
   assert.equal(built.source.kind, 'transform')
-  assert.match(built.key, /^g1-[0-9a-f]{16}$/)
+  assert.match(built.key, /^g2-[0-9a-f]{16}$/)
 })
 
 test('canonical build result also works for explicitly registered geometry kinds', () => {

@@ -1,4 +1,5 @@
 import type { GeometryDefinition, GeometrySafetyLimits } from '../types/index.js'
+import type { GeometryBuildIdentity } from './geometryIdentity.js'
 import { normalizeGeometryDefinition } from './normalizeGeometry.js'
 
 function canonicalStringify(value: unknown): string {
@@ -24,11 +25,22 @@ export function canonicalGeometryString(
   return canonicalStringify(normalizeGeometryDefinition(definition, options))
 }
 
+/** Pure canonical-source identity retained for content-only callers. */
 export function hashGeometryDefinition(
   definition: unknown,
   options: { limits?: Partial<GeometrySafetyLimits> } = {},
 ): string {
   return `g1-${fnv1a64(canonicalGeometryString(definition, options))}`
+}
+
+/** Canonical build identity including the geometry ABI and executable provenance. */
+export function canonicalGeometryBuildIdentityString(identity: GeometryBuildIdentity): string {
+  return canonicalStringify(identity)
+}
+
+/** Compiler/cache identity. Distinct from the legacy pure-source g1 hash. */
+export function hashGeometryBuildIdentity(identity: GeometryBuildIdentity): string {
+  return `g2-${fnv1a64(canonicalGeometryBuildIdentityString(identity))}`
 }
 
 export function geometryDefinitionsEqual(a: unknown, b: unknown): boolean {

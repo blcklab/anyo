@@ -50,7 +50,7 @@ test('universal geometry step 4 adds one universal indexed-mesh escape hatch wit
 test('arbitrary mesh compiles JSON arrays into the canonical immutable renderer-neutral mesh contract', () => {
   const result = buildGeometry(pyramid, { cache: false })
   assert.equal(result.source.kind, 'mesh')
-  assert.ok(result.key.startsWith('g1-'))
+  assert.ok(result.key.startsWith('g2-'))
   assert.ok(result.mesh.positions instanceof Float32Array)
   assert.ok(result.mesh.indices instanceof Uint16Array)
   assert.deepEqual([...result.mesh.positions], pyramid.positions)
